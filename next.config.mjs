@@ -17,5 +17,9 @@ export default withNextra({
   i18n: {
     locales: ['en', 'zh'],
     defaultLocale: 'en'
+  },
+  output: 'export',
+  images: {
+    unoptimized: true
   }
 })

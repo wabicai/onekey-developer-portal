@@ -31,9 +31,6 @@ jobs:
       - name: Build Next.js site
         run: yarn build
 
-      - name: Export static site
-        run: yarn next export
-
       - name: Generate search index
         run: npx pagefind --site out --output-path out/_pagefind
 
