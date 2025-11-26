@@ -12,20 +12,17 @@
    Design Tokens - Color System
    ============================================ */
 :root {
-  /* Nextra Primary (OneKey Green) */
-  --nextra-primary-hue: 142deg;
-  --nextra-primary-saturation: 100%;
-  --nextra-primary-lightness: 36%;
+  /* Use Nextra default primary color (blue) for sidebar active states */
+  /* Custom OneKey green only used for specific brand elements like buttons */
 
   /* OneKey Logo Colors */
   --onekey-logo-color: #18181b;
   --onekey-logo-subtitle: #71717a;
 
-  /* Neutral Gray Scale (Stripe-inspired) */
+  /* Neutral Gray Scale */
   --gray-0: #ffffff;
   --gray-50: #f6f8fa;
   --gray-100: #ebeef1;
-  --gray-150: #d5dbe1;
   --gray-200: #c0c8d2;
   --gray-300: #a3acba;
   --gray-400: #87909f;
@@ -34,19 +31,9 @@
   --gray-700: #414552;
   --gray-800: #30313d;
   --gray-900: #1a1b25;
-  --gray-950: #10111a;
 
   /* OneKey Brand Colors */
-  --ok-green-50: #f0fdf4;
-  --ok-green-100: #dcfce7;
-  --ok-green-200: #bbf7d0;
-  --ok-green-300: #86efac;
-  --ok-green-400: #4ade80;
   --ok-green-500: #00B812;
-  --ok-green-600: #00960E;
-  --ok-green-700: #15803d;
-  --ok-green-800: #166534;
-  --ok-green-900: #14532d;
 
   /* Semantic Colors */
   --info-500: #0570de;
@@ -118,26 +105,13 @@
 }
 
 .dark {
-  --nextra-primary-hue: 142deg;
-  --nextra-primary-saturation: 100%;
-  --nextra-primary-lightness: 45%;
-
   /* OneKey Logo Colors - Dark Mode */
   --onekey-logo-color: #ffffff;
   --onekey-logo-subtitle: #a1a1aa;
 
-  /* Dark mode gray scale - inverted */
-  --gray-0: #10111a;
-  --gray-50: #1a1b25;
-  --gray-100: #30313d;
-  --gray-200: #414552;
-  --gray-300: #545969;
-  --gray-400: #687385;
-  --gray-500: #87909f;
-  --gray-600: #a3acba;
-  --gray-700: #c0c8d2;
-  --gray-800: #ebeef1;
-  --gray-900: #f6f8fa;
+  /* Override Nextra gray colors for dark mode - more subtle borders */
+  --x-color-gray-200: #27272a; /* zinc-800 */
+  --x-color-gray-300: #3f3f46; /* zinc-700 */
 
   /* Dark mode shadows - more subtle */
   --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.3);
@@ -797,6 +771,7 @@ main ~ footer {
 /* ============================================
    Sidebar Styling
    ============================================ */
+
 .nextra-sidebar {
   border-right: 1px solid var(--gray-100);
 }
@@ -824,25 +799,7 @@ main ~ footer {
   color: var(--gray-100);
 }
 
-/* Active sidebar item - uses black/white, no colored background */
-/* Override Nextra's default primary color styling */
-.nextra-sidebar-menu li a[data-active="true"],
-aside nav a[data-active="true"],
-aside a[data-active="true"] {
-  background: #18181b !important;
-  background-image: none !important;
-  color: white !important;
-  font-weight: 500;
-  border-radius: 6px;
-}
-
-.dark .nextra-sidebar-menu li a[data-active="true"],
-.dark aside nav a[data-active="true"],
-.dark aside a[data-active="true"] {
-  background: white !important;
-  background-image: none !important;
-  color: #18181b !important;
-}
+/* Active sidebar item - use Nextra default styling */
 
 /* Sidebar section headers */
 .nextra-sidebar h4 {

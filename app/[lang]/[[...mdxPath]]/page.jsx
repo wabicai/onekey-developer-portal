@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation'
 import { generateStaticParamsFor, importPage } from 'nextra/pages'
 import { useMDXComponents as getMDXComponents } from '../../../mdx-components'
 
+// Use Nextra's built-in generateStaticParams (requires i18n config in next.config.mjs)
 export const generateStaticParams = generateStaticParamsFor('mdxPath', 'lang')
 
 const loadPage = async (params) => {

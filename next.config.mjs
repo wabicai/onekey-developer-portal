@@ -14,6 +14,7 @@ const normalizedAssetPrefix =
 
 const withNextra = nextra({
   contentDirBasePath: '/',
+  unstable_shouldAddLocaleToLinks: true,
   // Syntax highlighting configuration
   mdxOptions: {
     rehypePrettyCodeOptions: {
@@ -26,15 +27,17 @@ const withNextra = nextra({
 })
 
 export default withNextra({
-  i18n: {
-    locales: ['en', 'zh'],
-    defaultLocale: 'en'
-  },
   basePath: normalizedBasePath || undefined,
   assetPrefix: normalizedAssetPrefix || undefined,
   trailingSlash: true,
   output: 'export',
   images: {
     unoptimized: true
+  },
+  // Required by Nextra for page-map generation
+  // Note: This is Nextra-specific, not standard App Router i18n
+  i18n: {
+    locales: ['en', 'zh'],
+    defaultLocale: 'en'
   }
 })

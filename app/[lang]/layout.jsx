@@ -1,20 +1,15 @@
 import { Footer, Layout, Navbar } from 'nextra-theme-docs'
-import { Head } from 'nextra/components'
 import { getPageMap } from 'nextra/page-map'
 import { OneKeyWordmark } from '../../components/OneKeyLogo'
 import { NavbarExtras } from '../../components/NavbarExtras'
-import 'nextra-theme-docs/style.css'
-import '../../styles/globals.css'
 
-export const metadata = {
-  title: {
-    default: 'OneKey Developers',
-    template: '%s - OneKey Developers'
-  },
-  description: 'Official developer documentation for OneKey hardware and software integration.',
+// Static params for i18n routing (Next.js App Router pattern)
+// See: https://nextjs.org/docs/app/guides/internationalization#static-rendering
+export async function generateStaticParams() {
+  return [{ lang: 'en' }, { lang: 'zh' }]
 }
 
-export default async function RootLayout({ children, params }) {
+export default async function LocaleLayout({ children, params }) {
   const { lang } = await params
   const pageMap = await getPageMap(`/${lang}`)
 
@@ -36,34 +31,36 @@ export default async function RootLayout({ children, params }) {
   )
 
   return (
-    <html lang={lang} dir="ltr" suppressHydrationWarning>
-      <Head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet" />
-      </Head>
-      <body>
-        <Layout
-          navbar={navbar}
-          pageMap={pageMap}
-          docsRepositoryBase="https://github.com/OneKeyHQ/developer-docs/tree/main"
-          footer={footer}
-          sidebar={{
-            defaultMenuCollapseLevel: 2,
-            toggleButton: true
-          }}
-          editLink={lang === 'zh' ? '编辑此页面' : 'Edit this page'}
-          feedback={{ content: null }}
-          toc={{
-            title: lang === 'zh' ? '本页内容' : 'On This Page',
-            backToTop: lang === 'zh' ? '返回顶部' : 'Back to top'
-          }}
-          navigation
-          darkMode={true}
-        >
-          {children}
-        </Layout>
-      </body>
-    </html>
+    <>
+      <script
+        dangerouslySetInnerHTML={{
+          __html: `document.documentElement.lang="${lang}";`
+        }}
+      />
+      <Layout
+        navbar={navbar}
+        pageMap={pageMap}
+        docsRepositoryBase="https://github.com/OneKeyHQ/developer-docs/tree/main"
+        footer={footer}
+        i18n={[
+          { locale: 'en', name: 'English' },
+          { locale: 'zh', name: '简体中文' }
+        ]}
+        sidebar={{
+          defaultMenuCollapseLevel: 2,
+          toggleButton: true
+        }}
+        editLink={lang === 'zh' ? '编辑此页面' : 'Edit this page'}
+        feedback={{ content: null }}
+        toc={{
+          title: lang === 'zh' ? '本页内容' : 'On This Page',
+          backToTop: lang === 'zh' ? '返回顶部' : 'Back to top'
+        }}
+        navigation
+        darkMode={true}
+      >
+        {children}
+      </Layout>
+    </>
   )
 }
