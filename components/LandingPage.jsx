@@ -296,32 +296,32 @@ export function LandingPage({ locale = 'en' }) {
     <div className="landing-page flex-1 flex flex-col">
       {/* Hero Section */}
       <section className="relative overflow-hidden bg-white dark:bg-zinc-900">
-        {/* Background Effects - Stripe-inspired dot pattern */}
+        {/* Background Effects */}
         <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          {/* Dot pattern with gradient fade - Light mode */}
+          {/* Dot pattern - Light mode */}
           <div
             className="absolute inset-0 dark:hidden"
             style={{
-              backgroundImage: `radial-gradient(circle, #00B812 1px, transparent 1px)`,
-              backgroundSize: '24px 24px',
-              maskImage: 'linear-gradient(to right, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.1) 50%, transparent 80%)',
-              WebkitMaskImage: 'linear-gradient(to right, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.1) 50%, transparent 80%)',
+              backgroundImage: `radial-gradient(circle, rgba(0, 184, 18, 0.45) 1.2px, transparent 1.2px)`,
+              backgroundSize: '22px 22px',
+              maskImage: 'linear-gradient(to right, rgba(0,0,0,0.45) 0%, rgba(0,0,0,0.18) 50%, transparent 80%)',
+              WebkitMaskImage: 'linear-gradient(to right, rgba(0,0,0,0.45) 0%, rgba(0,0,0,0.18) 50%, transparent 80%)',
             }}
           />
 
-          {/* Dot pattern with gradient fade - Dark mode */}
+          {/* Dot pattern - Dark mode */}
           <div
             className="absolute inset-0 hidden dark:block"
             style={{
-              backgroundImage: `radial-gradient(circle, #00B812 1px, transparent 1px)`,
-              backgroundSize: '24px 24px',
-              maskImage: 'linear-gradient(to right, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.15) 50%, transparent 80%)',
-              WebkitMaskImage: 'linear-gradient(to right, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.15) 50%, transparent 80%)',
+              backgroundImage: `radial-gradient(circle, rgba(34, 197, 94, 0.55) 1.2px, transparent 1.2px)`,
+              backgroundSize: '22px 22px',
+              maskImage: 'linear-gradient(to right, rgba(0,0,0,0.65) 0%, rgba(0,0,0,0.22) 55%, transparent 80%)',
+              WebkitMaskImage: 'linear-gradient(to right, rgba(0,0,0,0.65) 0%, rgba(0,0,0,0.22) 55%, transparent 80%)',
             }}
           />
 
           {/* Subtle glow behind content */}
-          <div className="absolute top-1/2 left-1/4 -translate-y-1/2 w-[600px] h-[400px] bg-gradient-to-r from-[#00B812]/5 dark:from-[#00B812]/10 to-transparent rounded-full blur-3xl"></div>
+          <div className="absolute top-1/2 left-1/4 -translate-y-1/2 w-[600px] h-[400px] bg-gradient-to-r from-[#00B812]/7 dark:from-[#00B812]/10 to-transparent rounded-full blur-3xl" />
         </div>
 
         <div className="relative z-10 max-w-6xl mx-auto py-16 md:py-24 px-6">
