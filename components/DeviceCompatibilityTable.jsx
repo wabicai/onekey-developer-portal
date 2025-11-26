@@ -9,35 +9,35 @@ const devices = [
     image: '/icons/devices/classic1s.png',
     bluetooth: true,
     usb: true,
-    description: 'Enhanced Classic with better display'
+    description: { en: 'OneKey Classic 1s', zh: '经典款 Classic 1s' }
   },
   {
     name: 'OneKey Classic 1s Pure',
     image: '/icons/devices/classicPure.png',
     bluetooth: true,
     usb: true,
-    description: 'Pure edition with minimal design'
+    description: { en: 'Battery-free edition', zh: 'Classic 1s Pure 无电池版本' }
   },
   {
     name: 'OneKey Mini',
     image: '/icons/devices/mini.png',
     bluetooth: false,
     usb: true,
-    description: 'Compact USB-only wallet'
+    description: { en: 'Compact USB-only wallet', zh: '紧凑型 USB 钱包' }
   },
   {
     name: 'OneKey Touch',
     image: '/icons/devices/touch.png',
     bluetooth: true,
     usb: true,
-    description: 'Full touchscreen experience'
+    description: { en: 'Full touchscreen experience', zh: '全触屏体验' }
   },
   {
     name: 'OneKey Pro',
     image: '/icons/devices/pro.png',
     bluetooth: true,
     usb: true,
-    description: 'Premium with biometric security'
+    description: { en: 'Premium with fingerprint security', zh: '旗舰版，支持指纹识别' }
   }
 ]
 
@@ -127,7 +127,7 @@ export function DeviceCompatibilityTable({ locale = 'en' }) {
                         {device.name}
                       </div>
                       <div className="text-sm text-zinc-500">
-                        {device.description}
+                        {device.description[isZh ? 'zh' : 'en']}
                       </div>
                     </div>
                   </div>
