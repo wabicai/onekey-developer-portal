@@ -60,6 +60,9 @@ function SupportBadge({ supported }) {
 
 export function DeviceCompatibilityTable({ locale = 'en' }) {
   const isZh = locale === 'zh'
+  const basePath = process.env.NEXT_PUBLIC_BASE_PATH
+    ? process.env.NEXT_PUBLIC_BASE_PATH.replace(/\/$/, '')
+    : ''
 
   const labels = {
     en: {
@@ -102,7 +105,7 @@ export function DeviceCompatibilityTable({ locale = 'en' }) {
             </tr>
           </thead>
           <tbody>
-            {devices.map((device, index) => (
+            {devices.map((device) => (
               <tr
                 key={device.name}
                 className="border-b border-zinc-100 dark:border-zinc-800/50 last:border-b-0 transition-colors hover:bg-zinc-50 dark:hover:bg-zinc-900/30 group"
@@ -113,7 +116,7 @@ export function DeviceCompatibilityTable({ locale = 'en' }) {
                     {/* Device Image */}
                     <div className="w-14 h-14 rounded-xl bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center overflow-hidden transition-transform duration-200 group-hover:scale-105">
                       <Image
-                        src={device.image}
+                        src={`${basePath}${device.image}`}
                         alt={device.name}
                         width={48}
                         height={48}

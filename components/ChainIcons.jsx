@@ -2,8 +2,13 @@
 
 import Image from 'next/image'
 
+const getBasePath = () => process.env.NEXT_PUBLIC_BASE_PATH
+  ? process.env.NEXT_PUBLIC_BASE_PATH.replace(/\/$/, '')
+  : ''
+
 // Chain icon component using PNG images from public/icons/chains/
 export function ChainIcon({ chain, size = 20, className = '' }) {
+  const basePath = getBasePath()
   const chainMap = {
     ethereum: 'ethereum',
     eth: 'ethereum',
@@ -54,7 +59,7 @@ export function ChainIcon({ chain, size = 20, className = '' }) {
   }
 
   const normalizedChain = chainMap[chain?.toLowerCase()] || chain?.toLowerCase()
-  const iconPath = `/icons/chains/${normalizedChain}.png`
+  const iconPath = `${basePath}/icons/chains/${normalizedChain}.png`
 
   return (
     <Image
@@ -134,6 +139,7 @@ export function GenericChainIcon({ className = "w-5 h-5", name }) {
 
 // Device icon component
 export function DeviceIcon({ device, size = 40, className = '' }) {
+  const basePath = getBasePath()
   const deviceMap = {
     classic: 'classic1s',
     'classic 1s': 'classic1s',
@@ -146,7 +152,7 @@ export function DeviceIcon({ device, size = 40, className = '' }) {
   }
 
   const normalizedDevice = deviceMap[device?.toLowerCase()] || device?.toLowerCase()
-  const iconPath = `/icons/devices/${normalizedDevice}.png`
+  const iconPath = `${basePath}/icons/devices/${normalizedDevice}.png`
 
   return (
     <Image
@@ -162,9 +168,10 @@ export function DeviceIcon({ device, size = 40, className = '' }) {
 
 // OneKey logo
 export function OneKeyIcon({ size = 24, className = '' }) {
+  const basePath = getBasePath()
   return (
     <Image
-      src="/icons/onekey.png"
+      src={`${basePath}/icons/onekey.png`}
       alt="OneKey"
       width={size}
       height={size}
