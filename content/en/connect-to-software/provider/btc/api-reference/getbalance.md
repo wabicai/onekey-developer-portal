@@ -1,0 +1,36 @@
+# getBalance
+
+Get balance of current account.
+
+### Method
+
+```typescript
+async function getBalance(): BalanceInfo
+```
+
+### Response
+
+the balance.
+
+```typescript
+type BalanceInfo = { 
+    confirmed: number; 
+    unconfirmed: number; 
+    total: number 
+};
+```
+
+### Example
+
+```typescript
+const provider = (window.$onekey &#x26;&#x26; window.$onekey.btc) || window.unisat;
+
+const balance = async provider.getBalance();
+
+```
+
+### Demo
+
+
+<iframe src="https://codepen.io/OneKeyHQ/pen/qBgMXXJ" width="100%" height="400" frameborder="0" allowfullscreen></iframe>
+

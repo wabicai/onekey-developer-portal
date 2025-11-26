@@ -1,0 +1,31 @@
+# 通用参数
+
+在 SDK 方法调用中，通常需要传递 `connectId`、`deviceId` 和可选的 `commonParams` 对象。
+
+```ts
+function call(connectId: string, deviceId: string, commonParams?: CommonParams)
+```
+
+如何获取标识符：
+
+- `connectId`：来自 `searchDevices()` 结果（`connectId` 字段）。在会话之间保持稳定。
+- `deviceId`：来自 `getFeatures(connectId)`（`device_id` 字段）。当设备重置时会改变（如擦除）。
+
+## CommonParams
+
+- `keepSession?: boolean` — 方法完成后保持会话（在适用的情况下重用缓存状态）。
+- `retryCount?: number` — 轮询连接最大重试次数（默认：6）。
+- `pollIntervalTime?: number` — 轮询间隔毫秒数（默认：1000；每轮增加 1.5 倍）。
+- `timeout?: number` — 单次轮询尝试的超时毫秒数。
+- `passphraseState?: string` — 密码短语钱包状态。通过 [获取密码短语状态](basic-api/get-passphrase-state) 获取。用于验证/缓存密码短语。
+- `useEmptyPassphrase?: boolean` — 此次调用强制使用标准钱包（空密码短语）。
+- `initSession?: boolean` — 在调用开始时初始化会话并缓存 `passphraseState`。
+- `deriveCardano?: boolean` — 为当前会话派生 Cardano 种子（Cardano 方法默认为 true；其他为 false）。Cardano 派生可能需要更长时间。
+- `detectBootloaderDevice?: boolean` — 检测硬件是否处于引导加载程序模式并返回错误（当方法需要正常模式时可提前失败）。
+- `skipWebDevicePrompt?: boolean` — 跳过 Web 设备选择器提示（高级流程或当已显示外部提示时使用）。
+
+## 提示
+
+- 对于 WebUSB，确保您的站点通过 HTTPS 提供服务，且设备在发现之前已获得授权。
+- 在 Pro/Touch 型号上优先使用设备端 PIN/密码短语输入（这些型号不支持软件输入）。
+- 对于密码短语钱包，结合 `passphraseState` + `keepSession` 以减少重复提示，并考虑对标准钱包场景使用 `useEmptyPassphrase`。

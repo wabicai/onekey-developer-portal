@@ -1,0 +1,51 @@
+---
+description: NEAR integration via OneKey provider — detect, connect, send transactions, and sign
+slug: /dapp/chains/near
+---
+
+# NEAR
+
+Build NEAR dApps with OneKey’s provider. Start with detection and connection, then follow the sending/signing guides.
+
+## Quick links
+
+- [Introduction](introduction)
+- [Integrating](integrating)
+  - [Detecting the Provider](integrating/detecting-the-provider)
+  - [Establishing a Connection](integrating/establishing-a-connection)
+  - [Accessing Accounts](integrating/accessing-accounts)
+  - [Detecting Provider Network](integrating/detecting-provider-network)
+  - [Watch Accounts & Network Status](integrating/watch-accounts-and-network-status)
+  - [Sending Transactions](integrating/sending-transactions)
+  - [Signing Messages](integrating/signing-messages)
+  - [RPC API Calling](integrating/rpc-api-calling)
+  - [Debug Logging](integrating/debug-logging)
+  - [Migrate from Near Web Wallet](integrating/migrate-from-near-web-wallet)
+- [Reference](reference)
+- [Resources](resources)
+
+## Minimal pattern
+
+Use the Provider SDK to create a NEAR provider instance.
+
+```ts
+import { OneKeyNearProvider } from '@onekeyfe/onekey-near-provider'
+
+const provider = new OneKeyNearProvider()
+// Request accounts (example)
+await provider.request({ method: 'near_accounts' })
+```
+
+## Events & network
+
+- Watch account/network status via the Integrating section
+
+## Common errors
+
+- 4001: user rejected
+- Invalid params: ensure method names and arguments follow the NEAR provider spec
+
+## Mobile & deeplinks
+
+- Use OneKey deeplinks to bridge from mobile H5/WebViews
+- See [Use deeplinks](../../guides/use-deeplinks)

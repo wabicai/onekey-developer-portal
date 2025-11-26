@@ -1,0 +1,42 @@
+# deviceWipe
+
+## 擦除设备
+
+将设备重置为出厂默认设置并删除所有私有数据。
+
+```typescript
+const result = await HardwareSDK.wipeDevice(connectId);
+```
+
+## 参数
+
+空
+
+## 示例
+
+```typescript
+HardwareSDK.wipeDevice(connectId);
+```
+
+## 返回结果
+
+```typescript
+{
+    success: true,
+    payload: {
+        message: string
+    }
+}
+```
+
+错误
+
+```typescript
+{
+    success: false,
+    payload: {
+        error: string, // 错误信息
+        code: number // 错误码
+    }
+}
+```

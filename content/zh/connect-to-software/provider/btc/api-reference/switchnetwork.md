@@ -1,0 +1,28 @@
+# switchNetwork
+
+Get network of current account
+
+### Method
+
+```typescript
+async function switchNetwork(network: string): void
+```
+
+### Params
+
+the network. `livenet` and `testnet`
+
+### Example
+
+```typescript
+const provider = (window.$onekey &#x26;&#x26; window.$onekey.btc) || window.unisat;
+
+async provider.switchNetwork("livenet");
+
+```
+
+### Demo
+
+
+<iframe src="https://codepen.io/OneKeyHQ/pen/ZEwMJKJ" width="100%" height="400" frameborder="0" allowfullscreen></iframe>
+

@@ -1,0 +1,75 @@
+---
+slug: /dapp/web
+---
+
+# Web Provider（注入式 Provider）
+
+通过注入式 EIP-1193 Provider 连接 OneKey。浏览器中无需额外 SDK。
+
+## 检测 Provider
+
+```js
+// 优先使用 OneKey 专属注入（避免多钱包冲突）
+const provider = window?.$onekey?.ethereum
+  || window?.ethereum?.providers?.find(p => p?.isOneKey || p?.onekey)
+  || window?.ethereum;
+if (!provider) throw new Error('未检测到 OneKey Provider');
+```
+
+## 请求账户
+
+```js
+const accounts = await provider.request({ method: 'eth_requestAccounts' });
+const account = accounts?.[0];
+```
+
+## 事件监听
+
+```js
+provider.on?.('accountsChanged', (accounts) => {
+  // 处理账户变更
+});
+provider.on?.('chainChanged', (chainId) => {
+  // 处理网络变更（如需要可重新创建客户端）
+});
+```
+
+## 发送交易（EIP-1559）
+
+```js
+const txHash = await provider.request({
+  method: 'eth_sendTransaction',
+  params: [{ from: account, to: '0x...', value: '0x...', /* 可选: maxFeePerGas / maxPriorityFeePerGas */ }]
+});
+```
+
+## 签名数据
+
+```js
+// 个人签名（文本）
+await provider.request({ method: 'personal_sign', params: ['0x68656c6c6f', account] });
+
+// EIP-712（类型化数据 v4）
+await provider.request({ method: 'eth_signTypedData_v4', params: [account, JSON.stringify(typedData)] });
+```
+
+## 错误和兼容性
+
+- 4001：用户拒绝
+- 4902：链未添加 → 使用 `wallet_addEthereumChain`
+- 数据格式：带 0x 前缀的十六进制字符串；避免在参数中使用原始 BigInt
+
+## 移动端深度链接（简述）
+
+- 自定义协议：`onekey-wallet://wc?uri={encodeURIComponent(wcUri)}`
+- 通用链接（备用）：`https://app.onekey.so/wc/connect/wc?uri={encodeURIComponent(wcUri)}`
+- 查看 [使用深度链接](../guides/use-deeplinks)
+
+## 各链文档
+
+- [ETH / EVM](eth)
+- [Bitcoin](btc)
+- [NEAR](near)
+- [Solana](solana)
+- [Nostr](nostr)
+- [WebLN](webln)

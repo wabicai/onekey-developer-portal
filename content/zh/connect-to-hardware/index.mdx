@@ -1,0 +1,71 @@
+# 简介
+
+面向开发者的 OneKey 硬件钱包集成文档，适用于 Web 和原生应用。从快速开始（Web）入手，然后选择传输协议指南，配置事件处理，并调用链 API。
+
+## 快速开始
+
+适用于希望快速入门的 Web 开发者：从初始化到首次调用的简洁流程，提供可直接复制的代码片段。查看 [快速开始](hardware-sdk/quick-start)。
+
+## 选择传输协议
+
+| 平台（技术栈）        | 传输协议   | SDK 包                                                                                                 | 指南                                                      |
+| -------------------- | ---------- | ------------------------------------------------------------------------------------------------------ | --------------------------------------------------------- |
+| Web（浏览器）        | WebUSB     | [@onekeyfe/hd-common-connect-sdk](https://github.com/OneKeyHQ/hardware-js-sdk/tree/onekey/packages/hd-common-connect-sdk) | [WebUSB 连接指南](hardware-sdk/transport/web-usb)              |
+| React Native         | 蓝牙       | [@onekeyfe/hd-ble-sdk](https://github.com/OneKeyHQ/hardware-js-sdk/blob/onekey/packages/hd-ble-sdk)    | [React Native 蓝牙](hardware-sdk/transport/react-native-ble)   |
+| Android（原生）      | 蓝牙       | [@onekeyfe/hd-common-connect-sdk](https://github.com/OneKeyHQ/hardware-js-sdk/tree/onekey/packages/hd-common-connect-sdk) | [Android 蓝牙](hardware-sdk/transport/native-ble/android) |
+| iOS（原生）          | 蓝牙       | [@onekeyfe/hd-common-connect-sdk](https://github.com/OneKeyHQ/hardware-js-sdk/tree/onekey/packages/hd-common-connect-sdk) | [iOS 蓝牙](hardware-sdk/transport/native-ble/ios)    |
+| Flutter              | 蓝牙       | [@onekeyfe/hd-common-connect-sdk](https://github.com/OneKeyHQ/hardware-js-sdk/tree/onekey/packages/hd-common-connect-sdk) | [Flutter 蓝牙](hardware-sdk/transport/native-ble/flutter) |
+
+- 在线体验：[hardware-example.onekey.so](https://hardware-example.onekey.so/) — 尝试 WebUSB 连接、调用示例 API，并使用内置模拟器设备进行测试。
+  - 实时硬件钱包模拟
+  - 实时 API 测试
+  - 多链协议支持
+  - 无需物理设备即可测试（可使用模拟器设备）
+
+## API 参考
+
+- 各链 API：[硬件 SDK API 参考](hardware-sdk/api-reference)
+- 事件和 UI 响应：[事件配置](hardware-sdk/api-reference/config-event)
+- 如何解锁设备：[PIN 码](hardware-sdk/concepts/pin)
+- 需要密码短语支持？[什么是 Passphrase](hardware-sdk/concepts/passphrase)
+
+import { DeviceCompatibilityTable } from '../../../components/DeviceCompatibilityTable'
+
+## 设备与传输兼容性
+
+<DeviceCompatibilityTable locale="zh" />
+
+## 核心包
+
+| 包名                                  | 用途                                                                | NPM | 版本 |
+| ------------------------------------- | ------------------------------------------------------------------- | --- | ---- |
+| `@onekeyfe/hd-common-connect-sdk`     | 统一的 Web/原生 SDK 接口；推荐作为传输层入口                        | [npm](https://www.npmjs.com/package/@onekeyfe/hd-common-connect-sdk) | [![npm](https://img.shields.io/npm/v/%40onekeyfe%2Fhd-common-connect-sdk.svg)](https://www.npmjs.com/package/@onekeyfe/hd-common-connect-sdk) |
+| `@onekeyfe/hd-ble-sdk`                | 纯 React Native 蓝牙协议栈（推荐用于 RN 项目）                      | [npm](https://www.npmjs.com/package/@onekeyfe/hd-ble-sdk) | [![npm](https://img.shields.io/npm/v/%40onekeyfe%2Fhd-ble-sdk.svg)](https://www.npmjs.com/package/@onekeyfe/hd-ble-sdk) |
+| `@onekeyfe/hd-transport-react-native` | React Native 传输层副作用/桥接                                      | [npm](https://www.npmjs.com/package/@onekeyfe/hd-transport-react-native) | [![npm](https://img.shields.io/npm/v/%40onekeyfe%2Fhd-transport-react-native.svg)](https://www.npmjs.com/package/@onekeyfe/hd-transport-react-native) |
+| `@onekeyfe/hd-transport-web-device`   | Web 环境设备访问传输层                                              | [npm](https://www.npmjs.com/package/@onekeyfe/hd-transport-web-device) | [![npm](https://img.shields.io/npm/v/%40onekeyfe%2Fhd-transport-web-device.svg)](https://www.npmjs.com/package/@onekeyfe/hd-transport-web-device) |
+| `@onekeyfe/hd-transport-emulator`     | 模拟器传输层（无需物理设备即可开发和测试）                          | [npm](https://www.npmjs.com/package/@onekeyfe/hd-transport-emulator) | [![npm](https://img.shields.io/npm/v/%40onekeyfe%2Fhd-transport-emulator.svg)](https://www.npmjs.com/package/@onekeyfe/hd-transport-emulator) |
+| `@onekeyfe/hd-transport-http`         | HTTP 桥接传输层                                                     | [npm](https://www.npmjs.com/package/@onekeyfe/hd-transport-http) | [![npm](https://img.shields.io/npm/v/%40onekeyfe%2Fhd-transport-http.svg)](https://www.npmjs.com/package/@onekeyfe/hd-transport-http) |
+| `@onekeyfe/hd-transport-lowlevel`     | 底层主机适配器协议（用于原生集成）                                  | [npm](https://www.npmjs.com/package/@onekeyfe/hd-transport-lowlevel) | [![npm](https://img.shields.io/npm/v/%40onekeyfe%2Fhd-transport-lowlevel.svg)](https://www.npmjs.com/package/@onekeyfe/hd-transport-lowlevel) |
+| `@onekeyfe/hd-core`                   | 核心事件、常量、消息处理                                            | [npm](https://www.npmjs.com/package/@onekeyfe/hd-core) | [![npm](https://img.shields.io/npm/v/%40onekeyfe%2Fhd-core.svg)](https://www.npmjs.com/package/@onekeyfe/hd-core) |
+| `@onekeyfe/hd-shared`                 | 共享工具和类型                                                      | [npm](https://www.npmjs.com/package/@onekeyfe/hd-shared) | [![npm](https://img.shields.io/npm/v/%40onekeyfe%2Fhd-shared.svg)](https://www.npmjs.com/package/@onekeyfe/hd-shared) |
+| `@onekeyfe/hd-web-sdk`                | Web SDK 封装（不推荐；建议使用 hd-common-connect-sdk）              | [npm](https://www.npmjs.com/package/@onekeyfe/hd-web-sdk) | [![npm](https://img.shields.io/npm/v/%40onekeyfe%2Fhd-web-sdk.svg)](https://www.npmjs.com/package/@onekeyfe/hd-web-sdk) |
+
+- 更新日志：[releases](https://github.com/OneKeyHQ/hardware-js-sdk/releases)
+
+## 概念和进阶主题
+
+- 消息协议（用于调试底层传输）：[OneKey 消息协议](hardware-sdk/transport/native-ble/onekey-message-protocol)
+
+## 支持
+
+致用户：本文档主要面向开发者。如果您在使用我们的产品时遇到问题，请查阅帮助中心或提交工单。
+
+- [帮助中心](https://help.onekey.so)
+- [讨论区](https://github.com/OneKeyHQ/hardware-js-sdk/discussions)
+- [问题反馈](https://github.com/OneKeyHQ/hardware-js-sdk/issues)
+
+## 相关仓库
+
+- [OneKey App (app-monorepo)](https://github.com/OneKeyHQ/app-monorepo)
+- [OneKey 固件](https://github.com/OneKeyHQ/firmware)
+- [OneKey 硬件 JS SDK](https://github.com/OneKeyHQ/hardware-js-sdk)

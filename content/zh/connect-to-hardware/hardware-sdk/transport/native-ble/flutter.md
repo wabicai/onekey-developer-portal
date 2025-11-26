@@ -1,0 +1,38 @@
+# Flutter：通过蓝牙连接（原生）
+
+适用于通过 WebView 或 JS 引擎加载 JS 包并使用底层适配器桥接到 `@onekeyfe/hd-common-connect-sdk` 的 Flutter 应用。
+
+## 步骤 1. 选择运行时
+
+- WebView：稳定且广泛支持；桥接 API 与 iOS/Android 原生外壳相同
+- JS 引擎：例如 `flutter_js`，直接在 Dart 中运行构建的 JS 包
+
+## 步骤 2. 构建 JS 包
+
+在 hardware-js-sdk 仓库的原生示例中构建（参见 `web/` 目录）并生成 `web_dist/` 资源。
+
+## 步骤 3. 加载 JS 包
+
+在 Flutter 中加载 `web_dist/` 资源（通过 WebView 或 JS 引擎）。
+
+## 步骤 4. 实现消息桥接
+
+从原生向 JS 暴露 `enumerate/connect/disconnect/send/receive`，保持相同的签名。转发 64 字节 BLE 通知块并在 JS 上为 `receive()` 重组十六进制负载。
+
+## 步骤 5. 处理 UI 事件
+
+为 PIN/Passphrase/确认显示原生对话框，并通过 `HardwareSDK.uiResponse` 响应。
+
+## BLE UUID
+
+- `serviceUuid = 00000001-0000-1000-8000-00805f9b34fb`
+- `writeCharacteristic = 00000002-0000-1000-8000-00805f9b34fb`
+- `notifyCharacteristic = 00000003-0000-1000-8000-00805f9b34fb`
+
+## 参考
+
+- 协议帧：[OneKey 消息协议](./onekey-message-protocol)
+- UI 事件：[事件配置](../../api-reference/config-event)，[PIN](../../quick-start/ui-events-pin)，[Passphrase](../../quick-start/ui-events-passphrase)
+- 平台详情：[iOS 蓝牙](./ios)，[Android 蓝牙](./android)
+
+连接完成后，链 API 的使用与 WebUSB 相同：提供 `connectId` 和（如需要）`deviceId`。

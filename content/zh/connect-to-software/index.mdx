@@ -1,0 +1,28 @@
+---
+slug: /dapp
+---
+
+# dApp 集成（注入式 Provider）
+
+本章节介绍如何使用注入式 EIP-1193 Provider 连接 OneKey。Web 端无需额外 SDK —— 直接检测并调用 Provider 即可。
+
+## 推荐方式
+
+- Web（注入式 Provider）：
+  - 优先使用 `window.$onekey.ethereum`；如需兼容可回退到 `window.ethereum`
+  - 支持多链；查看各链章节了解签名/交易/事件（ETH、BTC、Solana、NEAR、Nostr、WebLN）
+
+> 注意：本章节聚焦于基于 EIP-1193 的原生 Provider 流程。如果您的应用已使用 Wallet Kits 或需要兼容性指导，请查看 [钱包套件](wallet-kits) 和 [兼容 MetaMask](compatible-with-metamask)。
+
+## 最小示例（EVM）
+
+```js
+const provider = window?.$onekey?.ethereum
+  || window?.ethereum?.providers?.find(p => p?.isOneKey || p?.onekey)
+  || window?.ethereum;
+if (!provider) throw new Error('未检测到 OneKey');
+const [account] = await provider.request({ method: 'eth_requestAccounts' });
+console.log('账户:', account);
+```
+
+查看 [Web Provider](provider) 了解详情。

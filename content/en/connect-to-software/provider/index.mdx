@@ -1,0 +1,75 @@
+---
+slug: /dapp/web
+---
+
+# Web (Injected Provider)
+
+Connect to OneKey via the injected EIP‑1193 provider. No extra SDK is required in the browser.
+
+## Detect provider
+
+```js
+// Prefer OneKey’s dedicated injection (avoid multi‑wallet conflicts)
+const provider = window?.$onekey?.ethereum
+  || window?.ethereum?.providers?.find(p => p?.isOneKey || p?.onekey)
+  || window?.ethereum;
+if (!provider) throw new Error('OneKey provider not detected');
+```
+
+## Request accounts
+
+```js
+const accounts = await provider.request({ method: 'eth_requestAccounts' });
+const account = accounts?.[0];
+```
+
+## Events
+
+```js
+provider.on?.('accountsChanged', (accounts) => {
+  // Handle account change
+});
+provider.on?.('chainChanged', (chainId) => {
+  // Handle network change (recreate clients if needed)
+});
+```
+
+## Send a transaction (EIP‑1559)
+
+```js
+const txHash = await provider.request({
+  method: 'eth_sendTransaction',
+  params: [{ from: account, to: '0x...', value: '0x...', /* optional: maxFeePerGas / maxPriorityFeePerGas */ }]
+});
+```
+
+## Sign data
+
+```js
+// Personal sign (text)
+await provider.request({ method: 'personal_sign', params: ['0x68656c6c6f', account] });
+
+// EIP‑712 (Typed Data v4)
+await provider.request({ method: 'eth_signTypedData_v4', params: [account, JSON.stringify(typedData)] });
+```
+
+## Errors and compatibility
+
+- 4001: user rejected
+- 4902: chain not added → use `wallet_addEthereumChain`
+- Data formats: hex strings with 0x prefix; avoid raw BigInt in params
+
+## Mobile deeplinks (brief)
+
+- Custom scheme: `onekey-wallet://wc?uri={encodeURIComponent(wcUri)}`
+- Universal link (fallback): `https://app.onekey.so/wc/connect/wc?uri={encodeURIComponent(wcUri)}`
+- See [Use deeplinks](../guides/use-deeplinks)
+
+## Per-chain docs
+
+- [ETH / EVM](eth)
+- [Bitcoin](btc)
+- [NEAR](near)
+- [Solana](solana)
+- [Nostr](nostr)
+- [WebLN](webln)

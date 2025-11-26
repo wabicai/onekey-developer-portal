@@ -1,0 +1,24 @@
+# getAccounts
+
+Get address of current account
+
+### Method
+
+```typescript
+async function getAccounts(): string[]
+```
+
+### Example
+
+```typescript
+const provider = (window.$onekey &#x26;&#x26; window.$onekey.btc) || window.unisat;
+
+const accounts = async provider.getAccounts()
+
+```
+
+### Demo
+
+
+<iframe src="https://codepen.io/OneKeyHQ/pen/qBgMXRM" width="100%" height="400" frameborder="0" allowfullscreen></iframe>
+

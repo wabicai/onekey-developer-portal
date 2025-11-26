@@ -1,0 +1,130 @@
+# 错误码
+
+本页列出了 hardware-js-sdk (core/shared) 暴露的错误码。使用这些错误码可以程序化地处理错误并显示用户友好的消息。
+
+说明
+- 错误码和消息与 hardware-js-sdk（源码）保持一致：https://github.com/OneKeyHQ/hardware-js-sdk/blob/onekey/packages/shared/src/HardwareError.ts
+- 按领域分组以便快速查找。
+
+## 0. 未知错误
+
+- **UnknownError (0):** 发生未知错误。请检查 message 属性。
+
+## 1. 设备 (101–118)
+
+- **DeviceFwException (101):** 固件版本不匹配
+- **DeviceUnexpectedMode (102):** 设备处于意外模式
+- **DeviceListNotInitialized (103):** 设备列表未初始化
+- **SelectDevice (104):** 请选择已连接的设备
+- **DeviceNotFound (105):** 未找到设备
+- **DeviceInitializeFailed (106):** 设备初始化失败
+- **DeviceInterruptedFromOutside (107):** 设备被外部中断
+- **RequiredButInBootloaderMode (108):** 设备应处于引导加载程序模式
+- **DeviceInterruptedFromUser (109):** 设备被用户中断
+- **DeviceCheckDeviceIdError (110):** features 中的设备 ID 不一致
+- **DeviceNotSupportPassphrase (111):** 设备不支持密码短语
+- **DeviceCheckPassphraseStateError (112):** 设备密码短语状态错误
+- **DeviceNotOpenedPassphrase (113):** 设备未开启密码短语
+- **DeviceOpenedPassphrase (114):** 设备已开启密码短语
+- **DeviceDetectInBootloaderMode (115):** 设备处于引导加载程序模式
+- **NotAllowInBootloaderMode (116):** 引导加载程序模式下不允许此操作
+- **DeviceBusy (117):** 设备繁忙
+- **DeviceCheckUnlockTypeError (118):** 设备解锁类型不匹配错误
+- **NotInitialized (200):** 未初始化
+
+## 2. IFrame (300–305)
+
+- **IFrameNotInitialized (300):** IFrame 未初始化
+- **IFrameAleradyInitialized (301):** IFrame 已初始化
+- **IFrameLoadFail (302):** IFrame 加载失败
+- **IframeTimeout (303):** 初始化 iframe 超时
+- **IframeBlocked (304):** IFrame 被阻止
+- **IframeDistrust (305):** IFrame 主机不受信任
+
+## 3. 方法/固件 (400–418)
+
+- **CallMethodError (400):** 方法执行时的运行时错误
+- **CallMethodNotResponse (404):** 方法无响应
+- **CallMethodInvalidParameter (405):** 参数无效
+- **FirmwareUpdateDownloadFailed (406):** 固件更新下载失败
+- **CallMethodNeedUpgradeFirmware (407):** 需要升级固件
+- **CallMethodDeprecated (408):** 方法已弃用
+- **FirmwareUpdateLimitOneDevice (409):** 固件更新时只允许连接一个设备
+- **FirmwareUpdateManuallyEnterBoot (410):** 需要手动进入引导加载程序
+- **FirmwareUpdateAutoEnterBootFailure (411):** 自动进入引导加载程序失败
+- **NewFirmwareUnRelease (412):** 新固件尚未发布
+- **UseDesktopToUpdateFirmware (413):** 请使用 OneKey Desktop 更新固件
+- **NewFirmwareForceUpdate (414):** 新固件已发布，请更新（强制）
+- **DeviceNotSupportMethod (415):** 设备不支持此方法
+- **ForbiddenKeyPath (416):** 禁止的密钥路径
+- **RepeatUnlocking (417):** 重复解锁
+- **DefectiveFirmware (418):** 设备固件有缺陷，请立即更新
+
+## 4. 网络 (500)
+
+- **NetworkError (500):** 网络请求错误
+
+## 5. 传输 (600–603)
+
+- **TransportNotConfigured (600):** 传输未配置
+- **TransportCallInProgress (601):** 传输调用进行中
+- **TransportNotFound (602):** 未找到传输
+- **TransportInvalidProtobuf (603):** 传输无效的 protobuf
+
+## 6. 蓝牙 (700–722)
+
+- **BleScanError (700):** 扫描错误
+- **BlePermissionError (701):** 需要蓝牙权限
+- **BleLocationError (702):** 位置权限错误
+- **BleRequiredUUID (703):** 需要 UUID
+- **BleConnectedError (704):** 连接错误（运行时）
+- **BleDeviceNotBonded (705):** 设备未配对
+- **BleServiceNotFound (706):** 未找到服务
+- **BleCharacteristicNotFound (707):** 未找到特征值
+- **BleMonitorError (708):** 监控错误：未找到特征值
+- **BleCharacteristicNotifyError (709):** 通知错误
+- **BleWriteCharacteristicError (710):** 写入错误
+- **BleAlreadyConnected (711):** 已连接
+- **BleLocationServicesDisabled (712):** 位置服务已禁用
+- **BleTimeoutError (713):** 连接超时
+- **BleForceCleanRunPromise (714):** 强制清理蓝牙运行 Promise
+- **BleDeviceBondError (715):** 蓝牙配对失败
+- **BleCharacteristicNotifyChangeFailure (716):** 通知更改失败
+- **BleTransportCallCanceled (717):** 传输调用已取消
+- **BleDeviceBondedCanceled (718):** 设备配对已取消
+- **BlePeerRemovedPairingInformation (719):** 对端移除了配对信息
+- **BleDeviceDisconnected (720):** 设备已断开连接
+- **BlePoweredOff (721):** 蓝牙已关闭
+- **BleUnsupported (722):** 不支持蓝牙
+
+## 7. 运行时/桥接 (800–821)
+
+- **RuntimeError (800):** 运行时错误
+- **PinInvalid (801):** PIN 无效
+- **PinCancelled (802):** 用户取消了 PIN 输入
+- **ActionCancelled (803):** 用户取消了操作
+- **FirmwareError (804):** 固件安装失败
+- **ResponseUnexpectTypeError (805):** 意外的响应类型
+- **BridgeNetworkError (806):** 桥接网络错误
+- **BridgeTimeoutError (807):** 桥接网络超时
+- **BridgeNotInstalled (808):** 未安装桥接
+- **PollingTimeout (809):** 确保连接超时
+- **PollingStop (810):** 确保连接停止轮询
+- **BlindSignDisabled (811):** 设备上禁用了盲签名
+- **UnexpectPassphrase (812):** 意外的密码短语
+- **FileAlreadyExists (813):** 文件已存在
+- **CheckDownloadFileError (814):** 检查下载文件错误
+- **NotInSigningMode (815):** 不在签名模式
+- **DataOverload (816):** 数据过载
+- **BridgeDeviceDisconnected (817):** 操作期间设备断开连接
+- **BTCPsbtTooManyUtxos (818):** BTC PSBT UTXO 过多
+- **EmmcFileWriteFirmwareError (819):** EMMC 文件写入固件错误
+- **FirmwareVerificationFailed (820):** 固件验证失败
+- **BridgeNeedsPermission (821):** Web 桥接连接需要权限
+
+## 8. Web 设备 (901–902)
+
+- **WebDeviceNotFoundOrNeedsPermission (901):** 未找到 Web USB/蓝牙设备或需要权限
+- **WebDevicePromptAccessError (902):** Web USB/蓝牙提示访问错误
+
+---

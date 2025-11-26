@@ -1,0 +1,28 @@
+# 第一个命令（首次签名）
+
+一旦知道 `connectId` 和 `device_id`，即可发起首次签名调用。以下示例使用 EVM 消息签名（EIP-191 personal_sign 风格）。
+
+```ts
+import HardwareSDK from '@onekeyfe/hd-common-connect-sdk';
+
+export async function signEvmMessage(connectId: string, deviceId: string) {
+  const message = 'Hello OneKey';
+  const messageHex = Buffer.from(message).toString('hex');
+
+  const res = await HardwareSDK.evmSignMessage(connectId, deviceId, {
+    path: "m/44'/60'/0'",
+    messageHex,
+    chainId: 1,
+  });
+
+  if (!res.success) throw new Error(res.payload.error);
+  return {
+    address: res.payload.address,
+    signature: res.payload.signature,
+  };
+}
+```
+
+- 响应格式和错误码：[通用参数](../api-reference/common-params)，[错误码](../api-reference/error-code)
+- BTC 消息签名请参阅 [BTC 签名消息](../api-reference/bitcoin-and-bitcoin-forks/btcsignmessage)
+- 类型化数据（EIP-712）请参阅 [EVM 签名类型化数据](../api-reference/ethereum-and-evm/evmsigntypeddata)
