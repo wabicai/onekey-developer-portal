@@ -56,6 +56,26 @@ const DiscordIcon = ({ className }) => (
   </svg>
 )
 
+// Open Source Badge Icon
+const OpenSourceIcon = () => (
+  <a href="https://github.com/OneKeyHQ" target="_blank" rel="noopener noreferrer" className="opacity-50 hover:opacity-80 transition-opacity">
+    <svg width="96" height="33" viewBox="0 0 96 33" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path
+        d="M44.6893 15.124C47.5783 15.124 49.678 12.9572 49.678 10.312V10.2854C49.678 7.64014 47.605 5.5 44.7161 5.5C41.8272 5.5 39.7274 7.6667 39.7274 10.312V10.3386C39.7274 12.9839 41.8004 15.124 44.6893 15.124ZM44.7161 13.2364C43.0576 13.2364 41.8807 11.9072 41.8807 10.312V10.2854C41.8807 8.6903 43.0309 7.38761 44.6893 7.38761C46.3478 7.38761 47.5247 8.71685 47.5247 10.312V10.3386C47.5247 11.9337 46.3745 13.2364 44.7161 13.2364ZM51.2376 14.9645H53.2973V12.173H54.8621C56.962 12.173 58.6471 11.0564 58.6471 8.903V8.87636C58.6471 6.97547 57.2963 5.65951 55.0627 5.65951H51.2376V14.9645ZM53.2973 10.3518V7.50719H54.8889C55.9187 7.50719 56.5607 7.99908 56.5607 8.91628V8.94283C56.5607 9.74036 55.9589 10.3518 54.929 10.3518H53.2973ZM59.9039 14.9645H67.0325V13.1434H61.9501V11.1893H66.3638V9.36824H61.9501V7.48064H66.9656V5.65951H59.9039V14.9645ZM68.5962 14.9645H70.6293V9.04914L75.1633 14.9645H76.9154V5.65951H74.8824V11.3887L70.4954 5.65951H68.5962V14.9645ZM43.4722 27.4734C45.4918 27.4734 46.9095 26.4366 46.9095 24.5889V24.5623C46.9095 22.9405 45.8395 22.2627 43.9404 21.7708C42.3221 21.3588 41.9208 21.1593 41.9208 20.5479V20.5213C41.9208 20.0693 42.3354 19.7104 43.1245 19.7104C43.9136 19.7104 44.7295 20.0561 45.5586 20.6276L46.6286 19.0857C45.679 18.328 44.5155 17.9026 43.1512 17.9026C41.2386 17.9026 39.8745 19.0192 39.8745 20.7074V20.734C39.8745 22.5817 41.0916 23.1001 42.9774 23.5786C44.5422 23.9774 44.8631 24.2432 44.8631 24.7617V24.7883C44.8631 25.3333 44.355 25.6656 43.5124 25.6656C42.4424 25.6656 41.5597 25.2269 40.7171 24.5357L39.5 25.9846C40.6235 26.9816 42.0545 27.4734 43.4722 27.4734ZM52.9768 27.5C55.8657 27.5 57.9654 25.3333 57.9654 22.688V22.6614C57.9654 20.0161 55.8925 17.876 53.0035 17.876C50.1146 17.876 48.0148 20.0428 48.0148 22.688V22.7146C48.0148 25.3599 50.0878 27.5 52.9768 27.5ZM53.0035 25.6124C51.3451 25.6124 50.1681 24.2831 50.1681 22.688V22.6614C50.1681 21.0663 51.3183 19.7636 52.9768 19.7636C54.6352 19.7636 55.8122 21.0928 55.8122 22.688V22.7146C55.8122 24.3097 54.662 25.6124 53.0035 25.6124ZM63.4305 27.4867C65.9448 27.4867 67.5364 26.1043 67.5364 23.2862V18.0356H65.4767V23.3659C65.4767 24.8414 64.7144 25.5991 63.4572 25.5991C62.2 25.5991 61.4377 24.8149 61.4377 23.2995V18.0356H59.378V23.3527C59.378 26.091 60.916 27.4867 63.4305 27.4867ZM69.3669 27.3405H71.4266V24.3629H73.0449L75.0511 27.3405H77.4585L75.1714 24.0173C76.3618 23.5786 77.1776 22.6348 77.1776 21.1328V21.1062C77.1776 20.2288 76.8968 19.4978 76.3752 18.9794C75.7599 18.3679 74.8371 18.0356 73.6468 18.0356H69.3669V27.3405ZM71.4266 22.555V19.8833H73.4728C74.4759 19.8833 75.0912 20.3351 75.0912 21.2125V21.2391C75.0912 22.0234 74.5161 22.555 73.513 22.555H71.4266ZM83.1515 27.5C84.957 27.5 86.0273 26.862 86.99 25.8384L85.6792 24.5224C84.9436 25.1871 84.2882 25.6124 83.2184 25.6124C81.6134 25.6124 80.5033 24.2831 80.5033 22.688V22.6614C80.5033 21.0663 81.6401 19.7636 83.2184 19.7636C84.1546 19.7636 84.8901 20.1624 85.6124 20.8138L86.9232 19.3116C86.054 18.4609 84.9972 17.876 83.2317 17.876C80.3561 17.876 78.3499 20.0428 78.3499 22.688V22.7146C78.3499 25.3864 80.3963 27.5 83.1515 27.5ZM88.3716 27.3405H95.5V25.5194H90.4173V23.5654H94.8312V21.7442H90.4173V19.8566H95.4332V18.0356H88.3716V27.3405Z"
+        fill="white"
+        fillOpacity="0.48"
+      />
+      <path
+        d="M19.1321 22.6003C21.5127 21.7161 22.7555 20.0133 22.7555 17.0827C22.7555 14.1521 20.2859 11.5697 17.2002 11.5646C13.944 11.5593 11.4877 14.1413 11.5269 17.0827C11.5662 20.0239 12.9688 21.9807 15.214 22.6883L11.2369 32.4726C5.91385 31.0945 0.5 24.8149 0.5 17.0827C0.5 7.92432 7.85885 0.5 17.0822 0.5C26.3055 0.5 33.7825 7.92432 33.7825 17.0827C33.7825 24.9352 28.4199 31.1273 22.9833 32.5L19.1321 22.6003Z"
+        stroke="white"
+        strokeOpacity="0.48"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  </a>
+)
+
 // Section Header Component with optional action button
 const SectionHeader = ({ title, subtitle, actionLabel, actionHref, actionExternal }) => (
   <div className="mb-10">
@@ -198,7 +218,7 @@ export function LandingPage({ locale = 'en' }) {
             icon: BookOpen,
             title: 'Developer Guides',
             desc: 'Best practices from authentication to transaction signing to production deployment. Complete debugging flow and error handling.',
-            href: `/${locale}/connect-to-software/guides`,
+            href: `/${locale}/connect-to-software/guides/developer-guide`,
             tags: ['Tutorials', 'Best Practices'],
             linkText: 'Read Guides',
           },
@@ -273,7 +293,7 @@ export function LandingPage({ locale = 'en' }) {
             icon: BookOpen,
             title: '开发指南',
             desc: '从认证、交易签名到生产环境的最佳实践。包含完整的调试流程与错误处理机制。',
-            href: `/${locale}/connect-to-software/guides`,
+            href: `/${locale}/connect-to-software/guides/developer-guide`,
             tags: ['Tutorials', 'Best Practices'],
             linkText: '阅读指南',
           },
@@ -506,6 +526,10 @@ export function LandingPage({ locale = 'en' }) {
               {/* Logo */}
               <div className="py-2">
                 <OneKeyLogo />
+                <p className="text-xs text-zinc-500 mt-3">
+                  {isZh ? '隶属于 ' : 'A member of '}
+                  <span className="text-zinc-300">SatoKey Group</span>
+                </p>
               </div>
 
               {/* Social Links - Desktop */}
@@ -537,26 +561,58 @@ export function LandingPage({ locale = 'en' }) {
                   </a>
                 </div>
 
+                {/* Open Source Badge */}
+                <OpenSourceIcon />
+
                 {/* Copyright */}
                 <p className="text-sm text-zinc-500">
                   {isZh
-                    ? `© ${new Date().getFullYear()} OneKey. 保留所有权利。`
-                    : `© ${new Date().getFullYear()} OneKey. All rights reserved.`}
+                    ? `Since 2019 to Now ｜ OneKey Limited 保留所有权利`
+                    : `Since 2019 to Now ｜ OneKey Limited All Rights Reserved`}
                 </p>
               </div>
             </div>
 
             {/* Right Column - Menu Links */}
-            <div className="flex-1 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-8 md:gap-6">
-              {/* Developers */}
+            <div className="flex-1 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-8 md:gap-6">
+              {/* Products */}
               <div className="flex flex-col gap-4 md:gap-6">
-                <h3 className="text-sm font-semibold text-zinc-400">
-                  {isZh ? '开发者' : 'Developers'}
+                <h3 className="text-sm font-semibold text-zinc-400 opacity-60">
+                  {isZh ? '产品' : 'Products'}
+                </h3>
+                <ul className="flex flex-col gap-3 md:gap-4">
+                  <li>
+                    <a href="https://onekey.so/products/onekey-pro" target="_blank" rel="noopener noreferrer" className="text-zinc-300 hover:text-white text-sm transition-colors">
+                      OneKey Pro
+                    </a>
+                  </li>
+                  <li>
+                    <a href="https://onekey.so/products/onekey-classic-1s" target="_blank" rel="noopener noreferrer" className="text-zinc-300 hover:text-white text-sm transition-colors">
+                      OneKey Classic 1S
+                    </a>
+                  </li>
+                  <li>
+                    <a href="https://onekey.so/download" target="_blank" rel="noopener noreferrer" className="text-zinc-300 hover:text-white text-sm transition-colors">
+                      {isZh ? '下载 App' : 'Download App'}
+                    </a>
+                  </li>
+                  <li>
+                    <a href="https://onekey.so/products" target="_blank" rel="noopener noreferrer" className="text-zinc-300 hover:text-white text-sm transition-colors">
+                      {isZh ? '对比所有型号' : 'Compare All Models'}
+                    </a>
+                  </li>
+                </ul>
+              </div>
+
+              {/* Developer */}
+              <div className="flex flex-col gap-4 md:gap-6">
+                <h3 className="text-sm font-semibold text-zinc-400 opacity-60">
+                  {isZh ? '开发者' : 'Developer'}
                 </h3>
                 <ul className="flex flex-col gap-3 md:gap-4">
                   <li>
                     <Link href={`/${locale}/connect-to-hardware/hardware-sdk/quick-start`} className="text-zinc-300 hover:text-white text-sm transition-colors">
-                      {isZh ? '快速开始' : 'Quick Start'}
+                      {isZh ? '快速开始' : 'Getting Started'}
                     </Link>
                   </li>
                   <li>
@@ -569,23 +625,28 @@ export function LandingPage({ locale = 'en' }) {
                       Playground
                     </a>
                   </li>
+                  <li>
+                    <a href="https://github.com/OneKeyHQ" target="_blank" rel="noopener noreferrer" className="text-zinc-300 hover:text-white text-sm transition-colors">
+                      {isZh ? '开源社区' : 'Open Source'}
+                    </a>
+                  </li>
                 </ul>
               </div>
 
-              {/* Resources */}
+              {/* Support */}
               <div className="flex flex-col gap-4 md:gap-6">
-                <h3 className="text-sm font-semibold text-zinc-400">
-                  {isZh ? '资源' : 'Resources'}
+                <h3 className="text-sm font-semibold text-zinc-400 opacity-60">
+                  {isZh ? '支持' : 'Support'}
                 </h3>
                 <ul className="flex flex-col gap-3 md:gap-4">
                   <li>
-                    <a href="https://github.com/OneKeyHQ/hardware-js-sdk" target="_blank" rel="noopener noreferrer" className="text-zinc-300 hover:text-white text-sm transition-colors">
-                      GitHub
+                    <a href="https://help.onekey.so" target="_blank" rel="noopener noreferrer" className="text-zinc-300 hover:text-white text-sm transition-colors">
+                      {isZh ? '帮助中心' : 'Help Center'}
                     </a>
                   </li>
                   <li>
-                    <a href="https://github.com/OneKeyHQ/hardware-js-sdk/releases" target="_blank" rel="noopener noreferrer" className="text-zinc-300 hover:text-white text-sm transition-colors">
-                      {isZh ? '更新日志' : 'Changelog'}
+                    <a href="https://help.onekey.so/hc/requests/new" target="_blank" rel="noopener noreferrer" className="text-zinc-300 hover:text-white text-sm transition-colors">
+                      {isZh ? '提交工单' : 'Submit a Request'}
                     </a>
                   </li>
                   <li>
@@ -593,20 +654,20 @@ export function LandingPage({ locale = 'en' }) {
                       Discord
                     </a>
                   </li>
+                  <li>
+                    <a href="https://status.onekey.so" target="_blank" rel="noopener noreferrer" className="text-zinc-300 hover:text-white text-sm transition-colors">
+                      {isZh ? '系统状态' : 'System Status'}
+                    </a>
+                  </li>
                 </ul>
               </div>
 
               {/* Company */}
               <div className="flex flex-col gap-4 md:gap-6">
-                <h3 className="text-sm font-semibold text-zinc-400">
+                <h3 className="text-sm font-semibold text-zinc-400 opacity-60">
                   {isZh ? '公司' : 'Company'}
                 </h3>
                 <ul className="flex flex-col gap-3 md:gap-4">
-                  <li>
-                    <a href="https://onekey.so" target="_blank" rel="noopener noreferrer" className="text-zinc-300 hover:text-white text-sm transition-colors">
-                      {isZh ? '官网' : 'Website'}
-                    </a>
-                  </li>
                   <li>
                     <a href="https://onekey.so/about" target="_blank" rel="noopener noreferrer" className="text-zinc-300 hover:text-white text-sm transition-colors">
                       {isZh ? '关于我们' : 'About'}
@@ -617,23 +678,33 @@ export function LandingPage({ locale = 'en' }) {
                       {isZh ? '博客' : 'Blog'}
                     </a>
                   </li>
+                  <li>
+                    <a href="https://onekey.so/careers" target="_blank" rel="noopener noreferrer" className="text-zinc-300 hover:text-white text-sm transition-colors">
+                      {isZh ? '加入我们' : 'Careers'}
+                    </a>
+                  </li>
+                  <li>
+                    <a href="https://onekey.so/media-kit" target="_blank" rel="noopener noreferrer" className="text-zinc-300 hover:text-white text-sm transition-colors">
+                      {isZh ? '媒体资源' : 'Media Kits'}
+                    </a>
+                  </li>
                 </ul>
               </div>
 
               {/* Legal */}
               <div className="flex flex-col gap-4 md:gap-6">
-                <h3 className="text-sm font-semibold text-zinc-400">
+                <h3 className="text-sm font-semibold text-zinc-400 opacity-60">
                   {isZh ? '法律' : 'Legal'}
                 </h3>
                 <ul className="flex flex-col gap-3 md:gap-4">
                   <li>
                     <a href="https://onekey.so/privacy" target="_blank" rel="noopener noreferrer" className="text-zinc-300 hover:text-white text-sm transition-colors">
-                      {isZh ? '隐私政策' : 'Privacy'}
+                      {isZh ? '隐私政策' : 'Privacy Policy'}
                     </a>
                   </li>
                   <li>
                     <a href="https://onekey.so/terms" target="_blank" rel="noopener noreferrer" className="text-zinc-300 hover:text-white text-sm transition-colors">
-                      {isZh ? '服务条款' : 'Terms'}
+                      {isZh ? '用户协议' : 'User Agreement'}
                     </a>
                   </li>
                 </ul>
@@ -642,36 +713,39 @@ export function LandingPage({ locale = 'en' }) {
 
             {/* Social Links & Copyright - Mobile */}
             <div className="flex md:hidden flex-col gap-4 pt-4 border-t border-zinc-800">
-              <div className="flex items-center gap-6">
-                <a
-                  href="https://twitter.com/onekeyHQ"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-zinc-400 hover:text-white transition-colors"
-                >
-                  <TwitterIcon className="w-5 h-5" />
-                </a>
-                <a
-                  href="https://github.com/OneKeyHQ"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-zinc-400 hover:text-white transition-colors"
-                >
-                  <GitHubIcon className="w-5 h-5" />
-                </a>
-                <a
-                  href="https://discord.gg/onekey"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-zinc-400 hover:text-white transition-colors"
-                >
-                  <DiscordIcon className="w-5 h-5" />
-                </a>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-6">
+                  <a
+                    href="https://twitter.com/onekeyHQ"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-zinc-400 hover:text-white transition-colors"
+                  >
+                    <TwitterIcon className="w-5 h-5" />
+                  </a>
+                  <a
+                    href="https://github.com/OneKeyHQ"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-zinc-400 hover:text-white transition-colors"
+                  >
+                    <GitHubIcon className="w-5 h-5" />
+                  </a>
+                  <a
+                    href="https://discord.gg/onekey"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-zinc-400 hover:text-white transition-colors"
+                  >
+                    <DiscordIcon className="w-5 h-5" />
+                  </a>
+                </div>
+                <OpenSourceIcon />
               </div>
               <p className="text-xs text-zinc-500">
                 {isZh
-                  ? `© ${new Date().getFullYear()} OneKey. 保留所有权利。`
-                  : `© ${new Date().getFullYear()} OneKey. All rights reserved.`}
+                  ? `Since 2019 to Now ｜ OneKey Limited 保留所有权利`
+                  : `Since 2019 to Now ｜ OneKey Limited All Rights Reserved`}
               </p>
             </div>
           </div>
