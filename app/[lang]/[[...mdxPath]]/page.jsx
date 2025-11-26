@@ -1,11 +1,23 @@
+import { notFound } from 'next/navigation'
 import { generateStaticParamsFor, importPage } from 'nextra/pages'
 import { useMDXComponents as getMDXComponents } from '../../../mdx-components'
 
 export const generateStaticParams = generateStaticParamsFor('mdxPath', 'lang')
 
+const loadPage = async (params) => {
+  try {
+    return await importPage(params.mdxPath, params.lang)
+  } catch (error) {
+    if (error && typeof error === 'object' && 'code' in error && error.code === 'MODULE_NOT_FOUND') {
+      notFound()
+    }
+    throw error
+  }
+}
+
 export async function generateMetadata(props) {
   const params = await props.params
-  const { metadata } = await importPage(params.mdxPath, params.lang)
+  const { metadata } = await loadPage(params)
   return metadata
 }
 
@@ -18,7 +30,7 @@ export default async function Page(props) {
     toc,
     metadata,
     sourceCode
-  } = await importPage(params.mdxPath, params.lang)
+  } = await loadPage(params)
 
   return (
     <Wrapper toc={toc} metadata={metadata} sourceCode={sourceCode}>

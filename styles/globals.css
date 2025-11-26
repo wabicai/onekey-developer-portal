@@ -1286,6 +1286,7 @@ hr {
   flex: 1;
   display: flex;
   flex-direction: column;
+  min-height: calc(100vh - 64px);
 }
 
 /* Footer always at bottom */
@@ -1321,17 +1322,7 @@ body:has(.landing-page) article {
   max-width: none !important;
 }
 
-/* Make article and all its wrappers flex containers that fill height */
-body:has(.landing-page) article,
-body:has(.landing-page) article > div,
-body:has(.landing-page) article > div > div {
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-  min-height: calc(100vh - 64px);
-}
-
-/* Remove any padding from Nextra wrappers */
+/* Remove leftover padding wrappers, keep document flow intact */
 body:has(.landing-page) article > div,
 body:has(.landing-page) article > div > div {
   padding: 0 !important;
