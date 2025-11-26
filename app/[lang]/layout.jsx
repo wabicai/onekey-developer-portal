@@ -12,7 +12,6 @@ export const metadata = {
     template: '%s - OneKey Developers'
   },
   description: 'Official developer documentation for OneKey hardware and software integration.',
-  // favicon auto-detected from app/icon.png
 }
 
 export default async function RootLayout({ children, params }) {
