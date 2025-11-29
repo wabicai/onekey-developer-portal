@@ -1,28 +1,275 @@
 ---
-slug: /dapp
+title: dApp Integration
+description: Integrate your dApp with OneKey wallet
 ---
 
-# dApp Integration (Injected Provider)
+import { Callout, Steps, Tabs } from 'nextra/components'
 
-This section focuses on connecting to OneKey using the injected EIP‑1193 provider. No extra SDK is required for the web — detect and call the provider directly.
+# dApp Integration
 
-## Recommended
+Integrate your dApp with OneKey wallet. Support EVM and 20+ non-EVM blockchains with a single wallet.
 
-- Web (Injected Provider):
-  - Prefer `window.$onekey.ethereum`; fall back to `window.ethereum` as needed
-  - Multi‑chain; see per‑chain sections for signing/transactions/events (ETH, BTC, Solana, NEAR, Nostr, WebLN)
+---
 
-> Note: This section centers on the native provider flow based on EIP-1193. If your app already uses Wallet Kits or needs compatibility guidance, see [Wallet Kits](wallet-kits).
+## Choose Your Integration Method
 
-## Minimal example (EVM)
+<Callout>
+**Not sure which to choose?** Use [RainbowKit](#rainbowkit) or [Web3Modal](#web3modal) for the fastest integration with a polished wallet selection UI.
+</Callout>
 
-```js
-const provider = window?.$onekey?.ethereum
-  || window?.ethereum?.providers?.find(p => p?.isOneKey || p?.onekey)
-  || window?.ethereum;
-if (!provider) throw new Error('OneKey not detected');
-const [account] = await provider.request({ method: 'eth_requestAccounts' });
-console.log('Account:', account);
+| Method | UI Included | Best For | Framework | Docs |
+|--------|-------------|----------|-----------|------|
+| **RainbowKit** | ✅ Yes | Beautiful wallet modal, React apps | React only | [Guide](/en/connect-to-software/wallet-ui/rainbowkit) |
+| **Web3Modal** | ✅ Yes | WalletConnect ecosystem, multi-framework | React/Vue/JS | [Guide](/en/connect-to-software/wallet-ui/web3modal) |
+| **Wagmi** | ❌ No | Custom UI with React hooks | React only | [Guide](/en/connect-to-software/react-hooks/wagmi) |
+| **Provider API** | ❌ No | Full control, any framework | Any | [EVM](/en/connect-to-software/provider/eth), [All Chains](/en/connect-to-software/provider) |
+
+### Decision Guide
+
+```
+Do you need a wallet selection UI?
+├── Yes → Do you use React?
+│         ├── Yes → RainbowKit (most popular) or Web3Modal
+│         └── No  → Web3Modal (supports Vue, vanilla JS)
+└── No  → Do you use React?
+          ├── Yes → Wagmi (type-safe hooks)
+          └── No  → Provider API (direct access)
 ```
 
-See [Web (Injected Provider)](provider) for details.
+---
+
+## Quick Start: With Wallet UI
+
+### RainbowKit
+
+The most popular React wallet connection library with a beautiful, customizable modal.
+
+```bash
+npm install @rainbow-me/rainbowkit wagmi viem @tanstack/react-query
+```
+
+```tsx filename="App.tsx"
+import '@rainbow-me/rainbowkit/styles.css'
+import { getDefaultConfig, RainbowKitProvider, ConnectButton } from '@rainbow-me/rainbowkit'
+import { WagmiProvider } from 'wagmi'
+import { mainnet, polygon } from 'wagmi/chains'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+
+const config = getDefaultConfig({
+  appName: 'My dApp',
+  projectId: 'YOUR_WALLETCONNECT_PROJECT_ID',
+  chains: [mainnet, polygon],
+})
+
+const queryClient = new QueryClient()
+
+export default function App() {
+  return (
+    <WagmiProvider config={config}>
+      <QueryClientProvider client={queryClient}>
+        <RainbowKitProvider>
+          <ConnectButton />
+        </RainbowKitProvider>
+      </QueryClientProvider>
+    </WagmiProvider>
+  )
+}
+```
+
+[Full RainbowKit Guide →](/en/connect-to-software/wallet-ui/rainbowkit)
+
+### Web3Modal
+
+WalletConnect's official UI kit, now called Reown AppKit. Supports React, Vue, and vanilla JavaScript.
+
+```bash
+npm install @reown/appkit @reown/appkit-adapter-wagmi wagmi viem @tanstack/react-query
+```
+
+```tsx filename="App.tsx"
+import { createAppKit } from '@reown/appkit/react'
+import { WagmiProvider } from 'wagmi'
+import { mainnet, polygon } from '@reown/appkit/networks'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { WagmiAdapter } from '@reown/appkit-adapter-wagmi'
+
+const projectId = 'YOUR_WALLETCONNECT_PROJECT_ID'
+const networks = [mainnet, polygon]
+const wagmiAdapter = new WagmiAdapter({ projectId, networks })
+
+createAppKit({ adapters: [wagmiAdapter], networks, projectId })
+
+const queryClient = new QueryClient()
+
+export default function App() {
+  return (
+    <WagmiProvider config={wagmiAdapter.wagmiConfig}>
+      <QueryClientProvider client={queryClient}>
+        <appkit-button />
+      </QueryClientProvider>
+    </WagmiProvider>
+  )
+}
+```
+
+[Full Web3Modal Guide →](/en/connect-to-software/wallet-ui/web3modal)
+
+---
+
+## Quick Start: Without Wallet UI
+
+### Wagmi (React Hooks)
+
+Type-safe React hooks for Ethereum. Build your own custom wallet UI.
+
+```bash
+npm install wagmi viem @tanstack/react-query
+```
+
+```tsx filename="App.tsx"
+import { WagmiProvider, useAccount, useConnect, useDisconnect } from 'wagmi'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { http, createConfig } from 'wagmi'
+import { mainnet, polygon } from 'wagmi/chains'
+import { injected } from 'wagmi/connectors'
+
+const config = createConfig({
+  chains: [mainnet, polygon],
+  connectors: [injected()],
+  transports: { [mainnet.id]: http(), [polygon.id]: http() },
+})
+
+function ConnectWallet() {
+  const { address, isConnected } = useAccount()
+  const { connect, connectors } = useConnect()
+  const { disconnect } = useDisconnect()
+
+  if (isConnected) return <div>{address} <button onClick={() => disconnect()}>Disconnect</button></div>
+  return <button onClick={() => connect({ connector: connectors[0] })}>Connect</button>
+}
+
+export default function App() {
+  return (
+    <WagmiProvider config={config}>
+      <QueryClientProvider client={new QueryClient()}>
+        <ConnectWallet />
+      </QueryClientProvider>
+    </WagmiProvider>
+  )
+}
+```
+
+[Full Wagmi Guide →](/en/connect-to-software/react-hooks/wagmi)
+
+### Provider API (Direct Access)
+
+No dependencies. Works with any framework. Use EIP-6963 for wallet detection.
+
+```typescript
+// 1. Detect wallets using EIP-6963
+const providers: any[] = []
+window.addEventListener('eip6963:announceProvider', (e: any) => {
+  providers.push(e.detail)
+})
+window.dispatchEvent(new Event('eip6963:requestProvider'))
+
+// 2. Find OneKey by rdns
+const onekey = providers.find(p => p.info.rdns === 'so.onekey.app.wallet')
+
+// 3. Connect and get accounts
+const accounts = await onekey.provider.request({ method: 'eth_requestAccounts' })
+
+// 4. Send transaction
+await onekey.provider.request({
+  method: 'eth_sendTransaction',
+  params: [{ from: accounts[0], to: '0x...', value: '0x...' }]
+})
+```
+
+[Full EVM Provider API →](/en/connect-to-software/provider/eth)
+
+---
+
+## Library Comparison
+
+| Feature | RainbowKit | Web3Modal | Wagmi | Provider API |
+|---------|------------|-----------|-------|--------------|
+| Wallet selection UI | ✅ | ✅ | ❌ | ❌ |
+| React support | ✅ | ✅ | ✅ | ✅ |
+| Vue support | ❌ | ✅ | ❌ | ✅ |
+| Vanilla JS | ❌ | ✅ | ❌ | ✅ |
+| Mobile QR codes | ✅ | ✅ | ❌ | ❌ |
+| WalletConnect | ✅ | ✅ | ✅ | ❌ |
+| Bundle size | Medium | Medium | Small | None |
+| Customization | High | Medium | Full | Full |
+
+---
+
+## Common Tasks
+
+| Task | Documentation |
+|------|---------------|
+| Send transactions | [Sending Transactions](/en/connect-to-software/provider/eth/sending-transactions) |
+| Sign messages | [Signing Data](/en/connect-to-software/provider/eth/signing-data) |
+| Switch/add networks | [JSON-RPC Reference](/en/connect-to-software/provider/eth/reference) |
+| Provider API methods | [Provider API](/en/connect-to-software/provider/eth/provider-api) |
+
+---
+
+## OneKey Identifier
+
+| Property | Value |
+|----------|-------|
+| `rdns` | `so.onekey.app.wallet` |
+| `name` | `OneKey` |
+
+---
+
+## Supported Chains
+
+### EVM Chains
+
+All EVM chains share the same provider via `window.$onekey.ethereum` or EIP-6963:
+
+Ethereum, Polygon, BSC, Arbitrum, Optimism, Base, zkSync, Avalanche, Fantom, Gnosis...
+
+### Non-EVM Chains
+
+| Chain | OneKey Provider | Docs |
+|-------|-----------------|------|
+| **Bitcoin** | `$onekey.btc` | [Guide](/en/connect-to-software/provider/btc) |
+| **Solana** | `$onekey.solana` | [Guide](/en/connect-to-software/provider/solana) |
+| **Cosmos** | `$onekey.cosmos` | [Guide](/en/connect-to-software/provider/cosmos) |
+| **Aptos** | `$onekey.aptos` | [Guide](/en/connect-to-software/provider/aptos) |
+| **Sui** | `$onekey.sui` | [Guide](/en/connect-to-software/provider/sui) |
+| **TON** | `$onekey.tonconnect` | [Guide](/en/connect-to-software/provider/ton) |
+| **TRON** | `$onekey.tron` | [Guide](/en/connect-to-software/provider/tron) |
+| **Polkadot** | `$onekey.polkadot` | [Guide](/en/connect-to-software/provider/polkadot) |
+| **Cardano** | `cardano.onekey` | [Guide](/en/connect-to-software/provider/cardano) |
+| **Algorand** | `$onekey.algo` | [Guide](/en/connect-to-software/provider/algorand) |
+| **Conflux** | `$onekey.conflux` | [Guide](/en/connect-to-software/provider/conflux) |
+| **NEAR** | `$onekey.near` | [Guide](/en/connect-to-software/provider/near) |
+| **Nostr** | `$onekey.nostr` | [Guide](/en/connect-to-software/provider/nostr) |
+| **WebLN** | `$onekey.webln` | [Guide](/en/connect-to-software/provider/webln) |
+
+<Callout>
+OneKey natively supports 20+ chains without Snaps or plugins.
+</Callout>
+
+---
+
+## Mobile Integration
+
+For mobile web integration, use WalletConnect with OneKey deeplinks:
+
+```typescript
+// Custom scheme
+onekey-wallet://wc?uri={encodeURIComponent(wcUri)}
+
+// Universal link
+https://app.onekey.so/wc/connect/wc?uri={encodeURIComponent(wcUri)}
+```
+
+<Callout type="info">
+RainbowKit and Web3Modal handle mobile deeplinks automatically.
+</Callout>

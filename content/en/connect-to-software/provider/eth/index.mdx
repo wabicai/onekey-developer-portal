@@ -1,44 +1,84 @@
 ---
-description: Ethereum & EVM integration with OneKey’s injected EIP‑1193 provider
-slug: /dapp/chains/eth
+title: Ethereum / EVM
+description: Ethereum & EVM integration with OneKey's injected EIP-1193 provider
 ---
 
-# ETH / EVM
+import { Callout } from 'nextra/components'
 
-Use the injected EIP‑1193 provider to build EVM dApps with OneKey. Start by detecting the provider and requesting accounts, then use the methods below for transactions and signing.
+# Ethereum / EVM
 
-## Quick links
+Use the injected EIP-1193 provider to build EVM dApps with OneKey. All EVM-compatible chains (Ethereum, Polygon, BSC, Arbitrum, Optimism, Base, etc.) share the same provider.
 
-- [Provider API](provider-api)
-- [RPC API](rpc-api)
-- [Accessing Accounts](accessing-accounts)
-- [Sending Transactions](sending-transactions)
-- [Signing Data](signing-data)
+---
 
-## Minimal pattern
+## Quick Start
 
-```js
-const provider = window?.$onekey?.ethereum
-  || window?.ethereum?.providers?.find(p => p?.isOneKey || p?.onekey)
-  || window?.ethereum
-if (!provider) throw new Error('OneKey not detected')
-const [account] = await provider.request({ method: 'eth_requestAccounts' })
+### EIP-6963 Detection (Recommended)
+
+Modern multi-wallet detection that avoids conflicts:
+
+```typescript
+const providers: any[] = []
+
+window.addEventListener('eip6963:announceProvider', (e: any) => {
+  providers.push(e.detail)
+})
+window.dispatchEvent(new Event('eip6963:requestProvider'))
+
+// Find OneKey by rdns
+const onekey = providers.find(p => p.info.rdns === 'so.onekey.app.wallet')
+const accounts = await onekey.provider.request({ method: 'eth_requestAccounts' })
 ```
 
-## Events & network
+### Direct Access (Fallback)
 
-- Listen to `accountsChanged` and `chainChanged`
-- For switching/adding chains: `wallet_switchEthereumChain`, `wallet_addEthereumChain`
+```typescript
+const provider = window.$onekey?.ethereum
+if (!provider) throw new Error('OneKey not detected')
 
-## Common errors
+const accounts = await provider.request({ method: 'eth_requestAccounts' })
+console.log('Connected:', accounts[0])
+```
 
-- 4001: user rejected
-- 4902: unknown chain (add the chain first)
-- Invalid params: use 0x‑prefixed hex strings; avoid raw BigInt in RPC params
+---
 
-## Mobile & deeplinks
+## Documentation
 
-- Use OneKey deeplinks that carry a WalletConnect URI
-- See [Use deeplinks](../../guides/use-deeplinks)
+| Topic | Description |
+|-------|-------------|
+| [Provider API](./provider-api) | EIP-1193 provider interface |
+| [Accessing Accounts](./accessing-accounts) | Connect and manage user accounts |
+| [Sending Transactions](./sending-transactions) | Send ETH and call contracts |
+| [Signing Data](./signing-data) | Sign messages and typed data |
+| [JSON-RPC Reference](./reference) | All supported RPC methods |
 
-See also [JavaScript (EIP‑1193)](../README) for an extended introduction.
+---
+
+## Events
+
+```typescript
+// Account changed
+window.$onekey.ethereum.on('accountsChanged', (accounts) => {
+  console.log('Account:', accounts[0])
+})
+
+// Network changed
+window.$onekey.ethereum.on('chainChanged', (chainId) => {
+  console.log('Chain:', chainId)
+  window.location.reload() // Recommended
+})
+```
+
+---
+
+## Common Errors
+
+| Code | Description | Solution |
+|------|-------------|----------|
+| 4001 | User rejected | Handle rejection gracefully |
+| 4902 | Unknown chain | Add chain with `wallet_addEthereumChain` |
+| -32602 | Invalid params | Use `0x`-prefixed hex strings |
+
+<Callout type="info">
+For quick integration with UI components, use [RainbowKit](/en/connect-to-software/wallet-kits/rainbowkit) or [Web3Modal](/en/connect-to-software/wallet-kits/web3modal).
+</Callout>

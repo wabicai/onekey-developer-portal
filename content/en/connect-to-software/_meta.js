@@ -1,14 +1,18 @@
 export default {
-  index: 'Overview',
+  index: 'Quick Start',
   '---1': {
     type: 'separator',
-    title: 'Injected Provider'
+    title: 'With Wallet UI'
   },
-  provider: 'Web Provider APIs',
+  'wallet-ui': 'UI Libraries',
   '---2': {
     type: 'separator',
-    title: 'Integration Tools'
+    title: 'Without Wallet UI'
   },
-  'wallet-kits': 'Wallet Kits',
-  guides: 'Developer Guides'
+  'react-hooks': 'React Hooks',
+  '---3': {
+    type: 'separator',
+    title: 'Direct Access'
+  },
+  provider: 'Provider API'
 }

@@ -31,4 +31,27 @@ const signedMessage = await provider.request({
 });
 ```
 
+---
+
+## Sign Off-chain Message
+
+For signing off-chain messages with version support (useful for authentication and verification):
+
+### solSignOffchainMessage
+```javascript
+const provider = getProvider();
+const message = "Sign this message to verify your identity";
+const signedMessage = await provider.request({
+    method: "solSignOffchainMessage",
+    params: {
+         message: message,
+         version: 0, // Optional version number
+    },
+});
+
+console.log({
+    signature: signedMessage.signature,
+    publicKey: signedMessage.publicKey,
+});
+```
 

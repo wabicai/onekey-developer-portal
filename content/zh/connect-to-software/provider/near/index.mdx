@@ -45,7 +45,7 @@ await provider.request({ method: 'near_accounts' })
 - 4001: user rejected
 - Invalid params: ensure method names and arguments follow the NEAR provider spec
 
-## Mobile & deeplinks
+## 移动端深度链接
 
-- Use OneKey deeplinks to bridge from mobile H5/WebViews
-- See [Use deeplinks](../../guides/use-deeplinks)
+- 自定义协议: `onekey-wallet://wc?uri={encodeURIComponent(wcUri)}`
+- 通用链接: `https://app.onekey.so/wc/connect/wc?uri={encodeURIComponent(wcUri)}`

@@ -1,18 +1,18 @@
-# Detecting the Provider
+# 检测 Provider
 
-To detect if a user has already installed OneKey, a web application should check for the existence of a `window.$onekey.solana` object.
+要检测用户是否已安装 OneKey，Web 应用应检查 `window.$onekey.solana` 对象是否存在。
 
-OneKey Browser Extension, OneKey Mobile APP and OneKey Desktop in-app browser will both inject a `$onekey.solana` object into the `window` of any web application the user visits.
+OneKey 浏览器扩展、OneKey 移动应用和 OneKey 桌面版内置浏览器都会将 `$onekey.solana` 对象注入到用户访问的任何 Web 应用的 `window` 中。
 
-If a `window.$onekey.solana` object exists, Solana apps can interact with OneKey via the API found at `window.$onekey.solana`. This `solana` object is also available at `window.solana` to support legacy integrations.&#x20;
+如果 `window.$onekey.solana` 对象存在，Solana 应用可以通过 `window.$onekey.solana` 处的 API 与 OneKey 交互。为了支持旧版集成，此 `solana` 对象也可在 `window.solana` 处访问。
 
-To detect if OneKey is installed, an application should check for an additional `isOneKey` flag.
+要检测是否安装了 OneKey，应用应检查额外的 `isOneKey` 标志。
 
 ```javascript
 const isOneKeyInstalled = window.$onekey?.solana?.isOneKey;
 ```
 
-If OneKey is not installed, we recommend you redirect your users to [https://onekey.so/download/?client=browserExtension](https://onekey.so/zh\_CN/download/?client=browserExtension). Altogether, this may look like the following.
+如果未安装 OneKey，我们建议将用户重定向到 [https://onekey.so/download/?client=browserExtension](https://onekey.so/zh_CN/download/?client=browserExtension)。完整代码如下所示：
 
 ```javascript
 const getProvider = () => {
@@ -27,4 +27,3 @@ const getProvider = () => {
   window.open('https://onekey.so/download/?client=browserExtension', '_blank');
 };
 ```
-

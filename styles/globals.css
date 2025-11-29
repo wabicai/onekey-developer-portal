@@ -12,8 +12,10 @@
    Design Tokens - Color System
    ============================================ */
 :root {
-  /* Use Nextra default primary color (blue) for sidebar active states */
-  /* Custom OneKey green only used for specific brand elements like buttons */
+  /* Nextra primary color - blue for sidebar active states */
+  --nextra-primary-hue: 212deg;
+  --nextra-primary-saturation: 100%;
+  --nextra-primary-lightness: 45%;
 
   /* OneKey Logo Colors */
   --onekey-logo-color: #18181b;
@@ -729,25 +731,7 @@ input[type="search"]::placeholder,
   color: white !important;
 }
 
-/* Hide original sidebar bottom controls and theme toggle */
-aside.nextra-sidebar > div:last-child {
-  display: none !important;
-}
-
-/* Hide Nextra's built-in theme toggle and footer controls */
-button[aria-label="Change theme"],
-button[aria-label="Toggle theme"],
-button[aria-label="Switch theme"],
-[data-nextra-footer] button,
-.nextra-sidebar-footer,
-aside footer,
-aside > footer,
-nav + footer,
-footer:has(button:only-child),
-footer > button:has(svg),
-div[class*="footer"] button:has(svg) {
-  display: none !important;
-}
+/* Use Nextra's built-in theme and language toggles */
 
 /* Ensure main footer stays visible */
 .nextra-content + footer,
@@ -772,7 +756,9 @@ main ~ footer {
    Sidebar Styling
    ============================================ */
 
-.nextra-sidebar {
+/* Sidebar container - let Nextra handle width for proper collapse behavior */
+aside.nextra-sidebar,
+[class*="nextra-sidebar"] {
   border-right: 1px solid var(--gray-100);
 }
 
@@ -780,26 +766,13 @@ main ~ footer {
   border-right-color: var(--gray-800);
 }
 
-/* Sidebar menu items */
-.nextra-sidebar-menu li a {
-  border-radius: var(--radius-md);
-  padding: var(--space-2) var(--space-3);
-  font-size: var(--text-sm);
-  color: var(--gray-600);
-  transition: all var(--duration-normal);
+/* Sidebar toggle button - ensure it's visible */
+button[aria-label="Hide sidebar"],
+button[aria-label="Show sidebar"],
+button[aria-label="Toggle sidebar"],
+button[aria-label="Collapse sidebar"] {
+  display: flex !important;
 }
-
-.nextra-sidebar-menu li a:hover {
-  background: var(--gray-50);
-  color: var(--gray-900);
-}
-
-.dark .nextra-sidebar-menu li a:hover {
-  background: var(--gray-800);
-  color: var(--gray-100);
-}
-
-/* Active sidebar item - use Nextra default styling */
 
 /* Sidebar section headers */
 .nextra-sidebar h4 {
@@ -810,6 +783,22 @@ main ~ footer {
   color: var(--gray-400);
   margin-top: var(--space-6);
   margin-bottom: var(--space-2);
+}
+
+/* Sidebar active item - enhanced styling for Nextra v4 */
+/* Target the specific active link class pattern from Nextra */
+aside a.x\:bg-primary-100,
+aside a[class*="x:bg-primary-100"] {
+  background-color: #dbeafe !important; /* blue-100 */
+  color: #1e40af !important; /* blue-800 */
+  font-weight: 600 !important;
+  border-radius: 6px;
+}
+
+.dark aside a.x\:bg-primary-100,
+.dark aside a[class*="x:bg-primary-100"] {
+  background-color: rgba(59, 130, 246, 0.2) !important; /* blue-500/20 - more visible */
+  color: #93c5fd !important; /* blue-300 - lighter for dark mode */
 }
 
 /* ============================================
@@ -1179,26 +1168,7 @@ hr {
   color: #4ade80;
 }
 
-/* Sidebar navigation text */
-.dark nav a,
-.dark nav span {
-  color: #a1a1aa;
-}
-
-.dark nav a:hover,
-.dark nav a[data-active="true"] {
-  color: #ffffff;
-}
-
-/* TOC (Table of Contents) */
-.dark aside a {
-  color: #a1a1aa;
-}
-
-.dark aside a:hover,
-.dark aside a[data-active="true"] {
-  color: #ffffff;
-}
+/* Let Nextra handle sidebar and TOC active states */
 
 /* Breadcrumbs */
 .dark [class*="breadcrumb"] {
@@ -1332,4 +1302,299 @@ article .landing-page footer a,
 
 .landing-page footer a:hover svg {
   color: #ffffff !important;
+}
+
+/* ============================================
+   Nextra Cards Component Override
+   Fix: title should be above description
+   ============================================ */
+
+/* Cards grid container */
+.nextra-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: var(--space-4);
+  margin: var(--space-6) 0;
+}
+
+/* Individual card */
+.nextra-card {
+  display: flex;
+  flex-direction: column;
+  padding: var(--space-5);
+  background: var(--gray-50);
+  border: 1px solid var(--gray-100);
+  border-radius: var(--radius-lg);
+  transition: all 200ms ease;
+  text-decoration: none !important;
+}
+
+.nextra-card:hover {
+  border-color: var(--ok-green-500);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}
+
+.dark .nextra-card {
+  background: rgba(255, 255, 255, 0.03);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.dark .nextra-card:hover {
+  border-color: var(--ok-green-500);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+/* Card title - should be first and prominent */
+.nextra-card h3,
+.nextra-card > span:first-child,
+.nextra-card [class*="title"] {
+  order: 1;
+  font-size: var(--text-base);
+  font-weight: 600;
+  color: var(--gray-900) !important;
+  margin-bottom: var(--space-2);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.dark .nextra-card h3,
+.dark .nextra-card > span:first-child,
+.dark .nextra-card [class*="title"] {
+  color: #ffffff !important;
+}
+
+/* Card description - comes after title */
+.nextra-card p,
+.nextra-card > span:last-child:not(:first-child),
+.nextra-card [class*="description"] {
+  order: 2;
+  font-size: var(--text-sm);
+  color: var(--gray-500) !important;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.dark .nextra-card p,
+.dark .nextra-card > span:last-child:not(:first-child),
+.dark .nextra-card [class*="description"] {
+  color: #a1a1aa !important;
+}
+
+/* Card icon */
+.nextra-card svg {
+  width: 20px;
+  height: 20px;
+  color: var(--gray-400);
+  flex-shrink: 0;
+}
+
+.nextra-card:hover svg {
+  color: var(--ok-green-500);
+}
+
+.dark .nextra-card svg {
+  color: #71717a;
+}
+
+.dark .nextra-card:hover svg {
+  color: var(--ok-green-500);
+}
+
+/* Remove default link underlines in cards */
+.nextra-card,
+.nextra-card *,
+.nextra-card a {
+  text-decoration: none !important;
+}
+
+/* Cards with only title (no description) */
+.nextra-card > span:only-child {
+  font-weight: 600;
+  color: var(--gray-900) !important;
+}
+
+.dark .nextra-card > span:only-child {
+  color: #ffffff !important;
+}
+
+/* ============================================
+   Nextra Steps Component Override
+   Cleaner, more professional step indicators
+   ============================================ */
+
+/* Steps container */
+.nextra-steps {
+  margin-left: 0;
+  padding-left: 0;
+  border-left: none;
+}
+
+/* Step item - remove default border */
+.nextra-steps > div {
+  position: relative;
+  padding-left: 3rem;
+  padding-bottom: 1.5rem;
+  margin-left: 0;
+  border-left: 2px solid var(--gray-200);
+}
+
+.dark .nextra-steps > div {
+  border-left-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Last step - no border */
+.nextra-steps > div:last-child {
+  border-left-color: transparent;
+}
+
+/* Step number - minimal style */
+.nextra-steps > div::before {
+  content: counter(step);
+  counter-increment: step;
+  position: absolute;
+  left: -0.5rem;
+  top: 0.15rem;
+  width: 1.25rem;
+  height: 1.25rem;
+  background: transparent;
+  color: var(--ok-green-500);
+  border: 1.5px solid var(--ok-green-500);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  font-weight: 600;
+  z-index: 1;
+}
+
+.dark .nextra-steps > div::before {
+  color: var(--ok-green-400);
+  border-color: var(--ok-green-400);
+}
+
+/* Initialize counter */
+.nextra-steps {
+  counter-reset: step;
+}
+
+/* Step heading */
+.nextra-steps h3 {
+  font-size: var(--text-lg);
+  font-weight: 600;
+  color: var(--gray-900);
+  margin-top: 0;
+  margin-bottom: var(--space-3);
+}
+
+.dark .nextra-steps h3 {
+  color: #ffffff;
+}
+
+/* Step content */
+.nextra-steps > div > *:not(h3) {
+  margin-left: 0;
+}
+
+/* Code blocks in steps */
+.nextra-steps pre {
+  margin-top: var(--space-3);
+  margin-bottom: var(--space-3);
+}
+
+/* ============================================
+   Code Block Enhancements
+   Consistent styling with line highlighting
+   ============================================ */
+
+/* Line highlight for code blocks */
+pre code .highlight {
+  background: rgba(0, 184, 18, 0.1);
+  display: block;
+  margin: 0 -1rem;
+  padding: 0 1rem;
+  border-left: 3px solid var(--ok-green-500);
+}
+
+/* Code block with filename */
+[data-rehype-pretty-code-figure] {
+  margin: var(--space-4) 0;
+}
+
+[data-rehype-pretty-code-figure] figcaption {
+  background: var(--gray-100);
+  color: var(--gray-600);
+  padding: var(--space-2) var(--space-4);
+  font-size: var(--text-xs);
+  font-family: var(--font-mono);
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  border: 1px solid var(--gray-200);
+  border-bottom: none;
+}
+
+.dark [data-rehype-pretty-code-figure] figcaption {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--gray-400);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-rehype-pretty-code-figure] figcaption + pre {
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+  margin-top: 0;
+}
+
+/* ============================================
+   Simple Link Cards (Alternative to Cards)
+   Cleaner display for navigation links
+   ============================================ */
+
+.link-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: var(--space-4) 0;
+}
+
+.link-list a {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  background: var(--gray-50);
+  border: 1px solid var(--gray-100);
+  border-radius: var(--radius-lg);
+  text-decoration: none;
+  color: var(--gray-700);
+  font-weight: 500;
+  transition: all 200ms ease;
+}
+
+.link-list a:hover {
+  border-color: var(--ok-green-500);
+  color: var(--ok-green-600);
+  transform: translateX(4px);
+}
+
+.dark .link-list a {
+  background: rgba(255, 255, 255, 0.03);
+  border-color: rgba(255, 255, 255, 0.1);
+  color: var(--gray-300);
+}
+
+.dark .link-list a:hover {
+  border-color: var(--ok-green-500);
+  color: var(--ok-green-400);
+}
+
+.link-list a svg {
+  width: 1rem;
+  height: 1rem;
+  color: var(--gray-400);
+}
+
+.link-list a:hover svg {
+  color: var(--ok-green-500);
 }

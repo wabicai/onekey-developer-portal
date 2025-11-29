@@ -1,7 +1,6 @@
 import { Footer, Layout, Navbar } from 'nextra-theme-docs'
 import { getPageMap } from 'nextra/page-map'
 import { OneKeyWordmark } from '../../components/OneKeyLogo'
-import { NavbarExtras } from '../../components/NavbarExtras'
 
 // Static params for i18n routing (Next.js App Router pattern)
 // See: https://nextjs.org/docs/app/guides/internationalization#static-rendering
@@ -17,15 +16,13 @@ export default async function LocaleLayout({ children, params }) {
     <Navbar
       logo={<OneKeyWordmark />}
       projectLink="https://github.com/OneKeyHQ/hardware-js-sdk"
-    >
-      <NavbarExtras locale={lang} />
-    </Navbar>
+    />
   )
 
   const footer = (
     <Footer>
       <div className="text-center text-sm text-zinc-500">
-        MIT {new Date().getFullYear()} © <a href="https://onekey.so" target="_blank" rel="noopener noreferrer" className="hover:text-zinc-900 dark:hover:text-white transition-colors">OneKey</a>
+        MIT 2025 © <a href="https://onekey.so" target="_blank" rel="noopener noreferrer" className="hover:text-zinc-900 dark:hover:text-white transition-colors">OneKey</a>
       </div>
     </Footer>
   )

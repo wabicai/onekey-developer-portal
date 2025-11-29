@@ -34,7 +34,9 @@ console.log(publicKey.toString())
 
 - 4001: user rejected the request
 
-## Mobile & deeplinks
+## Mobile & Deeplinks
 
-- Use OneKey deeplinks with a WalletConnect URI for mobile handoff
-- See [Use deeplinks](../../guides/use-deeplinks)
+Use OneKey deeplinks for mobile web/WebViews:
+
+- Custom scheme: `onekey-wallet://wc?uri={encodeURIComponent(wcUri)}`
+- Universal link: `https://app.onekey.so/wc/connect/wc?uri={encodeURIComponent(wcUri)}`

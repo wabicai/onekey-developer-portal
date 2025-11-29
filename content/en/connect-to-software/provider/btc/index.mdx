@@ -30,7 +30,9 @@ await provider.requestAccounts()
 - User rejection: handle gracefully and allow retry
 - Invalid params: ensure addresses/amounts are correctly formatted
 
-## Mobile & deeplinks
+## Mobile & Deeplinks
 
-- Use OneKey deeplinks with a WalletConnect URI when bridging from mobile web/WebViews
-- See [Use deeplinks](../../guides/use-deeplinks)
+Use OneKey deeplinks for mobile web/WebViews:
+
+- Custom scheme: `onekey-wallet://wc?uri={encodeURIComponent(wcUri)}`
+- Universal link: `https://app.onekey.so/wc/connect/wc?uri={encodeURIComponent(wcUri)}`

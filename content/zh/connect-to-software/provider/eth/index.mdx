@@ -1,44 +1,84 @@
 ---
-description: Ethereum & EVM integration with OneKey’s injected EIP‑1193 provider
-slug: /dapp/chains/eth
+title: Ethereum / EVM
+description: 使用 OneKey 的 EIP-1193 Provider 进行 Ethereum 和 EVM 集成
 ---
 
-# ETH / EVM
+import { Callout } from 'nextra/components'
 
-Use the injected EIP‑1193 provider to build EVM dApps with OneKey. Start by detecting the provider and requesting accounts, then use the methods below for transactions and signing.
+# Ethereum / EVM
 
-## Quick links
+使用 OneKey 注入的 EIP-1193 Provider 构建 EVM dApp。所有 EVM 兼容链（Ethereum、Polygon、BSC、Arbitrum、Optimism、Base 等）共享同一个 Provider。
 
-- [Provider API](provider-api)
-- [RPC API](rpc-api)
-- [Accessing Accounts](accessing-accounts)
-- [Sending Transactions](sending-transactions)
-- [Signing Data](signing-data)
+---
 
-## Minimal pattern
+## 快速开始
 
-```js
-const provider = window?.$onekey?.ethereum
-  || window?.ethereum?.providers?.find(p => p?.isOneKey || p?.onekey)
-  || window?.ethereum
-if (!provider) throw new Error('OneKey not detected')
-const [account] = await provider.request({ method: 'eth_requestAccounts' })
+### EIP-6963 检测（推荐）
+
+现代多钱包检测，避免冲突：
+
+```typescript
+const providers: any[] = []
+
+window.addEventListener('eip6963:announceProvider', (e: any) => {
+  providers.push(e.detail)
+})
+window.dispatchEvent(new Event('eip6963:requestProvider'))
+
+// 通过 rdns 找到 OneKey
+const onekey = providers.find(p => p.info.rdns === 'so.onekey.app.wallet')
+const accounts = await onekey.provider.request({ method: 'eth_requestAccounts' })
 ```
 
-## Events & network
+### 直接访问（回退方案）
 
-- Listen to `accountsChanged` and `chainChanged`
-- For switching/adding chains: `wallet_switchEthereumChain`, `wallet_addEthereumChain`
+```typescript
+const provider = window.$onekey?.ethereum
+if (!provider) throw new Error('未检测到 OneKey')
 
-## Common errors
+const accounts = await provider.request({ method: 'eth_requestAccounts' })
+console.log('已连接:', accounts[0])
+```
 
-- 4001: user rejected
-- 4902: unknown chain (add the chain first)
-- Invalid params: use 0x‑prefixed hex strings; avoid raw BigInt in RPC params
+---
 
-## Mobile & deeplinks
+## 文档
 
-- Use OneKey deeplinks that carry a WalletConnect URI
-- See [Use deeplinks](../../guides/use-deeplinks)
+| 主题 | 说明 |
+|------|------|
+| [Provider API](./provider-api) | EIP-1193 Provider 接口 |
+| [账户访问](./accessing-accounts) | 连接和管理用户账户 |
+| [发送交易](./sending-transactions) | 发送 ETH 和调用合约 |
+| [签名数据](./signing-data) | 签名消息和结构化数据 |
+| [JSON-RPC 参考](./reference) | 所有支持的 RPC 方法 |
 
-See also [JavaScript (EIP‑1193)](../README) for an extended introduction.
+---
+
+## 事件
+
+```typescript
+// 账户变更
+window.$onekey.ethereum.on('accountsChanged', (accounts) => {
+  console.log('账户:', accounts[0])
+})
+
+// 网络变更
+window.$onekey.ethereum.on('chainChanged', (chainId) => {
+  console.log('链:', chainId)
+  window.location.reload() // 推荐
+})
+```
+
+---
+
+## 常见错误
+
+| 错误码 | 说明 | 解决方案 |
+|--------|------|----------|
+| 4001 | 用户拒绝 | 优雅处理拒绝情况 |
+| 4902 | 未知链 | 使用 `wallet_addEthereumChain` 添加链 |
+| -32602 | 参数无效 | 使用 `0x` 前缀的十六进制字符串 |
+
+<Callout type="info">
+如需快速集成并使用 UI 组件，请使用 [RainbowKit](/zh/connect-to-software/wallet-kits/rainbowkit) 或 [Web3Modal](/zh/connect-to-software/wallet-kits/web3modal)。
+</Callout>

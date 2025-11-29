@@ -1,40 +1,40 @@
 ---
-description: Solana integration via OneKey provider — detect, connect, send transactions, and sign messages
+description: 通过 OneKey Provider 进行 Solana 集成 — 检测、连接、发送交易和签名消息
 slug: /dapp/chains/solana
 ---
 
 # Solana
 
-Use OneKey’s Solana provider in web apps.
+在 Web 应用中使用 OneKey 的 Solana Provider。
 
-## Quick links
+## 快速链接
 
-- [Detecting the Provider](detecting-the-provider)
-- [Establishing a Connection](establishing-a-connection)
-- [Sending a Transaction](sending-a-transaction)
-- [Signing a Message](signing-a-message)
+- [检测 Provider](detecting-the-provider)
+- [建立连接](establishing-a-connection)
+- [发送交易](sending-a-transaction)
+- [签署消息](signing-a-message)
 
-## Minimal pattern
+## 最小示例
 
 ```js
-// Detect
+// 检测
 const provider = window?.$onekey?.solana || window?.solana
-if (!provider?.isOneKey) throw new Error('OneKey Solana provider not detected')
+if (!provider?.isOneKey) throw new Error('未检测到 OneKey Solana Provider')
 
-// Connect
+// 连接
 const { publicKey } = await provider.connect()
 console.log(publicKey.toString())
 ```
 
-## Events
+## 事件
 
 - `connect`, `disconnect`, `accountChanged`
 
-## Common errors
+## 常见错误
 
-- 4001: user rejected the request
+- 4001: 用户拒绝了请求
 
-## Mobile & deeplinks
+## 移动端深度链接
 
-- Use OneKey deeplinks with a WalletConnect URI for mobile handoff
-- See [Use deeplinks](../../guides/use-deeplinks)
+- 自定义协议: `onekey-wallet://wc?uri={encodeURIComponent(wcUri)}`
+- 通用链接: `https://app.onekey.so/wc/connect/wc?uri={encodeURIComponent(wcUri)}`

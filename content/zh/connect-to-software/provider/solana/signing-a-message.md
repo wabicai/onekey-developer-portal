@@ -1,26 +1,24 @@
-# Signing a Message
+# 签署消息
 
-When a web application is connected to OneKey, it can also request that the user signs a given message. Applications are free to write their own messages which will be displayed to users from within OneKey's signature prompt. Message signatures do not involve network fees and are a convenient way for apps to verify ownership of an address.
+当 Web 应用连接到 OneKey 时，它还可以请求用户签署给定的消息。应用可以自由编写自己的消息，这些消息将在 OneKey 的签名提示中显示给用户。消息签名不涉及网络费用，是应用验证地址所有权的便捷方式。
 
-In order to send a message for the user to sign, a web application must:&#x20;
+要发送消息让用户签署，Web 应用必须：
 
-1. Provide a **hex** or **UTF-8** encoded string as a Uint8Array.
-2. Request that the encoded message is signed via the user's OneKey wallet.
-
+1. 提供一个 **hex** 或 **UTF-8** 编码的字符串作为 Uint8Array。
+2. 请求通过用户的 OneKey 钱包签署编码后的消息。
 
 ### signMessage
 ```javascript
 const provider = getProvider();
-const message = `To avoid digital dognappers, sign below to authenticate with CryptoCorgis`;
+const message = `为避免数字盗狗者，请在下方签名以通过 CryptoCorgis 进行身份验证`;
 const encodedMessage = new TextEncoder().encode(message);
 const signedMessage = await provider.signMessage(encodedMessage, "utf8");
 ```
 
-
 ### request
 ```javascript
 const provider = getProvider();
-const message = `To avoid digital dognappers, sign below to authenticate with CryptoCorgis`;
+const message = `为避免数字盗狗者，请在下方签名以通过 CryptoCorgis 进行身份验证`;
 const encodedMessage = new TextEncoder().encode(message);
 const signedMessage = await provider.request({
     method: "signMessage",
@@ -31,4 +29,26 @@ const signedMessage = await provider.request({
 });
 ```
 
+---
 
+## 签署链下消息
+
+用于签署支持版本的链下消息（适用于身份验证和验证）：
+
+### solSignOffchainMessage
+```javascript
+const provider = getProvider();
+const message = "签署此消息以验证您的身份";
+const signedMessage = await provider.request({
+    method: "solSignOffchainMessage",
+    params: {
+         message: message,
+         version: 0, // 可选的版本号
+    },
+});
+
+console.log({
+    signature: signedMessage.signature,
+    publicKey: signedMessage.publicKey,
+});
+```

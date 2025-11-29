@@ -1,23 +1,22 @@
-# Sending a Transaction
+# 发送交易
 
-Sending a TransactionOnce a web application is connected to OneKey, it can prompt the user for permission to send transactions on their behalf.In order to send a transaction, a web application must:
+Web 应用连接到 OneKey 后，可以提示用户授权代表他们发送交易。要发送交易，Web 应用必须：
 
-1. 1.Create an unsigned transaction.
-2. Have the transaction be signed and submitted to the network by the user's OneKey wallet.
-3. 3.Optionally await network confirmation using a Solana JSON RPC connection.
+1. 创建一个未签名的交易。
+2. 让用户的 OneKey 钱包签名并提交交易到网络。
+3. （可选）使用 Solana JSON RPC 连接等待网络确认。
 
-For more information about the nature of Solana transactions, please review the [`solana-web3.js` docs](https://solana-labs.github.io/solana-web3.js/) as well as the [Solana Cookbook](https://solanacookbook.com/core-concepts/transactions.html#transactions). For a sample OneKey transaction, see our examples below.
+有关 Solana 交易性质的更多信息，请查阅 [`solana-web3.js` 文档](https://solana-labs.github.io/solana-web3.js/)以及 [Solana Cookbook](https://solanacookbook.com/core-concepts/transactions.html#transactions)。有关示例 OneKey 交易，请参阅下面的示例。
 
-## Signing and Sending a Transaction <a href="#signing-and-sending-a-transaction" id="signing-and-sending-a-transaction"></a>
+## 签名并发送交易 <a href="#signing-and-sending-a-transaction" id="signing-and-sending-a-transaction"></a>
 
-Once a transaction is created, the web application may ask the user's OneKey wallet to sign and send the transaction.
+创建交易后，Web 应用可以请求用户的 OneKey 钱包签名并发送交易。
 
-If accepted, OneKey will sign the transaction with the user's private key and submit it via a Solana JSON RPC connection. By far the **easiest** and most **recommended** way of doing this is by using the `signAndSendTransaction` method on the provider, but it is also possible to do with `request`. In both cases, the call will return a [Promise](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global\_Objects/Promise) for an object containing the `signature`.
-
+如果接受，OneKey 将使用用户的私钥签名交易并通过 Solana JSON RPC 连接提交。到目前为止，**最简单**且最**推荐**的方式是使用 Provider 上的 `signAndSendTransaction` 方法，但也可以使用 `request`。在这两种情况下，调用都将返回一个包含 `signature` 的对象的 [Promise](https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Global_Objects/Promise)。
 
 ### signAndSendTransaction
 ```javascript
-const provider = getProvider(); // see "Detecting the Provider"
+const provider = getProvider(); // 参见"检测 Provider"
 const network = "<NETWORK_URL>";
 const connection = new Connection(network);
 const transaction = new Transaction();
@@ -25,10 +24,9 @@ const { signature } = await provider.signAndSendTransaction(transaction);
 await connection.getSignatureStatus(signature);
 ```
 
-
 ### Request
 ```javascript
-const provider = getProvider(); // see "Detecting the Provider"
+const provider = getProvider(); // 参见"检测 Provider"
 const network = "<NETWORK_URL>";
 const connection = new Connection(network);
 const transaction = new Transaction();
@@ -41,20 +39,17 @@ const { signature } = await provider.request({
 await connection.getSignatureStatus(signature);
 ```
 
+你还可以将 `SendOptions` [对象](https://solana-labs.github.io/solana-web3.js/modules.html#SendOptions)作为第二个参数传入 `signAndSendTransaction`，或在使用 `request` 时作为 `options` 参数。
 
+## 其他签名方法 <a href="#other-signing-methods" id="other-signing-methods"></a>
 
-You can also specify a `SendOptions` [object](https://solana-labs.github.io/solana-web3.js/modules.html#SendOptions) as a second argument into `signAndSendTransaction` or as an `options` parameter when using `request`.
+以下方法也受支持，但不推荐使用，应优先使用 `signAndSendTransaction`。对于用户来说更安全，对于开发者来说 API 更简单，让 OneKey 在签名后立即提交交易，而不是依赖应用来完成。如果你使用以下方法，OneKey 将向用户显示警告消息。
 
-## Other Signing Methods <a href="#other-signing-methods" id="other-signing-methods"></a>
+### 签名交易（不发送） <a href="#signing-a-transaction-without-sending" id="signing-a-transaction-without-sending"></a>
 
-The following methods are also supported, but are not recommended over `signAndSendTransaction`. It is safer for users, and a simpler API for developers, for OneKey to submit the transaction immediately after signing it instead of relying on the application to do so. If you use the methods below, OneKey will display a warning message to users.
+创建交易后，Web 应用可以请求用户的 OneKey 钱包签名交易，但_不_提交到网络。最简单且最推荐的方式是通过 Provider 上的 `signTransaction` 方法，但也可以通过 `request` 实现。在这两种情况下，调用都将返回已签名交易的 [Promise](https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Global_Objects/Promise)。
 
-### Signing a Transaction (Without Sending) <a href="#signing-a-transaction-without-sending" id="signing-a-transaction-without-sending"></a>
-
-Once a transaction is created, a web application may ask the user's OneKey wallet to sign the transaction _without_ also submitting it to the network. The easiest and most recommended way of doing this is via the `signTransaction` method on the provider, but it is also possible to do via `request`. In both cases, the call will return a [Promise](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global\_Objects/Promise) for the signed transaction.
-
-After the transaction has been signed, an application may submit the transaction itself via [web3js's `sendRawTransaction`](https://solana-labs.github.io/solana-web3.js/classes/Connection.html#sendRawTransaction).
-
+交易签名后，应用可以通过 [web3js 的 `sendRawTransaction`](https://solana-labs.github.io/solana-web3.js/classes/Connection.html#sendRawTransaction) 自行提交交易。
 
 ### signTransaction
 ```javascript
@@ -65,7 +60,6 @@ const transaction = new Transaction();
 const signedTransaction = await provider.signTransaction(transaction);
 const signature = await connection.sendRawTransaction(signedTransaction.serialize());
 ```
-
 
 ### Request
 ```javascript
@@ -82,18 +76,14 @@ const signedTransaction = await provider.request({
 const signature = await connection.sendRawTransaction(signedTransaction.serialize());
 ```
 
+### 签名多个交易 <a href="#signing-multiple-transactions" id="signing-multiple-transactions"></a>
 
-
-### Signing Multiple Transactions <a href="#signing-multiple-transactions" id="signing-multiple-transactions"></a>
-
-It is also possible to sign and send multiple transactions at once. This is exposed through the `signAllTransactions` method on the provider.
-
+也可以一次签名并发送多个交易。这通过 Provider 上的 `signAllTransactions` 方法暴露。
 
 ### signAllTransactions
 ```javascript
 const signedTransactions = await provider.signAllTransactions(transactions);
 ```
-
 
 ### request
 ```javascript
@@ -105,5 +95,3 @@ const signedTransactions = await provider.request({
     params: { message },
 });
 ```
-
-

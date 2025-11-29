@@ -33,7 +33,9 @@ const pubkey = await provider.getPublicKey()
 - 4001: user rejected
 - Invalid params: match NIP‑07 expectations
 
-## Mobile & deeplinks
+## Mobile & Deeplinks
 
-- Use OneKey deeplinks when bridging from mobile web/WebViews
-- See [Use deeplinks](../../guides/use-deeplinks)
+Use OneKey deeplinks for mobile web/WebViews integration:
+
+- Custom scheme: `onekey-wallet://wc?uri={encodeURIComponent(wcUri)}`
+- Universal link: `https://app.onekey.so/wc/connect/wc?uri={encodeURIComponent(wcUri)}`

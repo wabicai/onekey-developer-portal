@@ -1,14 +1,18 @@
 export default {
-  index: '概览',
+  index: '快速开始',
   '---1': {
     type: 'separator',
-    title: 'Web Provider'
+    title: '带钱包 UI'
   },
-  provider: 'Provider API',
+  'wallet-ui': 'UI 库',
   '---2': {
     type: 'separator',
-    title: '集成工具'
+    title: '不带钱包 UI'
   },
-  'wallet-kits': 'Wallet Kits',
-  guides: '开发指南'
+  'react-hooks': 'React Hooks',
+  '---3': {
+    type: 'separator',
+    title: '直接访问'
+  },
+  provider: 'Provider API'
 }

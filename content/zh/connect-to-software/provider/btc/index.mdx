@@ -1,36 +1,36 @@
 ---
-description: Bitcoin integration via OneKey’s injected BTC provider (window.$onekey.btc / window.unisat)
+description: 通过 OneKey 注入的 BTC Provider 进行 Bitcoin 集成 (window.$onekey.btc / window.unisat)
 slug: /dapp/chains/btc
 ---
 
 # BTC
 
-Integrate Bitcoin using OneKey’s injected BTC provider. Prefer `window.$onekey.btc`; fall back to `window.unisat` when needed.
+使用 OneKey 注入的 BTC Provider 集成 Bitcoin。优先使用 `window.$onekey.btc`；需要时可回退到 `window.unisat`。
 
-## Quick links
+## 快速链接
 
-- [Guide](guide)
-- [API Reference](api-reference)
-- [Event](event)
+- [指南](guide)
+- [API 参考](api-reference)
+- [事件](event)
 
-## Minimal pattern
+## 最小示例
 
 ```js
 const provider = (window as any).$onekey?.btc || (window as any).unisat
-if (!provider) throw new Error('OneKey BTC provider not detected')
+if (!provider) throw new Error('未检测到 OneKey BTC Provider')
 await provider.requestAccounts()
 ```
 
-## Events & network
+## 事件与网络
 
-- `accountsChanged`, `networkChanged` — re‑sync account and network state
+- `accountsChanged`, `networkChanged` — 重新同步账户和网络状态
 
-## Common errors
+## 常见错误
 
-- User rejection: handle gracefully and allow retry
-- Invalid params: ensure addresses/amounts are correctly formatted
+- 用户拒绝：优雅处理并允许重试
+- 参数无效：确保地址/金额格式正确
 
-## Mobile & deeplinks
+## 移动端深度链接
 
-- Use OneKey deeplinks with a WalletConnect URI when bridging from mobile web/WebViews
-- See [Use deeplinks](../../guides/use-deeplinks)
+- 自定义协议: `onekey-wallet://wc?uri={encodeURIComponent(wcUri)}`
+- 通用链接: `https://app.onekey.so/wc/connect/wc?uri={encodeURIComponent(wcUri)}`

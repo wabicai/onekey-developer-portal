@@ -1,17 +1,16 @@
-# Establishing a Connection
+# 建立连接
 
-Once an application has [detected the provider](detecting-the-provider), it can then request to connect to OneKey. This connection request will prompt the user for permission to share their public key, indicating that they are willing to interact further. Users must approve a connection request before the app can make additional requests such as [signing a message](signing-a-message) or [sending a transaction](sending-a-transaction).
+应用[检测到 Provider](detecting-the-provider) 后，就可以请求连接到 OneKey。此连接请求将提示用户授权分享其公钥，表明他们愿意进一步交互。用户必须先批准连接请求，应用才能发出其他请求，如[签署消息](signing-a-message)或[发送交易](sending-a-transaction)。
 
-Once permission is established for the first time, the web application's domain will be whitelisted for future connection requests. After a connection is established, it is possible to terminate the connection from both the application and the user side.
+首次建立权限后，Web 应用的域名将被加入白名单，以便将来的连接请求。连接建立后，可以从应用端和用户端终止连接。
 
-## Connecting
+## 连接
 
-The **recommended** and **easiest** way to connect to OneKey is by calling `window.$onekey.solana.connect()`. However, the provider also exposes a `request` JSON RPC interface.
-
+连接到 OneKey 的**推荐**且**最简单**的方式是调用 `window.$onekey.solana.connect()`。不过，Provider 也暴露了 `request` JSON RPC 接口。
 
 ### Connect
 ```javascript
-const provider = getProvider(); // see "Detecting the Provider"
+const provider = getProvider(); // 参见"检测 Provider"
 try {
     const resp = await provider.connect();
     console.log(resp.publicKey.toString());
@@ -21,10 +20,9 @@ try {
 }
 ```
 
-
 ### Request
 ```javascript
-const provider = getProvider(); // see "Detecting the Provider"
+const provider = getProvider(); // 参见"检测 Provider"
 try {
     const resp = await provider.request({ method: "connect" });
     console.log(resp.publicKey.toString());
@@ -34,17 +32,15 @@ try {
 }
 ```
 
+`connect()` 调用将返回一个 [Promise](https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Global_Objects/Promise)，当用户接受连接请求时解析，当用户拒绝请求或关闭弹窗时拒绝（await 时抛出）。有关 OneKey 可能发出的错误消息的详细信息，请参阅[错误](../signing-a-message.md#errors)。
 
-
-The `connect()` call will return a [Promise](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global\_Objects/Promise) that resolves when the user accepts the connection request, and reject (throw when awaited) when the user declines the request or closes the pop-up. See [Errors](../signing-a-message.md#errors) for a breakdown of error messages OneKey may emit.
-
-When the user accepts the request to connect, the provider will also emit a `connect` event.
+当用户接受连接请求时，Provider 也会发出 `connect` 事件。
 
 ```javascript
-provider.on("connect", () => console.log("connected!"));
+provider.on("connect", () => console.log("已连接！"));
 ```
 
-Once the web application is connected to OneKey, it will be able to read the connected account's public key and prompt the user for additional transactions. It also exposes a convenience `isConnected` boolean.
+Web 应用连接到 OneKey 后，将能够读取已连接账户的公钥并提示用户进行其他交易。它还暴露了一个便捷的 `isConnected` 布尔值。
 
 ```javascript
 console.log(provider.publicKey.toString()); 
@@ -52,68 +48,60 @@ console.log(provider.isConnected);
 // true
 ```
 
-### Eagerly Connecting
+### 急切连接
 
-After a web application connects to OneKey for the first time, it becomes trusted. Once trusted, it's possible for the application to automatically connect to OneKey on subsequent visits or page refreshes, without prompting the user for permission. This is referred to as "eagerly connecting".
+Web 应用首次连接到 OneKey 后，它就变成了受信任的应用。一旦受信任，应用就可以在后续访问或页面刷新时自动连接到 OneKey，而无需提示用户授权。这称为"急切连接"。
 
-To implement this, applications should pass an `onlyIfTrusted` option into the `connect()` call.
-
+要实现这一点，应用应在 `connect()` 调用中传递 `onlyIfTrusted` 选项。
 
 ### Connect
 ```javascript
 provider.connect({ onlyIfTrusted: true });
 ```
 
-
 ### Request
 ```javascript
 window.$onekey.solana.request({ method: "connect", params: { onlyIfTrusted: true }});
 ```
 
+如果存在此标志，OneKey 只会在应用受信任时急切连接并发出 `connect` 事件。如果应用不受信任，OneKey 将抛出 `4001` 错误并保持断开连接状态，直到提示用户在没有 `onlyIfTrusted` 标志的情况下连接。无论哪种情况，OneKey 都不会打开弹窗，这使得在所有页面加载时使用都很方便。
 
-
-If this flag is present, OneKey will only eagerly connect and emit a `connect` event if the application is trusted. If the application is not trusted, OneKey will throw a `4001` error and remain disconnected until the user is prompted to connect without an `onlyIfTrusted` flag. In either case, OneKey will not open a pop-up window, making this convenient to use on all page loads.
-
-The following is an example of how a React application can eagerly connect to OneKey.
+以下是 React 应用如何急切连接到 OneKey 的示例。
 
 ```javascript
 import { useEffect } from "react";
 
 useEffect(() => {
-    // Will either automatically connect to OneKey, or do nothing.
+    // 将自动连接到 OneKey，或不执行任何操作。
     provider.connect({ onlyIfTrusted: true })
         .then(({ publicKey }) => {
-            // Handle successful eager connection
+            // 处理成功的急切连接
         });
         .catch(() => {
-            // Handle connection failure as usual
+            // 照常处理连接失败
         })
 }, []);
 ```
 
-For a live demo, please refer to the `handleConnect` portion of our sandbox.
+有关实时演示，请参阅我们沙盒中的 `handleConnect` 部分。
 
-If a wallet disconnects from a trusted app and then attempts to reconnect at a later time, OneKey will still eagerly connect. Once an app is trusted, OneKey will only require the user to approve a connection request if the user revokes the app from within their Trusted Apps settings.
+如果钱包从受信任的应用断开连接，然后稍后尝试重新连接，OneKey 仍会急切连接。一旦应用受信任，OneKey 只会在用户从其"受信任应用"设置中撤销应用时才要求用户批准连接请求。
 
-## Disconnecting
+## 断开连接
 
-Disconnecting mirrors the same process as connecting. However, it is also possible for the wallet to initiate the disconnection, rather than the application itself.
-
+断开连接与连接的过程相同。但是，钱包也可以发起断开连接，而不是应用本身。
 
 ### disconnect
 ```javascript
 provider.disconnect();
 ```
 
-
 ### request
 ```javascript
 provider.request({ method: "disconnect" });
 ```
 
-
-
-The following is an example of how a React application can gracefully handle a `disconnect` event.
+以下是 React 应用如何优雅地处理 `disconnect` 事件的示例。
 
 ```javascript
 import { useState, useEffect } from "react";
@@ -121,44 +109,44 @@ import { useState, useEffect } from "react";
 const [pubKey, setPubKey] = useState(null);
 
 useEffect(() => {
-  // Store user's public key once they connect
+  // 用户连接后存储其公钥
   provider.on("connect", (publicKey) => {
     setPubKey(publicKey);
   });
 
-  // Forget user's public key once they disconnect
+  // 用户断开连接后忘记其公钥
   provider.on("disconnect", () => {
     setPubKey(null);
   });
 }, [provider]);
 ```
 
-## Changing Accounts
+## 切换账户
 
-OneKey allows users to seamlessly manage multiple accounts (i.e. [Keypairs](https://solana-labs.github.io/solana-web3.js/classes/Keypair.html)) from within a single extension or mobile app. Whenever a user switches accounts, OneKey will emit an `accountChanged` event.
+OneKey 允许用户在单个扩展或移动应用中无缝管理多个账户（即[密钥对](https://solana-labs.github.io/solana-web3.js/classes/Keypair.html)）。每当用户切换账户时，OneKey 都会发出 `accountChanged` 事件。
 
-If a user changes accounts while already connected to an application, and the new account had already whitelisted that application, then the user will stay connected and OneKey will pass the [PublicKey](https://solana-labs.github.io/solana-web3.js/classes/PublicKey.html) of the new account:
+如果用户在已连接到应用时切换账户，且新账户已将该应用加入白名单，则用户将保持连接状态，OneKey 将传递新账户的 [PublicKey](https://solana-labs.github.io/solana-web3.js/classes/PublicKey.html)：
 
 ```javascript
 provider.on('accountChanged', (publicKey) => {
     if (publicKey) {
-        // Set new public key and continue as usual
-        console.log(`Switched to account ${publicKey.toBase58()}`);
+        // 设置新公钥并照常继续
+        console.log(`已切换到账户 ${publicKey.toBase58()}`);
     } 
 });
 ```
 
-If OneKey does not pass the public key of the new account, an application can either do nothing or attempt to reconnect:
+如果 OneKey 没有传递新账户的公钥，应用可以不执行任何操作或尝试重新连接：
 
 ```javascript
 provider.on('accountChanged', (publicKey) => {
     if (publicKey) {
-      // Set new public key and continue as usual
-      console.log(`Switched to account ${publicKey.toBase58()}`);
+      // 设置新公钥并照常继续
+      console.log(`已切换到账户 ${publicKey.toBase58()}`);
     } else {
-      // Attempt to reconnect to OneKey
+      // 尝试重新连接到 OneKey
       provider.connect().catch((error) => {
-        // Handle connection failure
+        // 处理连接失败
       });
     }
 });
