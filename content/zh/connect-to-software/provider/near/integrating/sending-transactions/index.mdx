@@ -1,13 +1,17 @@
-# Sending Transactions
+---
+title: 发送交易
+---
 
-Once the web application is connected to OneKey, it can send transactions on behalf of the user, with the user's permission.
+# 发送交易
 
-In order to send a transaction, the web application must:
+一旦 Web 应用连接到 OneKey，它就可以在获得用户许可的情况下代表用户发送交易。
 
-* Create an unsigned transaction or transactions.
-* Have it be signed and submitted to the network by the user's OneKey wallet.
+要发送交易，Web 应用必须：
 
-For more information about the nature of transactions on Near, it is recommended to review the `near-api-js` [docs](https://docs.near.org/docs/develop/front-end/near-api-js) as well as the official [Near docs](https://docs.near.org/).
+* 创建一个或多个未签名的交易。
+* 让用户的 OneKey 钱包签名并提交到网络。
+
+有关 Near 上交易的更多信息，建议查阅 `near-api-js` [文档](https://docs.near.org/docs/develop/front-end/near-api-js)以及官方 [Near 文档](https://docs.near.org/)。
 
 
 [create-transaction.md](create-transaction)
@@ -17,7 +21,7 @@ For more information about the nature of transactions on Near, it is recommended
 [sign-and-send-transaction.md](sign-and-send-transaction)
 
 
-Sometimes you may need signing transactions only but not sending by OneKey, and then sending with your application self.
+有时你可能只需要让 OneKey 签名交易而不发送，然后由你的应用自行发送。
 
 
 [signing-transaction.md](signing-transaction)

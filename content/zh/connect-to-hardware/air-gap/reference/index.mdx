@@ -1,15 +1,20 @@
-# Air‑Gap SDK API Reference
+---
+title: Air‑Gap SDK API 参考
+---
 
-- `basic-api/` – Definitions for `CryptoHDKey`, `CryptoCoinInfo`, and `CryptoKeypath` used when decoding QR payloads.
-- `ethereum-and-evm/` – Examples for `EthSignRequest`, `EthSignature`, and other EVM‑centric offline signing flows.
+# Air‑Gap SDK API 参考
 
-Pair this reference with the Quick Start for end‑to‑end integration:
-- [Air‑Gap Quick Start](../quick-start)
+- `basic-api/` – 解码 QR 数据时使用的 `CryptoHDKey`、`CryptoCoinInfo` 和 `CryptoKeypath` 定义。
+- `ethereum-and-evm/` – `EthSignRequest`、`EthSignature` 及其他 EVM 离线签名流程示例。
 
-Tip: Study `basic-api` before implementing scanning/decoding to ensure correct parsing.
+将此参考与快速入门配合使用以进行端到端集成：
+- [Air‑Gap 快速入门](../quick-start)
 
-Note on Tron: Tron Air‑Gap helpers live in our QR wallet SDK and follow the same UR patterns; see [Tron Quick Start](../quick-start/tron) for usage.
+提示：在实现扫描/解码之前先学习 `basic-api`，以确保正确解析。
 
-Packages
-- Use Keystone official packages: `@keystonehq/keystone-sdk`, `@keystonehq/bc-ur-registry*`
-- UR primitives: `@ngraveio/bc-ur`
+Tron 说明：Tron Air‑Gap 辅助工具在我们的 QR 钱包 SDK 中，遵循相同的 UR 模式；使用方法请参阅 [Tron 快速入门](../quick-start/tron)。
+
+依赖包
+- 使用 Keystone 官方包：`@keystonehq/keystone-sdk`、`@keystonehq/bc-ur-registry*`
+- UR 基础组件：`@ngraveio/bc-ur`
+

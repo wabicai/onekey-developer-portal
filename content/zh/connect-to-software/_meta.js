@@ -2,17 +2,26 @@ export default {
   index: '快速开始',
   '---1': {
     type: 'separator',
-    title: '带钱包 UI'
+    title: 'UI 组件库'
   },
-  'wallet-ui': 'UI 库',
+  'wallet-ui': {
+    title: '钱包套件',
+    display: 'children'
+  },
   '---2': {
     type: 'separator',
-    title: '不带钱包 UI'
+    title: 'React Hooks'
   },
-  'react-hooks': 'React Hooks',
+  'react-hooks': {
+    title: 'Wagmi',
+    display: 'children'
+  },
   '---3': {
     type: 'separator',
-    title: '直接访问'
+    title: 'Provider API'
   },
-  provider: 'Provider API'
+  provider: {
+    title: '链',
+    display: 'children'
+  }
 }

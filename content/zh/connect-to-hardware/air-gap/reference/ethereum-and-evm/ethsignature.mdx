@@ -1,0 +1,49 @@
+---
+title: EthSignature
+---
+
+# EthSignature
+
+`ETHSignature` 类表示以太坊签名。
+
+用于解析设备返回的签名结果。
+
+
+
+#### 参数
+
+* `signature`：`Buffer` 签名数据。
+* `requestId`：`Buffer` 请求 ID，可选。
+* `origin`：`string` 来源信息，可选。
+
+
+
+### URL 示例
+
+```
+UR:ETH-SIGNATURE/OTADTPDAGDSWNNYAHGTOKPFPIAPANNROLNSAVYDTHHAOHDFPCATKCPPFYLENGAGLMKMUCAYKFPFSDREOMENTPKBGEONDCHFDNBKOSSTPDWETSGBZDNCMCHKPNYDMKIDPTDRYJSDRTKCTIOFPQZHFLNSKVACLMNIYTKLGISFRWLKTZTREAEAXIYGWJTIHGRIHKKPLGDEEDS
+```
+
+
+
+### 示例（解码）
+
+```ts
+import { URDecoder } from '@ngraveio/bc-ur';
+import { EthSignature } from '@keystonehq/bc-ur-registry-eth';
+
+const dec = new URDecoder();
+// 将每个扫描的帧字符串推入解码器
+// dec.receivePart(frame)
+
+if (dec.isComplete()) {
+  const ur = dec.resultUR(); // ur.type 应该是 'eth-signature'
+  const sig = EthSignature.fromCBOR(ur.cbor);
+  const requestId = sig.getRequestId();
+  const signature = sig.getSignature();
+  const r = signature.slice(0, 32);
+  const s = signature.slice(32, 64);
+  const v = signature.slice(64, 65);
+}
+```
+

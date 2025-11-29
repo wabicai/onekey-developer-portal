@@ -432,6 +432,93 @@ export function Roadmap({ items = [] }) {
   )
 }
 
+// ============================================
+// Chain Selector Component
+// Dropdown-style selector for chain APIs
+// ============================================
+export function ChainSelector({ chains = [], currentChain, basePath = '' }) {
+  return (
+    <div className="my-6">
+      <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 mb-2">
+        Select Chain
+      </label>
+      <div className="relative">
+        <select
+          className="w-full md:w-64 appearance-none bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg px-4 py-2.5 pr-10 text-sm font-medium text-zinc-900 dark:text-white cursor-pointer hover:border-[#00B812] focus:border-[#00B812] focus:ring-2 focus:ring-[#00B812]/20 focus:outline-none transition-all"
+          defaultValue={currentChain}
+          onChange={(e) => {
+            if (typeof window !== 'undefined') {
+              window.location.href = `${basePath}/${e.target.value}`
+            }
+          }}
+        >
+          {chains.map((chain) => (
+            <option key={chain.value} value={chain.value}>
+              {chain.label}
+            </option>
+          ))}
+        </select>
+        <ChevronRight className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 rotate-90 pointer-events-none" />
+      </div>
+    </div>
+  )
+}
+
+// ============================================
+// Decision Flow Component
+// Interactive decision tree for choosing integration method
+// ============================================
+export function DecisionFlow({ title, steps = [] }) {
+  return (
+    <div className="my-8 p-6 bg-gradient-to-br from-zinc-50 to-zinc-100/50 dark:from-zinc-900 dark:to-zinc-800/50 rounded-2xl border border-zinc-200 dark:border-zinc-700">
+      {title && (
+        <div className="flex items-center gap-2 mb-6">
+          <GitBranch className="w-5 h-5 text-[#00B812]" />
+          <h3 className="font-bold text-lg text-zinc-900 dark:text-white">{title}</h3>
+        </div>
+      )}
+      <div className="space-y-4">
+        {steps.map((step, idx) => (
+          <div key={idx} className="relative">
+            {/* Question */}
+            <div className="flex items-center gap-3 mb-3">
+              <span className="flex-shrink-0 w-6 h-6 rounded-full bg-[#00B812] text-white text-xs font-bold flex items-center justify-center">
+                {idx + 1}
+              </span>
+              <span className="font-semibold text-zinc-900 dark:text-white">{step.question}</span>
+            </div>
+            {/* Options */}
+            <div className="ml-9 grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {step.options.map((opt, optIdx) => (
+                <Link
+                  key={optIdx}
+                  href={opt.href || '#'}
+                  className="flex items-center gap-3 p-3 bg-white dark:bg-zinc-800 rounded-lg border border-zinc-200 dark:border-zinc-700 hover:border-[#00B812] hover:shadow-md transition-all no-underline group"
+                >
+                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold ${opt.highlight ? 'bg-[#00B812] text-white' : 'bg-zinc-100 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300 group-hover:bg-[#00B812] group-hover:text-white'} transition-colors`}>
+                    {opt.answer}
+                  </div>
+                  <div className="flex-1">
+                    <div className="font-medium text-sm text-zinc-900 dark:text-white">{opt.label}</div>
+                    {opt.description && (
+                      <div className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">{opt.description}</div>
+                    )}
+                  </div>
+                  <ArrowRight className="w-4 h-4 text-zinc-400 group-hover:text-[#00B812] group-hover:translate-x-1 transition-all" />
+                </Link>
+              ))}
+            </div>
+            {/* Connector line */}
+            {idx < steps.length - 1 && (
+              <div className="absolute left-3 top-8 bottom-0 w-0.5 bg-zinc-200 dark:bg-zinc-700" style={{ height: 'calc(100% - 24px)', top: '32px' }} />
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 // Export all components
 export default {
   Callout,
@@ -442,6 +529,8 @@ export default {
   ArchitectureLayer,
   ArchitectureDiagram,
   DecisionCard,
+  DecisionFlow,
+  ChainSelector,
   FeatureTable,
   QuickActions,
   SectionHeader,

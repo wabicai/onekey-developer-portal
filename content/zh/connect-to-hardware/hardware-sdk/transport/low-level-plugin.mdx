@@ -1,0 +1,80 @@
+---
+title: 底层传输插件
+---
+
+# 底层传输插件
+
+我们的蓝牙 SDK 是使用 React Native 开发的。您可能没有使用 React Native 来开发您的应用程序，例如，您可能使用的是 Swift、Kotlin 或 Flutter。此时，将 React Native 依赖项添加到您的项目中可能不是一个好的选择。
+
+我们提供了一种新的通信方式，您可以使用 LowlevelTransportSharedPlugin 与硬件进行通信。您可以自由使用任何您选择的技术栈。您需要完成设备连接、断开、发送数据和接收数据的协议。
+
+传输使用 64 字节帧。您的插件应该一次发送和接收一个 64 字节的十六进制帧；JS SDK 负责跨帧组装/拆解完整消息。如需要，请参考协议了解最终帧的填充。
+
+参考 [消息协议](onekey-message-protocol)。
+
+### LowlevelTransportSharedPlugin
+
+```typescript
+export type LowLevelDevice = { id: string; name: string };
+export type LowlevelTransportSharedPlugin = {
+  enumerate: () => Promise<LowLevelDevice[]>;
+  send: (uuid: string, data: string) => Promise<void>;
+  receive: () => Promise<string>;
+  connect: (uuid: string) => Promise<void>;
+  disconnect: (uuid: string) => Promise<void>;
+
+  init: () => Promise<void>;
+  version: string;
+};
+```
+
+### 示例
+
+这是一个用 Swift 编写的 [iOS 演示](https://github.com/OneKeyHQ/hardware-js-sdk/tree/onekey/packages/connect-examples/native-ios-example)。通过 WebView 桥接原生端和 SDK。使用 CoreBluetooth 处理连接和数据传输。
+
+```typescript
+import HardwareSDK from '@onekeyfe/hd-common-connect-sdk'
+
+function createLowlevelPlugin() {
+  const plugin = {
+    enumerate: () => {
+      return Promise.resolve([{id: 'foo', name: 'bar'}])
+    },
+    send: (uuid, data) => {
+      // TODO: 发送数据
+    },
+    receive: () => {
+      // 返回一个 64 字节的十六进制帧；SDK 重组完整消息
+      return Promise.resolve('a1b2c3...');
+    },
+    connect: (uuid) => {
+      // TODO: 连接设备
+    },
+    disconnect: (uuid)  => {
+      // TODO: 断开设备
+    },
+
+    init: () => {
+      // TODO: 做一些初始化工作
+    },
+
+    version: 'OneKey-1.0'
+  }
+  return plugin
+}
+
+const plugin = createLowlevelPlugin()
+
+const settings = {
+  env: 'lowlevel', // LowlevelTransport 需要启用 lowlevel 环境。
+  debug: true
+}
+
+HardwareSDK.init(settings, undefined, low-level-transport-plugin)
+```
+
+## 下一步
+
+- iOS 蓝牙（原生，底层适配器）→ [iOS 指南](./ios)
+- Android 蓝牙（原生，底层适配器）→ [Android 指南](./android)
+- Flutter 蓝牙（原生，底层适配器）→ [Flutter 指南](./flutter)

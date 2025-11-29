@@ -1,5 +1,6 @@
 export default {
-  index: '概览',
+  hooks: '概览',
   wagmi: 'Wagmi'
 }
+
 

@@ -1,53 +1,94 @@
 ---
-description: NEAR integration via OneKey provider — detect, connect, send transactions, and sign
-slug: /dapp/chains/near
+title: NEAR Provider
+description: Integrate NEAR Protocol into your dApp with OneKey wallet — detect provider, connect accounts, send transactions, and sign messages
 ---
 
 # NEAR
 
-Build NEAR dApps with OneKey’s provider. Start with detection and connection, then follow the sending/signing guides.
+Integrate NEAR Protocol into your dApp using OneKey's NEAR provider. OneKey provides a fully compatible NEAR wallet interface that works seamlessly with existing NEAR dApps.
 
-## Quick links
+## Features
 
-- [Introduction](introduction)
-- [Integrating](integrating)
-  - [Detecting the Provider](integrating/detecting-the-provider)
-  - [Establishing a Connection](integrating/establishing-a-connection)
-  - [Accessing Accounts](integrating/accessing-accounts)
-  - [Detecting Provider Network](integrating/detecting-provider-network)
-  - [Watch Accounts & Network Status](integrating/watch-accounts-and-network-status)
-  - [Sending Transactions](integrating/sending-transactions)
-  - [Signing Messages](integrating/signing-messages)
-  - [RPC API Calling](integrating/rpc-api-calling)
-  - [Debug Logging](integrating/debug-logging)
-  - [Migrate from Near Web Wallet](integrating/migrate-from-near-web-wallet)
-- [Reference](reference)
-- [Resources](resources)
+- Account connection and management
+- Transaction signing and sending
+- Message signing
+- Network switching (mainnet/testnet)
+- Full RPC API support
 
-## Minimal pattern
+## Installation
 
-Use the Provider SDK to create a NEAR provider instance.
-
-```ts
-import { OneKeyNearProvider } from '@onekeyfe/onekey-near-provider'
-
-const provider = new OneKeyNearProvider()
-// Request accounts (example)
-await provider.request({ method: 'near_accounts' })
+```bash
+npm install @onekeyfe/onekey-near-provider
+# or
+yarn add @onekeyfe/onekey-near-provider
 ```
 
-## Events & network
+## Quick Start
 
-- Watch account/network status via the Integrating section
+```typescript
+import { OneKeyNearProvider } from '@onekeyfe/onekey-near-provider'
 
-## Common errors
+// Create provider instance
+const provider = new OneKeyNearProvider()
 
-- 4001: user rejected
-- Invalid params: ensure method names and arguments follow the NEAR provider spec
+// Request account access
+const accounts = await provider.request({ method: 'near_accounts' })
+console.log('Connected accounts:', accounts)
 
-## Mobile & Deeplinks
+// Get current network
+const network = await provider.request({ method: 'near_network' })
+console.log('Current network:', network)
+```
 
-Use OneKey deeplinks for mobile web/WebViews:
+## Documentation
 
-- Custom scheme: `onekey-wallet://wc?uri={encodeURIComponent(wcUri)}`
-- Universal link: `https://app.onekey.so/wc/connect/wc?uri={encodeURIComponent(wcUri)}`
+### Getting Started
+- [Introduction](introduction) - Overview of the NEAR provider
+- [Install the Provider SDK](integrating/install-the-provider-sdk) - Setup instructions
+
+### Integration Guides
+- [Detecting the Provider](integrating/detecting-the-provider) - Check if OneKey is installed
+- [Establishing a Connection](integrating/establishing-a-connection) - Connect to user accounts
+- [Accessing Accounts](integrating/accessing-accounts) - Get account information
+- [Detecting Provider Network](integrating/detecting-provider-network) - Check current network
+- [Watch Accounts & Network Status](integrating/watch-accounts-and-network-status) - Subscribe to changes
+
+### Transactions & Signing
+- [Sending Transactions](integrating/sending-transactions) - Create and send transactions
+- [Signing Messages](integrating/signing-messages) - Sign arbitrary messages
+- [RPC API Calling](integrating/rpc-api-calling) - Direct RPC access
+
+### Advanced
+- [Debug Logging](integrating/debug-logging) - Enable debug mode
+- [Migrate from NEAR Web Wallet](integrating/migrate-from-near-web-wallet) - Migration guide
+
+### Reference
+- [API Reference](reference/api-reference) - Complete API documentation
+- [Troubleshooting](reference/trouble-shooting) - Common issues and solutions
+- [Examples & Demo](resources/example-and-demo) - Sample code
+- [FAQ](resources/faq) - Frequently asked questions
+
+## Error Handling
+
+| Code | Message | Description |
+|------|---------|-------------|
+| 4001 | User Rejected | User denied the request |
+| -32602 | Invalid Params | Method parameters are invalid |
+| -32603 | Internal Error | Internal JSON-RPC error |
+
+## Mobile Integration
+
+For mobile web and WebView integration, use OneKey deeplinks:
+
+```javascript
+// Custom scheme
+const customScheme = `onekey-wallet://wc?uri=${encodeURIComponent(wcUri)}`
+
+// Universal link
+const universalLink = `https://app.onekey.so/wc/connect/wc?uri=${encodeURIComponent(wcUri)}`
+```
+
+## Related Resources
+
+- [NEAR Documentation](https://docs.near.org/)
+- [OneKey GitHub](https://github.com/OneKeyHQ)

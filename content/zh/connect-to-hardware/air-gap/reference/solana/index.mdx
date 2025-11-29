@@ -1,23 +1,27 @@
-# Air‑Gap Reference: Solana
+---
+title: "Air-Gap 参考：Solana"
+---
 
-UR registry types used by Solana offline signing.
+# Air‑Gap 参考：Solana
 
-## Data types
+Solana 离线签名使用的 UR 注册表类型。
 
-- Request UR: `sol-sign-request` (transaction/message bytes + BIP‑44 path)
-- Response UR: `sol-signature`
+## 数据类型
 
-## Flow
+- 请求 UR：`sol-sign-request`（交易/消息字节 + BIP‑44 路径）
+- 响应 UR：`sol-signature`
 
-1. Prepare Solana transaction or message bytes and derive path.
-2. Build `sol-sign-request` and show as animated QR.
-3. Scan device response → decode `sol-signature` → attach to transaction.
-4. Submit to the Solana network.
+## 流程
+
+1. 准备 Solana 交易或消息字节和派生路径。
+2. 构建 `sol-sign-request` 并显示为动态 QR。
+3. 扫描设备响应 → 解码 `sol-signature` → 附加到交易。
+4. 提交到 Solana 网络。
 
 
-## Examples
+## 示例
 
-### Build Solana sign request (UR)
+### 构建 Solana 签名请求（UR）
 
 ```ts
 import { SolSignRequest, SignType } from '@keystonehq/bc-ur-registry-sol';
@@ -32,27 +36,28 @@ const keypath = new CryptoKeypath([
 ]);
 
 const req = new SolSignRequest({
-  signData: Buffer.from(rawTxBytes), // transaction or message bytes
+  signData: Buffer.from(rawTxBytes), // 交易或消息字节
   derivationPath: keypath,
-  signType: SignType.Transaction,    // or SignType.Message
+  signType: SignType.Transaction,    // 或 SignType.Message
 });
 
 const ur = req.toUR();
 const frames = airGapUrUtils.urToQrcode(ur);
 ```
 
-### Decode Solana signature (UR)
+### 解码 Solana 签名（UR）
 
 ```ts
 import { URDecoder } from '@ngraveio/bc-ur';
 import { SolSignature } from '@keystonehq/bc-ur-registry-sol';
 
 const dec = new URDecoder();
-// dec.receivePart(frameString) for each scanned frame
+// 对于每个扫描的帧 dec.receivePart(frameString)
 if (dec.isComplete()) {
   const ur = dec.resultUR();           // 'sol-signature'
   const sig = SolSignature.fromCBOR(ur.cbor);
   const signature = sig.getSignature();
-  // Attach signature to the transaction and submit
+  // 将签名附加到交易并提交
 }
 ```
+

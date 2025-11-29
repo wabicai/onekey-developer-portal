@@ -1,13 +1,10 @@
 export default {
   index: 'Overview',
-  '---1': {
-    type: 'separator',
-    title: 'Hardware SDK'
-  },
-  'hardware-sdk': 'Hardware SDK',
-  '---2': {
-    type: 'separator',
-    title: 'Air-Gap (QR Code)'
+  'hardware-sdk': {
+    title: 'Hardware SDK',
+    theme: {
+      collapsed: false
+    }
   },
   'air-gap': 'Air-Gap'
 }

@@ -1,23 +1,27 @@
-# Air‑Gap Reference: Tron
+---
+title: "Air-Gap 参考：Tron"
+---
 
-Tron offline signing via UR uses the same animated QR transport pattern.
+# Air‑Gap 参考：Tron
 
-## Notes
+Tron 通过 UR 进行离线签名使用相同的动态 QR 传输模式。
 
-- Tron helpers are provided by our QR wallet SDK and follow standard UR patterns (sign‑request → signature).
-- For end‑to‑end examples, see the React Native demo’s Air‑Gap module.
+## 说明
 
-## Flow
+- Tron 辅助工具由我们的 QR 钱包 SDK 提供，遵循标准 UR 模式（sign‑request → signature）。
+- 有关端到端示例，请参阅 React Native 演示的 Air‑Gap 模块。
 
-1. Construct a Tron sign request (transaction/message + BIP‑44 path).
-2. Encode as UR and display as animated QR.
-3. Scan device response and decode signature.
-4. Broadcast to the Tron network.
+## 流程
+
+1. 构建 Tron 签名请求（交易/消息 + BIP‑44 路径）。
+2. 编码为 UR 并显示为动态 QR。
+3. 扫描设备响应并解码签名。
+4. 广播到 Tron 网络。
 
 
-## Examples
+## 示例
 
-### Build Tron sign request (UR)
+### 构建 Tron 签名请求（UR）
 
 ```ts
 import { TronSignRequest } from '@keystonehq/bc-ur-registry-tron';
@@ -42,18 +46,19 @@ const ur = req.toUR();
 const frames = airGapUrUtils.urToQrcode(ur);
 ```
 
-### Decode Tron signature (UR)
+### 解码 Tron 签名（UR）
 
 ```ts
 import { URDecoder } from '@ngraveio/bc-ur';
 import { TronSignature } from '@keystonehq/bc-ur-registry-tron';
 
 const dec = new URDecoder();
-// dec.receivePart(frameString) for each scanned frame
+// 对于每个扫描的帧 dec.receivePart(frameString)
 if (dec.isComplete()) {
   const ur = dec.resultUR();            // 'tron-signature'
   const sig = TronSignature.fromCBOR(ur.cbor);
   const signature = sig.getSignature();
-  // broadcast signed transaction to Tron network
+  // 将已签名交易广播到 Tron 网络
 }
 ```
+

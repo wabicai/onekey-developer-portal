@@ -44,7 +44,7 @@ export default async function LocaleLayout({ children, params }) {
           { locale: 'zh', name: '简体中文' }
         ]}
         sidebar={{
-          defaultMenuCollapseLevel: 2,
+          defaultMenuCollapseLevel: 1,
           toggleButton: true
         }}
         editLink={lang === 'zh' ? '编辑此页面' : 'Edit this page'}

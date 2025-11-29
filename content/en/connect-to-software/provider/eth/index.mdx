@@ -11,9 +11,9 @@ Use the injected EIP-1193 provider to build EVM dApps with OneKey. All EVM-compa
 
 ---
 
-## Quick Start
+## Provider Detection
 
-### EIP-6963 Detection (Recommended)
+### EIP-6963 (Recommended)
 
 Modern multi-wallet detection that avoids conflicts:
 
@@ -37,20 +37,7 @@ const provider = window.$onekey?.ethereum
 if (!provider) throw new Error('OneKey not detected')
 
 const accounts = await provider.request({ method: 'eth_requestAccounts' })
-console.log('Connected:', accounts[0])
 ```
-
----
-
-## Documentation
-
-| Topic | Description |
-|-------|-------------|
-| [Provider API](./provider-api) | EIP-1193 provider interface |
-| [Accessing Accounts](./accessing-accounts) | Connect and manage user accounts |
-| [Sending Transactions](./sending-transactions) | Send ETH and call contracts |
-| [Signing Data](./signing-data) | Sign messages and typed data |
-| [JSON-RPC Reference](./reference) | All supported RPC methods |
 
 ---
 
@@ -58,27 +45,48 @@ console.log('Connected:', accounts[0])
 
 ```typescript
 // Account changed
-window.$onekey.ethereum.on('accountsChanged', (accounts) => {
+provider.on('accountsChanged', (accounts) => {
   console.log('Account:', accounts[0])
 })
 
 // Network changed
-window.$onekey.ethereum.on('chainChanged', (chainId) => {
+provider.on('chainChanged', (chainId) => {
   console.log('Chain:', chainId)
   window.location.reload() // Recommended
+})
+
+// Connected
+provider.on('connect', (info) => {
+  console.log('Connected to chain:', info.chainId)
 })
 ```
 
 ---
 
-## Common Errors
+## Error Codes
 
 | Code | Description | Solution |
 |------|-------------|----------|
 | 4001 | User rejected | Handle rejection gracefully |
 | 4902 | Unknown chain | Add chain with `wallet_addEthereumChain` |
 | -32602 | Invalid params | Use `0x`-prefixed hex strings |
+| -32603 | Internal error | Check request format |
+
+---
+
+## Chain IDs
+
+| Network | Chain ID | Hex |
+|---------|----------|-----|
+| Ethereum Mainnet | 1 | 0x1 |
+| Polygon | 137 | 0x89 |
+| BSC | 56 | 0x38 |
+| Arbitrum One | 42161 | 0xa4b1 |
+| Optimism | 10 | 0xa |
+| Base | 8453 | 0x2105 |
+
+See [chainlist.org](https://chainlist.org) for more chains.
 
 <Callout type="info">
-For quick integration with UI components, use [RainbowKit](/en/connect-to-software/wallet-kits/rainbowkit) or [Web3Modal](/en/connect-to-software/wallet-kits/web3modal).
+For quick integration with UI components, use [RainbowKit](/en/connect-to-software/wallet-ui/rainbowkit) or [Web3Modal](/en/connect-to-software/wallet-ui/web3modal).
 </Callout>

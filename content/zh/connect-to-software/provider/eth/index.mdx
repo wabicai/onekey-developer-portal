@@ -11,9 +11,9 @@ import { Callout } from 'nextra/components'
 
 ---
 
-## 快速开始
+## Provider 检测
 
-### EIP-6963 检测（推荐）
+### EIP-6963（推荐）
 
 现代多钱包检测，避免冲突：
 
@@ -37,20 +37,7 @@ const provider = window.$onekey?.ethereum
 if (!provider) throw new Error('未检测到 OneKey')
 
 const accounts = await provider.request({ method: 'eth_requestAccounts' })
-console.log('已连接:', accounts[0])
 ```
-
----
-
-## 文档
-
-| 主题 | 说明 |
-|------|------|
-| [Provider API](./provider-api) | EIP-1193 Provider 接口 |
-| [账户访问](./accessing-accounts) | 连接和管理用户账户 |
-| [发送交易](./sending-transactions) | 发送 ETH 和调用合约 |
-| [签名数据](./signing-data) | 签名消息和结构化数据 |
-| [JSON-RPC 参考](./reference) | 所有支持的 RPC 方法 |
 
 ---
 
@@ -58,27 +45,48 @@ console.log('已连接:', accounts[0])
 
 ```typescript
 // 账户变更
-window.$onekey.ethereum.on('accountsChanged', (accounts) => {
+provider.on('accountsChanged', (accounts) => {
   console.log('账户:', accounts[0])
 })
 
 // 网络变更
-window.$onekey.ethereum.on('chainChanged', (chainId) => {
+provider.on('chainChanged', (chainId) => {
   console.log('链:', chainId)
   window.location.reload() // 推荐
+})
+
+// 已连接
+provider.on('connect', (info) => {
+  console.log('已连接到链:', info.chainId)
 })
 ```
 
 ---
 
-## 常见错误
+## 错误码
 
 | 错误码 | 说明 | 解决方案 |
 |--------|------|----------|
 | 4001 | 用户拒绝 | 优雅处理拒绝情况 |
 | 4902 | 未知链 | 使用 `wallet_addEthereumChain` 添加链 |
 | -32602 | 参数无效 | 使用 `0x` 前缀的十六进制字符串 |
+| -32603 | 内部错误 | 检查请求格式 |
+
+---
+
+## Chain ID
+
+| 网络 | Chain ID | 十六进制 |
+|------|----------|----------|
+| Ethereum 主网 | 1 | 0x1 |
+| Polygon | 137 | 0x89 |
+| BSC | 56 | 0x38 |
+| Arbitrum One | 42161 | 0xa4b1 |
+| Optimism | 10 | 0xa |
+| Base | 8453 | 0x2105 |
+
+更多链请访问 [chainlist.org](https://chainlist.org)。
 
 <Callout type="info">
-如需快速集成并使用 UI 组件，请使用 [RainbowKit](/zh/connect-to-software/wallet-kits/rainbowkit) 或 [Web3Modal](/zh/connect-to-software/wallet-kits/web3modal)。
+如需快速集成并使用 UI 组件，请使用 [RainbowKit](/zh/connect-to-software/wallet-ui/rainbowkit) 或 [Web3Modal](/zh/connect-to-software/wallet-ui/web3modal)。
 </Callout>

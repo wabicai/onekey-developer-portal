@@ -1,5 +1,6 @@
 export default {
-  index: 'Overview',
+  hooks: 'Overview',
   wagmi: 'Wagmi'
 }
+
 

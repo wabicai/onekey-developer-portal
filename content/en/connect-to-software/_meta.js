@@ -2,17 +2,26 @@ export default {
   index: 'Quick Start',
   '---1': {
     type: 'separator',
-    title: 'With Wallet UI'
+    title: 'UI Libraries'
   },
-  'wallet-ui': 'UI Libraries',
+  'wallet-ui': {
+    title: 'Wallet Kits',
+    display: 'children'
+  },
   '---2': {
     type: 'separator',
-    title: 'Without Wallet UI'
+    title: 'React Hooks'
   },
-  'react-hooks': 'React Hooks',
+  'react-hooks': {
+    title: 'Wagmi',
+    display: 'children'
+  },
   '---3': {
     type: 'separator',
-    title: 'Direct Access'
+    title: 'Provider API'
   },
-  provider: 'Provider API'
+  provider: {
+    title: 'Chains',
+    display: 'children'
+  }
 }

@@ -3,46 +3,30 @@ title: dApp 集成
 description: 将你的 dApp 与 OneKey 钱包集成
 ---
 
-import { Callout, Steps, Tabs } from 'nextra/components'
+import { Callout } from 'nextra/components'
 
 # dApp 集成
 
-将你的 dApp 与 OneKey 钱包集成。一个钱包支持 EVM 和 20+ 条非 EVM 区块链。
-
----
+连接你的 dApp 到 OneKey 钱包，支持 EVM 和 20+ 条非 EVM 链。
 
 ## 选择集成方式
 
+| 方式 | 适用场景 | 框架 |
+|------|----------|------|
+| [**RainbowKit**](/zh/connect-to-software/wallet-ui/rainbowkit) | 现成钱包 UI，React 应用 | React |
+| [**Web3Modal**](/zh/connect-to-software/wallet-ui/web3modal) | 多框架钱包 UI | React / Vue / JS |
+| [**Wagmi**](/zh/connect-to-software/react-hooks/wagmi) | 自定义 UI + React hooks | React |
+| [**Provider API**](/zh/connect-to-software/provider/eth) | 完全控制，无依赖 | 任意 |
+
 <Callout>
-**不确定选哪个？** 使用 [RainbowKit](#rainbowkit) 或 [Web3Modal](#web3modal) 可以最快速地集成，并获得精美的钱包选择 UI。
+**快速建议：** React 应用使用 RainbowKit，Vue/原生 JS 使用 Web3Modal。
 </Callout>
-
-| 方式 | 包含 UI | 适用场景 | 框架支持 | 文档 |
-|------|---------|----------|----------|------|
-| **RainbowKit** | ✅ 是 | 精美钱包弹窗，React 应用 | 仅 React | [指南](/zh/connect-to-software/wallet-ui/rainbowkit) |
-| **Web3Modal** | ✅ 是 | WalletConnect 生态，多框架 | React/Vue/JS | [指南](/zh/connect-to-software/wallet-ui/web3modal) |
-| **Wagmi** | ❌ 否 | 自定义 UI + React hooks | 仅 React | [指南](/zh/connect-to-software/react-hooks/wagmi) |
-| **Provider API** | ❌ 否 | 完全控制，任意框架 | 任意 | [EVM](/zh/connect-to-software/provider/eth), [所有链](/zh/connect-to-software/provider) |
-
-### 决策指南
-
-```
-你需要钱包选择 UI 吗？
-├── 是 → 你使用 React 吗？
-│        ├── 是 → RainbowKit（最流行）或 Web3Modal
-│        └── 否 → Web3Modal（支持 Vue、原生 JS）
-└── 否 → 你使用 React 吗？
-         ├── 是 → Wagmi（类型安全的 hooks）
-         └── 否 → Provider API（直接访问）
-```
 
 ---
 
-## 快速开始：带钱包 UI
+## 快速开始
 
-### RainbowKit
-
-最流行的 React 钱包连接库，提供精美、可定制的弹窗。
+### RainbowKit (React)
 
 ```bash
 npm install @rainbow-me/rainbowkit wagmi viem @tanstack/react-query
@@ -52,21 +36,19 @@ npm install @rainbow-me/rainbowkit wagmi viem @tanstack/react-query
 import '@rainbow-me/rainbowkit/styles.css'
 import { getDefaultConfig, RainbowKitProvider, ConnectButton } from '@rainbow-me/rainbowkit'
 import { WagmiProvider } from 'wagmi'
-import { mainnet, polygon } from 'wagmi/chains'
+import { mainnet } from 'wagmi/chains'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 
 const config = getDefaultConfig({
   appName: 'My dApp',
-  projectId: 'YOUR_WALLETCONNECT_PROJECT_ID',
-  chains: [mainnet, polygon],
+  projectId: 'YOUR_WALLETCONNECT_PROJECT_ID', // 从 cloud.walletconnect.com 获取
+  chains: [mainnet],
 })
-
-const queryClient = new QueryClient()
 
 export default function App() {
   return (
     <WagmiProvider config={config}>
-      <QueryClientProvider client={queryClient}>
+      <QueryClientProvider client={new QueryClient()}>
         <RainbowKitProvider>
           <ConnectButton />
         </RainbowKitProvider>
@@ -76,200 +58,38 @@ export default function App() {
 }
 ```
 
-[RainbowKit 完整指南 →](/zh/connect-to-software/wallet-ui/rainbowkit)
+[完整指南](/zh/connect-to-software/wallet-ui/rainbowkit)
 
-### Web3Modal
-
-WalletConnect 官方 UI 套件，现已更名为 Reown AppKit。支持 React、Vue 和原生 JavaScript。
-
-```bash
-npm install @reown/appkit @reown/appkit-adapter-wagmi wagmi viem @tanstack/react-query
-```
-
-```tsx filename="App.tsx"
-import { createAppKit } from '@reown/appkit/react'
-import { WagmiProvider } from 'wagmi'
-import { mainnet, polygon } from '@reown/appkit/networks'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { WagmiAdapter } from '@reown/appkit-adapter-wagmi'
-
-const projectId = 'YOUR_WALLETCONNECT_PROJECT_ID'
-const networks = [mainnet, polygon]
-const wagmiAdapter = new WagmiAdapter({ projectId, networks })
-
-createAppKit({ adapters: [wagmiAdapter], networks, projectId })
-
-const queryClient = new QueryClient()
-
-export default function App() {
-  return (
-    <WagmiProvider config={wagmiAdapter.wagmiConfig}>
-      <QueryClientProvider client={queryClient}>
-        <appkit-button />
-      </QueryClientProvider>
-    </WagmiProvider>
-  )
-}
-```
-
-[Web3Modal 完整指南 →](/zh/connect-to-software/wallet-ui/web3modal)
-
----
-
-## 快速开始：不带钱包 UI
-
-### Wagmi (React Hooks)
-
-类型安全的 React hooks。构建你自己的自定义钱包 UI。
-
-```bash
-npm install wagmi viem @tanstack/react-query
-```
-
-```tsx filename="App.tsx"
-import { WagmiProvider, useAccount, useConnect, useDisconnect } from 'wagmi'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { http, createConfig } from 'wagmi'
-import { mainnet, polygon } from 'wagmi/chains'
-import { injected } from 'wagmi/connectors'
-
-const config = createConfig({
-  chains: [mainnet, polygon],
-  connectors: [injected()],
-  transports: { [mainnet.id]: http(), [polygon.id]: http() },
-})
-
-function ConnectWallet() {
-  const { address, isConnected } = useAccount()
-  const { connect, connectors } = useConnect()
-  const { disconnect } = useDisconnect()
-
-  if (isConnected) return <div>{address} <button onClick={() => disconnect()}>断开</button></div>
-  return <button onClick={() => connect({ connector: connectors[0] })}>连接</button>
-}
-
-export default function App() {
-  return (
-    <WagmiProvider config={config}>
-      <QueryClientProvider client={new QueryClient()}>
-        <ConnectWallet />
-      </QueryClientProvider>
-    </WagmiProvider>
-  )
-}
-```
-
-[Wagmi 完整指南 →](/zh/connect-to-software/react-hooks/wagmi)
-
-### Provider API（直接访问）
-
-无需依赖。适用于任何框架。使用 EIP-6963 进行钱包检测。
+### Provider API（无依赖）
 
 ```typescript
-// 1. 使用 EIP-6963 检测钱包
-const providers: any[] = []
-window.addEventListener('eip6963:announceProvider', (e: any) => {
-  providers.push(e.detail)
-})
+// 使用 EIP-6963 检测 OneKey
+const providers = []
+window.addEventListener('eip6963:announceProvider', (e) => providers.push(e.detail))
 window.dispatchEvent(new Event('eip6963:requestProvider'))
 
-// 2. 通过 rdns 找到 OneKey
+// 查找并连接 OneKey
 const onekey = providers.find(p => p.info.rdns === 'so.onekey.app.wallet')
-
-// 3. 连接并获取账户
 const accounts = await onekey.provider.request({ method: 'eth_requestAccounts' })
-
-// 4. 发送交易
-await onekey.provider.request({
-  method: 'eth_sendTransaction',
-  params: [{ from: accounts[0], to: '0x...', value: '0x...' }]
-})
 ```
 
-[EVM Provider API 完整参考 →](/zh/connect-to-software/provider/eth)
+[完整指南](/zh/connect-to-software/provider/eth)
 
 ---
 
-## 库对比
-
-| 特性 | RainbowKit | Web3Modal | Wagmi | Provider API |
-|------|------------|-----------|-------|--------------|
-| 钱包选择 UI | ✅ | ✅ | ❌ | ❌ |
-| React 支持 | ✅ | ✅ | ✅ | ✅ |
-| Vue 支持 | ❌ | ✅ | ❌ | ✅ |
-| 原生 JS | ❌ | ✅ | ❌ | ✅ |
-| 移动端二维码 | ✅ | ✅ | ❌ | ❌ |
-| WalletConnect | ✅ | ✅ | ✅ | ❌ |
-| 包体积 | 中等 | 中等 | 小 | 无 |
-| 可定制性 | 高 | 中等 | 完全 | 完全 |
-
----
-
-## 常用操作
-
-| 操作 | 文档 |
-|------|------|
-| 发送交易 | [发送交易](/zh/connect-to-software/provider/eth/sending-transactions) |
-| 签名消息 | [签名数据](/zh/connect-to-software/provider/eth/signing-data) |
-| 切换/添加网络 | [JSON-RPC 参考](/zh/connect-to-software/provider/eth/reference) |
-| Provider API 方法 | [Provider API](/zh/connect-to-software/provider/eth/provider-api) |
-
----
-
-## OneKey 标识
+## OneKey 检测
 
 | 属性 | 值 |
 |------|-----|
-| `rdns` | `so.onekey.app.wallet` |
-| `name` | `OneKey` |
+| EIP-6963 `rdns` | `so.onekey.app.wallet` |
+| Provider | `window.$onekey.ethereum` |
 
 ---
 
 ## 支持的链
 
-### EVM 链
+**EVM：** Ethereum, Polygon, BSC, Arbitrum, Optimism, Base 及所有 EVM 兼容链
 
-所有 EVM 链共享同一个 provider，通过 `window.$onekey.ethereum` 或 EIP-6963 访问：
+**非 EVM：** [Bitcoin](/zh/connect-to-software/provider/btc), [Solana](/zh/connect-to-software/provider/solana), [Cosmos](/zh/connect-to-software/provider/cosmos), [Aptos](/zh/connect-to-software/provider/aptos), [Sui](/zh/connect-to-software/provider/sui), [TON](/zh/connect-to-software/provider/ton), [TRON](/zh/connect-to-software/provider/tron), [Polkadot](/zh/connect-to-software/provider/polkadot), [Cardano](/zh/connect-to-software/provider/cardano), [NEAR](/zh/connect-to-software/provider/near) 等
 
-Ethereum, Polygon, BSC, Arbitrum, Optimism, Base, zkSync, Avalanche, Fantom, Gnosis...
-
-### 非 EVM 链
-
-| 链 | OneKey Provider | 文档 |
-|---|-----------------|------|
-| **Bitcoin** | `$onekey.btc` | [指南](/zh/connect-to-software/provider/btc) |
-| **Solana** | `$onekey.solana` | [指南](/zh/connect-to-software/provider/solana) |
-| **Cosmos** | `$onekey.cosmos` | [指南](/zh/connect-to-software/provider/cosmos) |
-| **Aptos** | `$onekey.aptos` | [指南](/zh/connect-to-software/provider/aptos) |
-| **Sui** | `$onekey.sui` | [指南](/zh/connect-to-software/provider/sui) |
-| **TON** | `$onekey.tonconnect` | [指南](/zh/connect-to-software/provider/ton) |
-| **TRON** | `$onekey.tron` | [指南](/zh/connect-to-software/provider/tron) |
-| **Polkadot** | `$onekey.polkadot` | [指南](/zh/connect-to-software/provider/polkadot) |
-| **Cardano** | `cardano.onekey` | [指南](/zh/connect-to-software/provider/cardano) |
-| **Algorand** | `$onekey.algo` | [指南](/zh/connect-to-software/provider/algorand) |
-| **Conflux** | `$onekey.conflux` | [指南](/zh/connect-to-software/provider/conflux) |
-| **NEAR** | `$onekey.near` | [指南](/zh/connect-to-software/provider/near) |
-| **Nostr** | `$onekey.nostr` | [指南](/zh/connect-to-software/provider/nostr) |
-| **WebLN** | `$onekey.webln` | [指南](/zh/connect-to-software/provider/webln) |
-
-<Callout>
-OneKey 原生支持 20+ 条链，无需 Snap 或插件。
-</Callout>
-
----
-
-## 移动端集成
-
-移动端 Web 集成，使用 WalletConnect 配合 OneKey 深度链接：
-
-```typescript
-// 自定义协议
-onekey-wallet://wc?uri={encodeURIComponent(wcUri)}
-
-// 通用链接
-https://app.onekey.so/wc/connect/wc?uri={encodeURIComponent(wcUri)}
-```
-
-<Callout type="info">
-RainbowKit 和 Web3Modal 会自动处理移动端深度链接。
-</Callout>
+[查看所有 Provider API](/zh/connect-to-software/provider/eth)

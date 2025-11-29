@@ -1,133 +1,16 @@
 ---
 title: Provider API
-description: 通过注入式 EIP-1193 Provider 连接 OneKey
-slug: /dapp/web
 ---
-
-import { Callout } from 'nextra/components'
 
 # Provider API
 
-通过注入式 EIP-1193 Provider 连接 OneKey，浏览器中无需额外 SDK。
+从侧边栏选择一个链来查看其 Provider 文档。
 
-<Callout type="info">
-**想使用第三方库？**
+## 支持的链
 
-对于 React 项目，推荐使用 [RainbowKit](/zh/connect-to-software/wallet-kits/rainbowkit) 或 [Web3Modal](/zh/connect-to-software/wallet-kits/web3modal) 获得更好的开发体验。
-</Callout>
-
----
-
-## 可用 Provider
-
-| 链 | Provider | 描述 |
-|---|----------|------|
-| [EVM / Ethereum](./eth) | `$onekey.ethereum` | ETH, Polygon, BSC, Arbitrum, Optimism, Base, zkSync... |
-| [Bitcoin](./btc) | `$onekey.btc` | BTC, Ordinals, BRC-20, Runes, PSBT 签名 |
-| [Solana](./solana) | `$onekey.solana` | SPL Tokens, NFTs, Metaplex 标准 |
-| [Cosmos](./cosmos) | `$onekey.cosmos` | Keplr 兼容, Cosmos Hub, Osmosis, Juno... |
-| [Aptos](./aptos) | `$onekey.aptos` | Petra 兼容, Move 智能合约 |
-| [Sui](./sui) | `$onekey.sui` | Sui Wallet 标准, Move 智能合约 |
-| [TON](./ton) | `$onekey.tonconnect` | TON Connect 2.0, Jettons, NFTs |
-| [TRON](./tron) | `$onekey.tron` | TronLink 兼容, TRC-20, TronWeb |
-| [Polkadot](./polkadot) | `$onekey.polkadot` | Polkadot.js 扩展, Substrate 链 |
-| [Cardano](./cardano) | `cardano.onekey` | CIP-30, Nami 兼容, ADA |
-| [Algorand](./algorand) | `$onekey.algo` | ARC-0001, ALGO, ASA 代币 |
-| [Conflux](./conflux) | `$onekey.conflux` | Fluent 兼容, CFX |
-| [NEAR](./near) | `$onekey.near` | NEAR Protocol, FT/NFT 标准 |
-| [Nostr](./nostr) | `$onekey.nostr` | NIP-07 签名, 加密消息 |
-| [WebLN](./webln) | `$onekey.webln` | 闪电网络支付 |
-
----
-
-## 快速开始 (EVM)
-
-### 检测 Provider
-
-```js
-// 优先使用 OneKey 专属注入（避免多钱包冲突）
-const provider = window?.$onekey?.ethereum
-  || window?.ethereum?.providers?.find(p => p?.isOneKey || p?.onekey)
-  || window?.ethereum;
-
-if (!provider) throw new Error('未检测到 OneKey Provider');
-```
-
-### 请求账户
-
-```js
-const accounts = await provider.request({ method: 'eth_requestAccounts' });
-const account = accounts?.[0];
-```
-
-### 监听事件
-
-```js
-provider.on?.('accountsChanged', (accounts) => {
-  // 处理账户变更
-});
-
-provider.on?.('chainChanged', (chainId) => {
-  // 处理网络变更（如需要可重新创建客户端）
-});
-```
-
-### 发送交易
-
-```js
-const txHash = await provider.request({
-  method: 'eth_sendTransaction',
-  params: [{
-    from: account,
-    to: '0x...',
-    value: '0x...',
-    // 可选: maxFeePerGas / maxPriorityFeePerGas
-  }]
-});
-```
-
----
-
-## 签名数据
-
-```js
-// 个人签名（文本）
-await provider.request({
-  method: 'personal_sign',
-  params: ['0x68656c6c6f', account]
-});
-
-// EIP-712（类型化数据 v4）
-await provider.request({
-  method: 'eth_signTypedData_v4',
-  params: [account, JSON.stringify(typedData)]
-});
-```
-
----
-
-## 错误码
-
-| 错误码 | 描述 | 解决方案 |
-|-------|-----|---------|
-| 4001 | 用户拒绝 | 显示重试选项 |
-| 4902 | 链未添加 | 使用 `wallet_addEthereumChain` |
-| -32603 | 内部错误 | 检查参数格式 |
-
----
-
-## 移动端深度链接
-
-对于移动端集成，使用 WalletConnect 协议：
-
-- 自定义协议：`onekey-wallet://wc?uri={encodeURIComponent(wcUri)}`
-- 通用链接：`https://app.onekey.so/wc/connect/wc?uri={encodeURIComponent(wcUri)}`
-
----
-
-## 下一步
-
-- [EVM Provider 详情](./eth) - 完整 EIP-1193 API 参考
-- [Bitcoin Provider](./btc) - BTC, Ordinals, BRC-20 集成
-- [Solana Provider](./solana) - SPL 代币和 NFT 支持
-- [第三方库](../wallet-kits) - RainbowKit, Web3Modal, Web3-Onboard
+- **EVM**: Ethereum, Polygon, BSC, Arbitrum, Optimism, Base 等
+- **Bitcoin**: BTC, Lightning Network (WebLN)
+- **Solana**: SOL
+- **Cosmos**: ATOM 和 Cosmos SDK 链
+- **Move**: Aptos, Sui
+- **其他**: TON, TRON, Polkadot, Cardano, Algorand, Conflux, NEAR, Nostr

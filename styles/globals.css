@@ -417,7 +417,7 @@ article pre code,
 
 /* Shiki syntax highlighting - preserve token colors */
 [data-rehype-pretty-code-figure] code span {
-  /* Allow Shiki to set colors via style attribute */
+  color: inherit; /* Allow Shiki to set colors via style attribute */
 }
 
 /* Code block line numbers */
@@ -567,17 +567,17 @@ tbody tr:hover {
 /* ============================================
    Navbar Styling
    ============================================ */
-.nextra-navbar,
-nav.nextra-nav-container {
-  backdrop-filter: blur(12px);
-  background-color: rgba(255, 255, 255, 0.95) !important;
-  border-bottom: 1px solid var(--gray-100);
+header.nextra-navbar {
+  top: var(--space-3) !important;
 }
 
-.dark .nextra-navbar,
-.dark nav.nextra-nav-container {
+.nextra-navbar-blur {
+  backdrop-filter: blur(12px);
+  background-color: rgba(255, 255, 255, 0.95) !important;
+}
+
+.dark .nextra-navbar-blur {
   background-color: rgba(16, 17, 26, 0.95) !important;
-  border-bottom-color: rgba(255, 255, 255, 0.1);
 }
 
 /* ============================================
@@ -1597,4 +1597,159 @@ pre code .highlight {
 
 .link-list a:hover svg {
   color: var(--ok-green-500);
+}
+
+/* ============================================
+   Custom Sidebar Styles (Provider & Hardware)
+   Shared styles for custom dropdown sidebars
+   ============================================ */
+
+
+/* Chain/Product dropdown button */
+.provider-chain-sidebar button,
+.hardware-product-sidebar button {
+  color: inherit;
+}
+
+/* Dropdown list - selected state */
+.provider-chain-sidebar .chain-selected,
+.hardware-product-sidebar .product-selected {
+  background-color: #dbeafe; /* blue-100 */
+  color: #1e40af; /* blue-800 */
+  font-weight: 600;
+}
+
+.dark .provider-chain-sidebar .chain-selected,
+.dark .hardware-product-sidebar .product-selected {
+  background-color: rgba(59, 130, 246, 0.2); /* blue-500/20 */
+  color: #93c5fd; /* blue-300 */
+}
+
+/* Page links - active state (matches Nextra native sidebar) */
+.provider-chain-sidebar a.sidebar-link-active,
+.hardware-product-sidebar a.sidebar-link-active {
+  background-color: #dbeafe; /* blue-100 */
+  color: #1e40af; /* blue-800 */
+  font-weight: 500;
+}
+
+.dark .provider-chain-sidebar a.sidebar-link-active,
+.dark .hardware-product-sidebar a.sidebar-link-active {
+  background-color: rgba(59, 130, 246, 0.2); /* blue-500/20 */
+  color: #93c5fd; /* blue-300 */
+}
+
+/* Page links - default state */
+.provider-chain-sidebar a.sidebar-link,
+.hardware-product-sidebar a.sidebar-link {
+  color: #71717a; /* zinc-500 */
+}
+
+.provider-chain-sidebar a.sidebar-link:hover,
+.hardware-product-sidebar a.sidebar-link:hover {
+  color: #18181b; /* zinc-900 */
+  background-color: #f4f4f5; /* zinc-100 */
+}
+
+.dark .provider-chain-sidebar a.sidebar-link,
+.dark .hardware-product-sidebar a.sidebar-link {
+  color: #a1a1aa; /* zinc-400 */
+}
+
+.dark .provider-chain-sidebar a.sidebar-link:hover,
+.dark .hardware-product-sidebar a.sidebar-link:hover {
+  color: #f4f4f5; /* zinc-100 */
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+/* Expandable section button - active state */
+.provider-chain-sidebar button.sidebar-section-active,
+.hardware-product-sidebar button.sidebar-section-active {
+  color: #1e40af; /* blue-800 */
+  font-weight: 500;
+}
+
+.dark .provider-chain-sidebar button.sidebar-section-active,
+.dark .hardware-product-sidebar button.sidebar-section-active {
+  color: #93c5fd; /* blue-300 */
+}
+
+/* Expandable section button - default state */
+.provider-chain-sidebar button.sidebar-section,
+.hardware-product-sidebar button.sidebar-section {
+  color: #71717a; /* zinc-500 */
+}
+
+.provider-chain-sidebar button.sidebar-section:hover,
+.hardware-product-sidebar button.sidebar-section:hover {
+  color: #18181b; /* zinc-900 */
+}
+
+.dark .provider-chain-sidebar button.sidebar-section,
+.dark .hardware-product-sidebar button.sidebar-section {
+  color: #a1a1aa; /* zinc-400 */
+}
+
+.dark .provider-chain-sidebar button.sidebar-section:hover,
+.dark .hardware-product-sidebar button.sidebar-section:hover {
+  color: #f4f4f5; /* zinc-100 */
+}
+
+/* Custom dropdown menu container - ensure solid background */
+.provider-chain-sidebar .absolute,
+.hardware-product-sidebar .absolute {
+  background-color: #ffffff !important;
+  border: 1px solid #e4e4e7 !important;
+}
+
+.dark .provider-chain-sidebar .absolute,
+.dark .hardware-product-sidebar .absolute {
+  background-color: #171717 !important; /* neutral-900 */
+  border: 1px solid #404040 !important; /* neutral-700 */
+}
+
+/* Custom dropdown search input - override global green focus */
+.provider-chain-sidebar input,
+.hardware-product-sidebar input {
+  background: #fafafa !important; /* zinc-50 */
+  border: 1px solid #e4e4e7 !important; /* zinc-200 */
+  color: #18181b !important; /* zinc-900 */
+}
+
+.provider-chain-sidebar input:focus,
+.hardware-product-sidebar input:focus {
+  border-color: #a1a1aa !important; /* zinc-400 */
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+.provider-chain-sidebar input::placeholder,
+.hardware-product-sidebar input::placeholder {
+  color: #a1a1aa !important; /* zinc-400 */
+}
+
+.dark .provider-chain-sidebar input,
+.dark .hardware-product-sidebar input {
+  background: #262626 !important; /* neutral-800 */
+  border: 1px solid #404040 !important; /* neutral-700 */
+  color: #f4f4f5 !important; /* zinc-100 */
+}
+
+.dark .provider-chain-sidebar input:focus,
+.dark .hardware-product-sidebar input:focus {
+  border-color: #525252 !important; /* neutral-600 */
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+.dark .provider-chain-sidebar input::placeholder,
+.dark .hardware-product-sidebar input::placeholder {
+  color: #71717a !important; /* zinc-500 */
+}
+
+/* Reduce margin-top for Nextra separator containing custom sidebar */
+/* Nextra separator with title has x:not-first:mt-5 (1.25rem), reduce to 0.5rem */
+li:has(> .provider-chain-sidebar),
+li:has(> .hardware-product-sidebar) {
+  margin-top: 0.1rem !important;
 }

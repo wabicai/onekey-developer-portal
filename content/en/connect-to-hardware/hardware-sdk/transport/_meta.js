@@ -1,6 +1,10 @@
 export default {
   index: 'Overview',
   'web-usb': 'WebUSB',
-  'react-native-ble': 'React Native BLE',
-  'native-ble': 'Native BLE Integration'
+  'react-native-ble': 'React Native',
+  android: 'Android',
+  ios: 'iOS',
+  flutter: 'Flutter',
+  'low-level-plugin': 'Low-Level Plugin',
+  'message-protocol': 'Message Protocol'
 }

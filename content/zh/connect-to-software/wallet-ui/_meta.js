@@ -1,7 +1,8 @@
 export default {
-  index: '概览',
+  'wallet-kits': '概览',
   rainbowkit: 'RainbowKit',
   web3modal: 'Web3Modal',
   'web3-onboard': 'Web3-Onboard'
 }
+
 

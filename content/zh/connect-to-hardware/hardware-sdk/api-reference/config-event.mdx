@@ -1,0 +1,123 @@
+---
+title: 配置事件
+---
+
+# 配置事件
+
+初始化后，SDK 会为 UI 请求、设备状态和固件信息发出事件。您可以订阅高级通道（获取完整的 `CoreMessage`）或直接订阅特定事件类型（仅接收 payload）。
+
+## 订阅
+
+```ts
+import HardwareSDK from '@onekeyfe/hd-common-connect-sdk';
+import {
+  UI_EVENT,
+  UI_REQUEST,
+  UI_RESPONSE,
+  DEVICE_EVENT,
+  DEVICE,
+  FIRMWARE_EVENT,
+  CoreMessage,
+} from '@onekeyfe/hd-core';
+
+// 高级订阅：获取 CoreMessage { event, type, payload }
+HardwareSDK.on(UI_EVENT, (message: CoreMessage) => {
+  if (message.type === UI_REQUEST.REQUEST_PIN) {
+    // 显示您的 PIN UI 或引导用户在设备上输入
+  }
+});
+
+// 快捷订阅：监听特定类型并直接获取 payload
+HardwareSDK.on(UI_REQUEST.REQUEST_PIN, payload => {
+  // payload.device, payload.type (PinMatrixRequestType) 等
+});
+
+// 设备事件
+HardwareSDK.on(DEVICE_EVENT, (message: CoreMessage) => {
+  if (message.type === DEVICE.CONNECT) {
+    // 设备已连接
+  }
+});
+// 选定设备类型的快捷方式（仅 payload）
+HardwareSDK.on(DEVICE.CONNECT, payload => {
+  // { device }
+});
+```
+
+高级消息结构：
+
+```ts
+type CoreMessage = {
+  event: string; // 例如 'UI_EVENT'
+  type: string;  // 例如 'ui-request_pin'
+  payload: any;
+};
+```
+
+## 响应 UI 请求
+
+某些 UI 请求需要您的应用响应。使用 `uiResponse`：
+
+- 参见：[响应 UI 事件](basic-api/response-ui-event)
+
+```ts
+// 从您的 UI 提供 PIN（或指示在设备上输入）
+HardwareSDK.uiResponse({ type: UI_RESPONSE.RECEIVE_PIN, payload: '1234' });
+
+// 提供密码短语（使用 passphraseOnDevice = true 在设备上输入）
+HardwareSDK.uiResponse({
+  type: UI_RESPONSE.RECEIVE_PASSPHRASE,
+  payload: { value: '', passphraseOnDevice: true },
+});
+
+// 选择浏览器 WebUSB 引导加载程序选择器显示的设备
+HardwareSDK.uiResponse({
+  type: UI_RESPONSE.SELECT_DEVICE_IN_BOOTLOADER_FOR_WEB_DEVICE,
+  payload: { deviceId: 'bootloader-device-id' },
+});
+```
+
+## UI_EVENT 类型 (UI_REQUEST)
+
+- PIN 和确认
+  - `ui-request_pin`, `ui-invalid_pin`, `ui-button`, `ui-close_pin_window`
+- 密码短语
+  - `ui-request_passphrase`, `ui-request_passphrase_on_device`
+- 引导加载程序 (WebUSB)
+  - `ui-request_select_device_in_bootloader_for_web_device`
+- 权限和平台状态
+  - `ui-bluetooth_permission`, `ui-bluetooth_unsupported`, `ui-bluetooth_powered_off`
+  - `ui-location_permission`, `ui-location_service_permission`
+  - `ui-bluetooth_characteristic_notify_change_failure`
+- 固件和进度
+  - `ui-firmware-processing`, `ui-firmware-progress`, `ui-firmware-tip`
+  - `ui-device_progress`, `ui-previous_address_result`
+- 设备模式和状态
+  - `ui-device_bootloader_mode`, `ui-device_not_in_bootloader_mode`, `ui-device_require_mode`
+  - `ui-device_not_initialized`, `ui-device_seedless`
+  - `ui-device_firmware_old`, `ui-device_firmware_unsupported`, `ui-device_firmware_not_compatible`, `ui-device_firmware_not_installed`
+  - `ui-device_please_use_onekey_device`
+- 通用
+  - `ui-close_window`, `ui-web_device_prompt_access_permission`
+
+## UI_RESPONSE 类型
+
+- `ui-receive_pin`
+- `ui-receive_passphrase`
+- `ui-receive_select-device-in-bootloader-for-web-device`
+
+## DEVICE_EVENT 类型
+
+- 设备生命周期
+  - `device-connect`, `device-connect_unacquired`, `device-disconnect`, `device-changed`
+  - `device-acquire`, `device-release`, `device-acquired`, `device-released`, `device-used_elsewhere`, `unreadable-device`, `device-loading`
+- 设备请求和信息
+  - `button`, `pin`, `passphrase`, `passphrase_on_device`, `word`
+  - `support_features`, `select_device_in_bootloader_for_web_device`, `features`
+
+注意：`device-connect`, `device-disconnect`, `features`, `support_features` 也通过 `HardwareSDK.on(<type>, cb)` 提供仅 payload 的快捷方式。
+
+## FIRMWARE_EVENT 类型
+
+- `firmware-release-info`
+- `ble-firmware-release-info`

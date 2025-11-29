@@ -9,6 +9,7 @@ const devices = [
     image: '/icons/devices/classic1s.png',
     bluetooth: true,
     usb: true,
+    airGap: false,
     description: { en: 'OneKey Classic 1s', zh: '经典款 Classic 1s' }
   },
   {
@@ -16,6 +17,7 @@ const devices = [
     image: '/icons/devices/classicPure.png',
     bluetooth: true,
     usb: true,
+    airGap: false,
     description: { en: 'Battery-free edition', zh: 'Classic 1s Pure 无电池版本' }
   },
   {
@@ -23,6 +25,7 @@ const devices = [
     image: '/icons/devices/mini.png',
     bluetooth: false,
     usb: true,
+    airGap: false,
     description: { en: 'Compact USB-only wallet', zh: '紧凑型 USB 钱包' }
   },
   {
@@ -30,6 +33,7 @@ const devices = [
     image: '/icons/devices/touch.png',
     bluetooth: true,
     usb: true,
+    airGap: false,
     description: { en: 'Full touchscreen experience', zh: '全触屏体验' }
   },
   {
@@ -37,6 +41,7 @@ const devices = [
     image: '/icons/devices/pro.png',
     bluetooth: true,
     usb: true,
+    airGap: true,
     description: { en: 'Premium with fingerprint security', zh: '旗舰版，支持指纹识别' }
   }
 ]
@@ -66,16 +71,18 @@ export function DeviceCompatibilityTable({ locale = 'en' }) {
 
   const labels = {
     en: {
-      subtitle: 'Support status for Bluetooth and USB connections',
+      subtitle: 'Support status for Bluetooth, USB, and Air-Gap connections',
       device: 'Device',
       bluetooth: 'Bluetooth',
       usb: 'USB',
+      airGap: 'Air-Gap',
     },
     zh: {
-      subtitle: '蓝牙和 USB 连接的支持状态',
+      subtitle: '蓝牙、USB 和 Air-Gap 连接的支持状态',
       device: '设备',
       bluetooth: '蓝牙',
       usb: 'USB',
+      airGap: 'Air-Gap',
     }
   }
 
@@ -93,14 +100,17 @@ export function DeviceCompatibilityTable({ locale = 'en' }) {
         <table className="w-full min-w-[640px]">
           <thead>
             <tr className="border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50">
-              <th className="text-left py-4 px-5 font-semibold text-zinc-900 dark:text-white" style={{ width: '45%' }}>
+              <th className="text-left py-4 px-5 font-semibold text-zinc-900 dark:text-white" style={{ width: '40%' }}>
                 {t.device}
               </th>
-              <th className="text-center py-4 px-5 font-semibold text-zinc-900 dark:text-white" style={{ width: '27.5%' }}>
+              <th className="text-center py-4 px-5 font-semibold text-zinc-900 dark:text-white" style={{ width: '20%' }}>
                 {t.bluetooth}
               </th>
-              <th className="text-center py-4 px-5 font-semibold text-zinc-900 dark:text-white" style={{ width: '27.5%' }}>
+              <th className="text-center py-4 px-5 font-semibold text-zinc-900 dark:text-white" style={{ width: '20%' }}>
                 {t.usb}
+              </th>
+              <th className="text-center py-4 px-5 font-semibold text-zinc-900 dark:text-white" style={{ width: '20%' }}>
+                {t.airGap}
               </th>
             </tr>
           </thead>
@@ -144,6 +154,11 @@ export function DeviceCompatibilityTable({ locale = 'en' }) {
                 {/* USB Support */}
                 <td className="py-4 px-5 text-center">
                   <SupportBadge supported={device.usb} />
+                </td>
+
+                {/* Air-Gap Support */}
+                <td className="py-4 px-5 text-center">
+                  <SupportBadge supported={device.airGap} />
                 </td>
               </tr>
             ))}

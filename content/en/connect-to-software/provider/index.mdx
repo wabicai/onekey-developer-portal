@@ -1,84 +1,16 @@
 ---
 title: Provider API
-description: Direct provider access for all supported chains
 ---
-
-import { Callout } from 'nextra/components'
 
 # Provider API
 
-Direct access to OneKey's injected providers for all supported chains. No SDK required.
+Select a chain from the sidebar to view its provider documentation.
 
-<Callout type="info">
-For quick integration with built-in UI, consider using [RainbowKit](/en/connect-to-software/wallet-kits/rainbowkit) or [Web3Modal](/en/connect-to-software/wallet-kits/web3modal) instead.
-</Callout>
+## Supported Chains
 
----
-
-## EVM Chains
-
-All EVM-compatible chains share a single provider: `window.$onekey.ethereum`
-
-| Chain | Documentation |
-|-------|---------------|
-| Ethereum, Polygon, BSC, Arbitrum, Optimism, Base, zkSync... | [EVM Provider](./eth) |
-
----
-
-## Non-EVM Chains
-
-| Chain | Provider | Documentation |
-|-------|----------|---------------|
-| Bitcoin | `$onekey.btc` | [Guide](./btc) |
-| Solana | `$onekey.solana` | [Guide](./solana) |
-| Cosmos | `$onekey.cosmos` | [Guide](./cosmos) |
-| Aptos | `$onekey.aptos` | [Guide](./aptos) |
-| Sui | `$onekey.sui` | [Guide](./sui) |
-| TON | `$onekey.tonconnect` | [Guide](./ton) |
-| TRON | `$onekey.tron` | [Guide](./tron) |
-| Polkadot | `$onekey.polkadot` | [Guide](./polkadot) |
-| Cardano | `cardano.onekey` | [Guide](./cardano) |
-| Algorand | `$onekey.algo` | [Guide](./algorand) |
-| Conflux | `$onekey.conflux` | [Guide](./conflux) |
-| NEAR | `$onekey.near` | [Guide](./near) |
-| Nostr | `$onekey.nostr` | [Guide](./nostr) |
-| WebLN | `$onekey.webln` | [Guide](./webln) |
-
----
-
-## Provider Detection
-
-### EIP-6963 (Recommended)
-
-Modern multi-wallet detection standard:
-
-```typescript
-const providers: any[] = []
-
-window.addEventListener('eip6963:announceProvider', (e: any) => {
-  providers.push(e.detail)
-})
-window.dispatchEvent(new Event('eip6963:requestProvider'))
-
-// Find OneKey by rdns
-const onekey = providers.find(p => p.info.rdns === 'so.onekey.app.wallet')
-```
-
-### Direct Access
-
-```typescript
-// EVM
-const evmProvider = window.$onekey?.ethereum
-
-// Non-EVM (replace 'solana' with your chain)
-const solanaProvider = window.$onekey?.solana
-```
-
----
-
-## OneKey Identifier
-
-| Property | Value |
-|----------|-------|
-| `rdns` | `so.onekey.app.wallet` |
-| `name` | `OneKey` |
+- **EVM**: Ethereum, Polygon, BSC, Arbitrum, Optimism, Base, etc.
+- **Bitcoin**: BTC, Lightning Network (WebLN)
+- **Solana**: SOL
+- **Cosmos**: ATOM and Cosmos SDK chains
+- **Move**: Aptos, Sui
+- **Others**: TON, TRON, Polkadot, Cardano, Algorand, Conflux, NEAR, Nostr

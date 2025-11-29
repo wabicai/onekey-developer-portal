@@ -1,50 +1,55 @@
-# Air‑Gap Reference: Bitcoin (PSBT)
+---
+title: "Air-Gap 参考：Bitcoin (PSBT)"
+---
 
-This section summarizes PSBT data handling for offline signing with animated UR codes.
+# Air‑Gap 参考：Bitcoin (PSBT)
 
-## Data types
+本节总结了使用动态 UR 码进行离线签名的 PSBT 数据处理。
 
-- Request/response UR type: `crypto-psbt`
-- See also: [Basic API](../basic-api/README) (UR primitives and structures)
+## 数据类型
 
-## Flow
+- 请求/响应 UR 类型：`crypto-psbt`
+- 另请参阅：[基础 API](../basic-api/README)（UR 基础组件和结构）
 
-1. Build an unsigned PSBT with your wallet backend.
-2. Encode PSBT → UR (`crypto-psbt`) and display as animated QR.
-3. Device scans → returns signed PSBT as `crypto-psbt`.
-4. Finalize and broadcast.
+## 流程
 
-Tip: Keep PSBT size within practical QR limits; split across frames as needed.
+1. 使用钱包后端构建未签名的 PSBT。
+2. 将 PSBT 编码为 UR（`crypto-psbt`）并显示为动态 QR。
+3. 设备扫描 → 返回已签名的 PSBT（`crypto-psbt`）。
+4. 完成并广播。
+
+提示：将 PSBT 大小保持在实际 QR 限制内；根据需要分割成多帧。
 
 
-## Examples
+## 示例
 
-### Decode animated QR → signed PSBT
+### 解码动态 QR → 已签名 PSBT
 
 ```ts
 import { URDecoder } from '@ngraveio/bc-ur';
 import { CryptoPSBT } from '@keystonehq/bc-ur-registry-btc';
 
 const dec = new URDecoder();
-// For each scanned frame string from camera:
+// 对于从相机扫描的每个帧字符串：
 // dec.receivePart(frameString)
 
 if (dec.isComplete()) {
-  const ur = dec.resultUR();              // ur.type should be 'crypto-psbt'
+  const ur = dec.resultUR();              // ur.type 应该是 'crypto-psbt'
   const psbt = CryptoPSBT.fromCBOR(ur.cbor);
-  const signedPsbt = psbt.getPSBT();      // Buffer of PSBT (signed or partially signed)
-  // finalize & broadcast using your backend
+  const signedPsbt = psbt.getPSBT();      // PSBT 的 Buffer（已签名或部分签名）
+  // 使用后端完成并广播
 }
 ```
 
-### Encode unsigned PSBT → animated QR
+### 编码未签名 PSBT → 动态 QR
 
 ```ts
 import { CryptoPSBT } from '@keystonehq/bc-ur-registry-btc';
 import { airGapUrUtils } from '@keystonehq/keystone-sdk';
 
 const psbtBytes = Buffer.from(unsignedPsbtBase64, 'base64');
-const req = CryptoPSBT.fromPSBT(psbtBytes); // or new CryptoPSBT(psbtBytes)
+const req = CryptoPSBT.fromPSBT(psbtBytes); // 或 new CryptoPSBT(psbtBytes)
 const ur = req.toUR();
-const frames = airGapUrUtils.urToQrcode(ur); // render frames in your UI
+const frames = airGapUrUtils.urToQrcode(ur); // 在 UI 中渲染帧
 ```
+
