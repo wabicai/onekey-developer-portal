@@ -11,7 +11,6 @@ import {
   ExternalLink,
   ChevronRight,
   GitBranch,
-  Layers,
   Box,
   Zap,
   Globe,
@@ -40,7 +39,6 @@ const iconMap = {
   globe: Globe,
   puzzle: Puzzle,
   book: BookOpen,
-  layers: Layers,
   link: Link2,
   zap: Zap,
   code: Code2,
@@ -219,51 +217,6 @@ export function Step({ number, title, children }) {
           {children}
         </div>
       </div>
-    </div>
-  )
-}
-
-// ============================================
-// Architecture Diagram
-// ============================================
-export function ArchitectureLayer({ title, items = [], color = 'zinc' }) {
-  const colorStyles = {
-    green: 'bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800',
-    blue: 'bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800',
-    purple: 'bg-purple-50 dark:bg-purple-950/30 border-purple-200 dark:border-purple-800',
-    zinc: 'bg-zinc-50 dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700',
-    amber: 'bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-800',
-  }
-
-  return (
-    <div className={`p-4 rounded-xl border ${colorStyles[color] || colorStyles.zinc}`}>
-      <div className="text-xs font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 mb-3">
-        {title}
-      </div>
-      <div className="flex flex-wrap gap-2">
-        {items.map((item, idx) => (
-          <span
-            key={idx}
-            className="px-3 py-1.5 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-sm font-medium text-zinc-700 dark:text-zinc-300"
-          >
-            {item}
-          </span>
-        ))}
-      </div>
-    </div>
-  )
-}
-
-export function ArchitectureDiagram({ children, title }) {
-  return (
-    <div className="my-8 p-6 bg-zinc-50 dark:bg-zinc-900/50 rounded-2xl border border-zinc-200 dark:border-zinc-800">
-      {title && (
-        <div className="flex items-center gap-2 mb-4 pb-3 border-b border-zinc-200 dark:border-zinc-700">
-          <Layers className="w-5 h-5 text-[#00B812]" />
-          <h3 className="font-bold text-zinc-900 dark:text-white">{title}</h3>
-        </div>
-      )}
-      <div className="space-y-3">{children}</div>
     </div>
   )
 }
@@ -526,8 +479,6 @@ export default {
   CardGrid,
   Steps,
   Step,
-  ArchitectureLayer,
-  ArchitectureDiagram,
   DecisionCard,
   DecisionFlow,
   ChainSelector,
