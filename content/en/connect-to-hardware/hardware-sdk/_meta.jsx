@@ -9,6 +9,7 @@ export default {
     title: <ChainMethodsSidebar lang="en" />
   },
   'api-reference': 'API Reference',
+  chains: { display: 'hidden' },
   'legacy-guides': 'Migration',
   // Hidden folders
   'quick-start': { display: 'hidden' },

@@ -9,6 +9,7 @@ export default {
     title: <ChainMethodsSidebar lang="zh" />
   },
   'api-reference': '参考文档',
+  chains: { display: 'hidden' },
   'legacy-guides': '迁移指南',
   // Hidden folders
   'quick-start': { display: 'hidden' },

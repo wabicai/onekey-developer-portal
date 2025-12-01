@@ -285,7 +285,7 @@ export function ChainMethodsSidebar({ lang = 'en' }) {
 
   // Get chain from URL
   const pathParts = pathname?.split('/') || []
-  const apiRefIndex = pathParts.findIndex(p => p === 'api-reference')
+  const apiRefIndex = pathParts.findIndex(p => p === 'chains')
   const urlChainId = apiRefIndex >= 0 && CHAINS.some(c => c.id === pathParts[apiRefIndex + 1])
     ? pathParts[apiRefIndex + 1]
     : null
@@ -294,7 +294,7 @@ export function ChainMethodsSidebar({ lang = 'en' }) {
   // Use URL chain if available, otherwise use last selected (persists across remounts)
   const displayedChainId = urlChainId || lastSelectedChainId
   const selectedChain = CHAINS.find(c => c.id === displayedChainId) || CHAINS[0]
-  const basePath = `/${lang}/connect-to-hardware/hardware-sdk/api-reference`
+  const basePath = `/${lang}/connect-to-hardware/hardware-sdk/chains`
 
   // Update last selected when URL chain changes
   useEffect(() => {
