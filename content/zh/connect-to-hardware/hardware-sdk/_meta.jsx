@@ -14,6 +14,5 @@ export default {
   chains: { display: 'hidden' },
   'legacy-guides': '迁移指南',
   // Hidden folders
-  'quick-start': { display: 'hidden' },
   concepts: { display: 'hidden' }
 }
