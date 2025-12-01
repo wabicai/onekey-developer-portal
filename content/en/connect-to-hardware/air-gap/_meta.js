@@ -1,5 +1,12 @@
 export default {
   index: 'Overview',
-  'quick-start': 'Quick Start',
-  reference: 'Reference'
+  '---': {
+    type: 'separator',
+    title: 'API Reference'
+  },
+  'basic-api': 'Basic API',
+  'ethereum-and-evm': 'Ethereum & EVM',
+  'bitcoin': 'Bitcoin (PSBT)',
+  'solana': 'Solana',
+  'tron': 'Tron'
 }
