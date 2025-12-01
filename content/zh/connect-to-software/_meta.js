@@ -1,5 +1,6 @@
 export default {
   index: '快速开始',
+  'mobile-deeplinks': '移动端 & Deeplinks',
   '---1': {
     type: 'separator',
     title: 'UI 组件库'

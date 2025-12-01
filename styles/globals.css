@@ -756,21 +756,10 @@ main ~ footer {
    Sidebar Styling
    ============================================ */
 
-/* Sidebar container - increase width for better readability */
-/* Nextra uses x:w-64 (256px), override to 300px */
-aside.nextra-sidebar {
+/* Sidebar container - let Nextra handle width for proper collapse behavior */
+aside.nextra-sidebar,
+[class*="nextra-sidebar"] {
   border-right: 1px solid var(--gray-100);
-  --sidebar-width: 300px;
-  width: var(--sidebar-width) !important;
-  min-width: var(--sidebar-width) !important;
-  flex-shrink: 0 !important;
-}
-
-/* Adjust main content area to account for wider sidebar */
-@media (min-width: 1280px) {
-  aside.nextra-sidebar {
-    --sidebar-width: 320px;
-  }
 }
 
 .dark .nextra-sidebar {

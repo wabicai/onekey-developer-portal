@@ -1,5 +1,6 @@
 export default {
   index: 'Quick Start',
+  'mobile-deeplinks': 'Mobile & Deeplinks',
   '---1': {
     type: 'separator',
     title: 'UI Libraries'
