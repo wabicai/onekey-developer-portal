@@ -21,11 +21,11 @@ OneKey 设备支持两种主要连接方式：
 
 | 平台 | 推荐方案 | 包名 |
 |-----|---------|-----|
-| **Web 浏览器** | [WebUSB](web-usb) | `@onekeyfe/hd-common-connect-sdk` |
-| **React Native** | [React Native BLE](react-native-ble) | `@onekeyfe/hd-ble-sdk` |
-| **Android (原生)** | [Android 原生](android) | 底层传输插件 |
-| **iOS (原生)** | [iOS 原生](ios) | 底层传输插件 |
-| **Flutter** | [Flutter 原生](flutter) | 底层传输插件 |
+| **Web 浏览器** | [WebUSB](./web-usb) | `@onekeyfe/hd-common-connect-sdk` |
+| **React Native** | [React Native BLE](./react-native-ble) | `@onekeyfe/hd-ble-sdk` |
+| **Android (原生)** | [Android 原生](./android) | 底层传输插件 |
+| **iOS (原生)** | [iOS 原生](./ios) | 底层传输插件 |
+| **Flutter** | [Flutter 原生](./flutter) | 底层传输插件 |
 
 ## 架构
 
@@ -52,7 +52,7 @@ OneKey 设备支持两种主要连接方式：
 - 需要用户手势授权设备
 - 无需原生依赖
 
-[开始使用 WebUSB](web-usb)
+[开始使用 WebUSB](./web-usb)
 
 ## 移动端开发
 
@@ -64,7 +64,7 @@ OneKey 设备支持两种主要连接方式：
 - 支持 iOS 和 Android
 - 需要 Dev Client 构建（非 Expo Go）
 
-[开始使用 React Native BLE](react-native-ble)
+[开始使用 React Native BLE](./react-native-ble)
 
 ### 原生平台 (Android / iOS / Flutter)
 
@@ -74,9 +74,9 @@ OneKey 设备支持两种主要连接方式：
 
 | 平台 | 指南 | 示例 |
 |-----|-----|-----|
-| Android | [Android 原生](android) | [native-android-example](https://github.com/OneKeyHQ/hardware-js-sdk/tree/onekey/packages/connect-examples/native-android-example) |
-| iOS | [iOS 原生](ios) | [native-ios-example](https://github.com/OneKeyHQ/hardware-js-sdk/tree/onekey/packages/connect-examples/native-ios-example) |
-| Flutter | [Flutter 原生](flutter) | - |
+| Android | [Android 原生](./android) | [native-android-example](https://github.com/OneKeyHQ/hardware-js-sdk/tree/onekey/packages/connect-examples/native-android-example) |
+| iOS | [iOS 原生](./ios) | [native-ios-example](https://github.com/OneKeyHQ/hardware-js-sdk/tree/onekey/packages/connect-examples/native-ios-example) |
+| Flutter | [Flutter 原生](./flutter) | - |
 
 ## 高级主题
 
@@ -86,10 +86,10 @@ OneKey 设备支持两种主要连接方式：
 
 定义自定义传输实现的接口。Android、iOS 和 Flutter 集成的必读内容。
 
-[查看底层传输插件](low-level-plugin)
+[查看底层传输插件](./low-level-plugin)
 
 ### 消息协议
 
 描述 USB 和 BLE 通信使用的 64 字节数据包帧协议。实现自定义传输插件的必读内容。
 
-[查看消息协议](message-protocol)
+[查看消息协议](./message-protocol)

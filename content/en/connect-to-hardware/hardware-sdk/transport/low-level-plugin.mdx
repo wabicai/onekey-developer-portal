@@ -10,7 +10,7 @@ We provide a new communication method where you can use the LowlevelTransportSha
 
 Transport uses 64‑byte frames. Your plugin should send and receive one 64‑byte hex frame at a time; the JS SDK is responsible for assembling/disassembling full messages across frames. Refer to the protocol for padding of the final frame when needed.
 
-Refer to the [Message protocol](onekey-message-protocol).
+Refer to the [Message protocol](../message-protocol).
 
 ### LowlevelTransportSharedPlugin
 
@@ -75,6 +75,6 @@ HardwareSDK.init(settings, undefined, low-level-transport-plugin)
 
 ## Next
 
-- iOS BLE (Native, low-level adapter) → [iOS Guide](./ios)
-- Android BLE (Native, low-level adapter) → [Android Guide](./android)
-- Flutter BLE (Native, low-level adapter) → [Flutter Guide](./flutter)
+- iOS BLE (Native, low-level adapter) → [iOS Guide](../ios)
+- Android BLE (Native, low-level adapter) → [Android Guide](../android)
+- Flutter BLE (Native, low-level adapter) → [Flutter Guide](../flutter)

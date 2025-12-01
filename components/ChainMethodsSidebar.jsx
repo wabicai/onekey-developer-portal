@@ -1,10 +1,9 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useEffect } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
-import { ChevronDown } from 'lucide-react'
 import Link from 'next/link'
-import { ChainIcon } from './ChainIcons'
+import { ChainDropdown } from './ChainDropdown'
 
 // Module-level variable to persist chain selection across remounts (no localStorage flash)
 let lastSelectedChainId = 'ethereum-and-evm'
@@ -13,7 +12,7 @@ let lastSelectedChainId = 'ethereum-and-evm'
 const CHAINS = [
   {
     id: 'ethereum-and-evm',
-    name: 'Ethereum & EVM',
+    name: 'EVM',
     icon: 'ethereum',
     methods: [
       { id: 'evmgetaddress', name: 'evmGetAddress' },
@@ -276,10 +275,6 @@ const CHAINS = [
 ]
 
 export function ChainMethodsSidebar({ lang = 'en' }) {
-  const [isOpen, setIsOpen] = useState(false)
-  const [searchQuery, setSearchQuery] = useState('')
-  const [mounted, setMounted] = useState(false)
-  const dropdownRef = useRef(null)
   const pathname = usePathname()
   const router = useRouter()
 
@@ -303,115 +298,37 @@ export function ChainMethodsSidebar({ lang = 'en' }) {
     }
   }, [urlChainId])
 
-  const filteredChains = CHAINS.filter(chain =>
-    chain.name.toLowerCase().includes(searchQuery.toLowerCase())
-  )
-
-  useEffect(() => {
-    setMounted(true)
-  }, [])
-
-  useEffect(() => {
-    function handleClickOutside(event) {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-        setIsOpen(false)
-        setSearchQuery('')
-      }
-    }
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [])
-
   // Navigate to the chain's first method when selecting from dropdown
-  const handleSelect = (chain) => {
-    setIsOpen(false)
-    setSearchQuery('')
-    lastSelectedChainId = chain.id  // Update module-level variable
+  const handleChainSelect = (chain) => {
+    lastSelectedChainId = chain.id
     const firstMethod = chain.methods[0]
     router.push(`${basePath}/${chain.id}/${firstMethod.id}`)
   }
 
-  const sectionLabel = lang === 'zh' ? 'Chain Methods' : 'Chain Methods'
+  const sectionLabel = lang === 'zh' ? '链方法' : 'Chain Methods'
   const searchPlaceholder = lang === 'zh' ? '搜索链...' : 'Search chains...'
   const noResults = lang === 'zh' ? '未找到链' : 'No chains found'
 
-  // Always render structure to prevent layout shift
   return (
     <div className="hardware-product-sidebar">
       {/* Section Label */}
-      <div className="mb-1">
-        <span className="text-xs font-medium text-zinc-400 dark:text-zinc-500">
+      <div className="mb-2">
+        <span className="text-xs font-semibold uppercase tracking-wide text-zinc-400 dark:text-zinc-500">
           {sectionLabel}
         </span>
       </div>
 
-      {/* Chain Dropdown - always render button structure */}
-      <div ref={dropdownRef} className="relative mb-1">
-        <button
-          onClick={() => mounted && setIsOpen(!isOpen)}
-          className="w-full flex items-center gap-2.5 px-2 py-1.5 rounded-md text-sm transition-colors
-            text-zinc-700 dark:text-zinc-300
-            hover:bg-zinc-100 dark:hover:bg-neutral-800
-            hover:text-zinc-900 dark:hover:text-zinc-100"
-        >
-          <ChainIcon chain={selectedChain.icon} size={18} />
-          <span className="flex-1 text-left truncate font-medium">
-            {selectedChain.name}
-          </span>
-          <ChevronDown
-            className={`w-4 h-4 text-zinc-400 transition-transform flex-shrink-0 ${isOpen ? 'rotate-180' : ''}`}
-          />
-        </button>
+      {/* Chain Dropdown */}
+      <ChainDropdown
+        chains={CHAINS}
+        selectedChainId={displayedChainId}
+        onSelect={handleChainSelect}
+        searchPlaceholder={searchPlaceholder}
+        noResultsText={noResults}
+        className="mb-2"
+      />
 
-        {/* Dropdown Menu - only when mounted and open */}
-        {mounted && isOpen && (
-          <div className="absolute z-[9999] top-full left-0 right-0 mt-1 rounded-md shadow-lg overflow-hidden
-            border border-zinc-200 dark:border-neutral-700
-            bg-white dark:bg-neutral-900">
-            {/* Search - no icon */}
-            <div className="p-2 border-b border-zinc-100 dark:border-neutral-800">
-              <input
-                type="text"
-                placeholder={searchPlaceholder}
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full px-3 py-1.5 text-sm rounded-md
-                  bg-zinc-50 dark:bg-neutral-800
-                  text-zinc-900 dark:text-zinc-100
-                  placeholder:text-zinc-400 dark:placeholder:text-zinc-500
-                  border border-zinc-200 dark:border-neutral-700
-                  focus:outline-none focus:ring-0 focus:border-zinc-400 dark:focus:border-neutral-500"
-                autoFocus
-              />
-            </div>
-
-            {/* Chain List */}
-            <div className="max-h-64 overflow-y-auto p-1">
-              {filteredChains.map((chain) => (
-                <button
-                  key={chain.id}
-                  onClick={() => handleSelect(chain)}
-                  className={`w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-sm transition-colors text-left
-                    ${chain.id === displayedChainId
-                      ? 'product-selected'
-                      : 'text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-neutral-800 hover:text-zinc-900 dark:hover:text-zinc-100'
-                    }`}
-                >
-                  <ChainIcon chain={chain.icon} size={16} />
-                  <span className="truncate">{chain.name}</span>
-                </button>
-              ))}
-              {filteredChains.length === 0 && (
-                <div className="px-2.5 py-3 text-center text-sm text-zinc-400">
-                  {noResults}
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Methods List - always render structure */}
+      {/* Methods List */}
       <ul className="flex flex-col gap-0.5 border-l border-zinc-200 dark:border-neutral-800 ml-[11px]">
         {selectedChain.methods.map((method) => {
           const methodPath = `${basePath}/${displayedChainId}/${method.id}`

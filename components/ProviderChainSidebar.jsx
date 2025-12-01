@@ -1,10 +1,10 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
-import { ChevronDown, ChevronRight } from 'lucide-react'
+import { ChevronRight } from 'lucide-react'
 import Link from 'next/link'
-import { ChainIcon } from './ChainIcons'
+import { ChainDropdown } from './ChainDropdown'
 
 // Module-level variable to persist chain selection across remounts (no localStorage flash)
 let lastSelectedChainId = 'eth'
@@ -202,11 +202,7 @@ const PROVIDER_CHAINS = [
 ]
 
 export function ProviderChainSidebar({ lang = 'en' }) {
-  const [isOpen, setIsOpen] = useState(false)
-  const [searchQuery, setSearchQuery] = useState('')
-  const [mounted, setMounted] = useState(false)
   const [expandedSections, setExpandedSections] = useState({})
-  const dropdownRef = useRef(null)
   const pathname = usePathname()
   const router = useRouter()
 
@@ -238,30 +234,9 @@ export function ProviderChainSidebar({ lang = 'en' }) {
     }
   }, [urlChainId])
 
-  const filteredChains = PROVIDER_CHAINS.filter(chain =>
-    chain.name.toLowerCase().includes(searchQuery.toLowerCase())
-  )
-
-  useEffect(() => {
-    setMounted(true)
-  }, [])
-
-  useEffect(() => {
-    function handleClickOutside(event) {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-        setIsOpen(false)
-        setSearchQuery('')
-      }
-    }
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [])
-
   // Navigate to the chain's overview page when selecting from dropdown
-  const handleSelect = (chain) => {
-    setIsOpen(false)
-    setSearchQuery('')
-    lastSelectedChainId = chain.id  // Update module-level variable
+  const handleChainSelect = (chain) => {
+    lastSelectedChainId = chain.id
     router.push(`${basePath}/${chain.id}`)
   }
 
@@ -275,70 +250,14 @@ export function ProviderChainSidebar({ lang = 'en' }) {
   return (
     <div className="provider-chain-sidebar">
       {/* Chain Dropdown */}
-      <div ref={dropdownRef} className="relative mb-1">
-        <button
-          onClick={() => mounted && setIsOpen(!isOpen)}
-          className="w-full flex items-center gap-2.5 px-2 py-1.5 rounded-md text-sm transition-colors
-            text-zinc-700 dark:text-zinc-300
-            hover:bg-zinc-100 dark:hover:bg-neutral-800
-            hover:text-zinc-900 dark:hover:text-zinc-100"
-        >
-          <ChainIcon chain={selectedChain.icon} size={18} />
-          <span className="flex-1 text-left truncate font-medium">
-            {selectedChain.name}
-          </span>
-          <ChevronDown
-            className={`w-4 h-4 text-zinc-400 transition-transform flex-shrink-0 ${isOpen ? 'rotate-180' : ''}`}
-          />
-        </button>
-
-        {/* Dropdown Menu */}
-        {mounted && isOpen && (
-          <div className="absolute z-[9999] top-full left-0 right-0 mt-1 rounded-md shadow-lg overflow-hidden
-            border border-zinc-200 dark:border-neutral-700
-            bg-white dark:bg-neutral-900">
-            {/* Search */}
-            <div className="p-2 border-b border-zinc-100 dark:border-neutral-800">
-              <input
-                type="text"
-                placeholder={searchPlaceholder}
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full px-3 py-1.5 text-sm rounded-md
-                  bg-zinc-50 dark:bg-neutral-800
-                  text-zinc-900 dark:text-zinc-100
-                  placeholder:text-zinc-400 dark:placeholder:text-zinc-500
-                  border border-zinc-200 dark:border-neutral-700
-                  focus:outline-none focus:ring-0 focus:border-zinc-400 dark:focus:border-neutral-500"
-                autoFocus
-              />
-            </div>
-
-            {/* Chain List */}
-            <div className="max-h-64 overflow-y-auto p-1">
-              {filteredChains.map((chain) => (
-                <button
-                  key={chain.id}
-                  onClick={() => handleSelect(chain)}
-                  className={`w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-sm transition-colors text-left
-                    ${chain.id === displayedChainId
-                      ? 'chain-selected'
-                      : 'text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-neutral-800 hover:text-zinc-900 dark:hover:text-zinc-100'
-                    }`}
-                >
-                  <ChainIcon chain={chain.icon} size={16} />
-                  <span className="truncate">{chain.name}</span>
-                </button>
-              ))}
-              {filteredChains.length === 0 && (
-                <div className="px-2.5 py-3 text-center text-sm text-zinc-400">
-                  {noResults}
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-      </div>
+      <ChainDropdown
+        chains={PROVIDER_CHAINS}
+        selectedChainId={displayedChainId}
+        onSelect={handleChainSelect}
+        searchPlaceholder={searchPlaceholder}
+        noResultsText={noResults}
+        className="mb-2"
+      />
 
       {/* Pages List */}
       <ul className="space-y-0.5 border-l border-zinc-200 dark:border-neutral-800 ml-[11px] pl-3">
@@ -363,12 +282,12 @@ export function ProviderChainSidebar({ lang = 'en' }) {
                 <div>
                   <button
                     onClick={() => toggleSection(page.id)}
-                    className={`w-full flex items-center justify-between py-1 text-sm transition-colors text-left
+                    className={`w-full flex items-center justify-between py-1.5 text-sm transition-colors text-left
                       ${isParentActive ? 'sidebar-section-active' : 'sidebar-section'}`}
                   >
                     <span>{page.name}</span>
                     <ChevronRight
-                      className={`w-3.5 h-3.5 transition-transform ${isExpanded ? 'rotate-90' : ''}`}
+                      className={`w-3.5 h-3.5 transition-transform duration-200 ${isExpanded ? 'rotate-90' : ''}`}
                     />
                   </button>
 
@@ -386,7 +305,7 @@ export function ProviderChainSidebar({ lang = 'en' }) {
                           <li key={child.id}>
                             <Link
                               href={childPath}
-                              className={`block py-1 text-xs font-mono transition-colors
+                              className={`block py-1 text-xs transition-colors rounded px-1.5
                                 ${isChildActive ? 'sidebar-link-active' : 'sidebar-link'}`}
                             >
                               {child.name}
@@ -401,7 +320,7 @@ export function ProviderChainSidebar({ lang = 'en' }) {
                 // Regular link item
                 <Link
                   href={pagePath}
-                  className={`block py-1 text-sm transition-colors
+                  className={`block py-1.5 text-sm transition-colors rounded px-1.5
                     ${isActive ? 'sidebar-link-active' : 'sidebar-link'}`}
                 >
                   {page.name}

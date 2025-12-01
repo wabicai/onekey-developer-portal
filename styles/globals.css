@@ -1753,3 +1753,133 @@ li:has(> .provider-chain-sidebar),
 li:has(> .hardware-product-sidebar) {
   margin-top: 0.1rem !important;
 }
+
+/* ============================================
+   ChainDropdown Component Styles
+   Modern, polished dropdown for chain selection
+   ============================================ */
+
+/* Dropdown trigger button */
+.chain-dropdown-trigger {
+  position: relative;
+}
+
+.chain-dropdown-trigger::after {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: 10px;
+  opacity: 0;
+  transition: opacity 200ms ease;
+  pointer-events: none;
+}
+
+.chain-dropdown-trigger:focus-visible::after {
+  opacity: 1;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5);
+}
+
+/* Dropdown menu animation */
+@keyframes dropdown-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.chain-dropdown-menu {
+  animation: dropdown-in 150ms ease-out;
+}
+
+/* Search input in dropdown */
+.chain-dropdown-search {
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.dark .chain-dropdown-search {
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+/* Dropdown items */
+.chain-dropdown-item {
+  position: relative;
+}
+
+.chain-dropdown-item::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 0;
+  background: #3b82f6;
+  border-radius: 0 2px 2px 0;
+  transition: height 150ms ease;
+}
+
+.chain-dropdown-item-selected::before {
+  height: 60%;
+}
+
+/* Smooth scrollbar for dropdown */
+.chain-dropdown-menu > div:last-child {
+  scrollbar-width: thin;
+  scrollbar-color: #d4d4d8 transparent;
+}
+
+.dark .chain-dropdown-menu > div:last-child {
+  scrollbar-color: #525252 transparent;
+}
+
+.chain-dropdown-menu > div:last-child::-webkit-scrollbar {
+  width: 6px;
+}
+
+.chain-dropdown-menu > div:last-child::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.chain-dropdown-menu > div:last-child::-webkit-scrollbar-thumb {
+  background: #d4d4d8;
+  border-radius: 3px;
+}
+
+.dark .chain-dropdown-menu > div:last-child::-webkit-scrollbar-thumb {
+  background: #525252;
+}
+
+/* Override for chain dropdown inputs */
+.chain-dropdown input {
+  background: #fafafa !important;
+  border: 1px solid #e4e4e7 !important;
+  color: #18181b !important;
+}
+
+.chain-dropdown input:focus {
+  border-color: #a1a1aa !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+.chain-dropdown input::placeholder {
+  color: #a1a1aa !important;
+}
+
+.dark .chain-dropdown input {
+  background: #262626 !important;
+  border: 1px solid #404040 !important;
+  color: #f4f4f5 !important;
+}
+
+.dark .chain-dropdown input:focus {
+  border-color: #525252 !important;
+}
+
+.dark .chain-dropdown input::placeholder {
+  color: #71717a !important;
+}

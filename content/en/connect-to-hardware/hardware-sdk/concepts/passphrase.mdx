@@ -47,7 +47,7 @@ await HardwareSDK.evmGetAddress(connectId, deviceId, {
 
 ## Caching & sessions
 
-- `passphraseState`: Obtain once via [Get Passphrase State](../api-reference/basic-api/get-passphrase-state) and pass in [Common Params](../api-reference/common-params) to reduce repeated prompts.
+- `passphraseState`: Obtain once via [Get Passphrase State](../../api-reference/basic-api/get-passphrase-state) and pass in [Common Params](../../api-reference/common-params) to reduce repeated prompts.
 - Combine with `keepSession` / `initSession` for fewer interactions during a flow.
 
 ## Notes
@@ -56,4 +56,4 @@ await HardwareSDK.evmGetAddress(connectId, deviceId, {
 - Prefer on-device entry for better security.
 - Pro/Touch: PIN must be entered on device; passphrase can still be entered on device or in software (prefer device).
 
-See also: [UI Events: Passphrase](../quick-start/ui-events-passphrase), [Common Params](../api-reference/common-params).
+See also: [UI Events: Passphrase](../../quick-start/ui-events-passphrase), [Common Params](../../api-reference/common-params).

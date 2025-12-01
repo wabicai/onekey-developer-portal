@@ -21,7 +21,7 @@ function call(connectId: string, deviceId: string, commonParams?: CommonParams)
 - `retryCount?: number` — 轮询连接最大重试次数（默认：6）。
 - `pollIntervalTime?: number` — 轮询间隔毫秒数（默认：1000；每轮增加 1.5 倍）。
 - `timeout?: number` — 单次轮询尝试的超时毫秒数。
-- `passphraseState?: string` — 密码短语钱包状态。通过 [获取密码短语状态](basic-api/get-passphrase-state) 获取。用于验证/缓存密码短语。
+- `passphraseState?: string` — 密码短语钱包状态。通过 [获取密码短语状态](../basic-api/get-passphrase-state) 获取。用于验证/缓存密码短语。
 - `useEmptyPassphrase?: boolean` — 此次调用强制使用标准钱包（空密码短语）。
 - `initSession?: boolean` — 在调用开始时初始化会话并缓存 `passphraseState`。
 - `deriveCardano?: boolean` — 为当前会话派生 Cardano 种子（Cardano 方法默认为 true；其他为 false）。Cardano 派生可能需要更长时间。

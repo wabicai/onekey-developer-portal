@@ -21,7 +21,7 @@ CommonParams
 - `retryCount?: number` — Polling connect max retry count (default: 6).
 - `pollIntervalTime?: number` — Polling interval in ms (default: 1000; backoff ×1.5 each round).
 - `timeout?: number` — Timeout in ms for a single polling attempt.
-- `passphraseState?: string` — Passphrase wallet state. Obtain via [Get Passphrase State](basic-api/get-passphrase-state). Used to validate/cache passphrase.
+- `passphraseState?: string` — Passphrase wallet state. Obtain via [Get Passphrase State](../basic-api/get-passphrase-state). Used to validate/cache passphrase.
 - `useEmptyPassphrase?: boolean` — Force standard wallet (empty passphrase) for this call.
 - `initSession?: boolean` — Initialize session and cache `passphraseState` at call start.
 - `deriveCardano?: boolean` — Derive Cardano seed for current session (true by default for Cardano methods; false otherwise). Cardano derivation may take longer.

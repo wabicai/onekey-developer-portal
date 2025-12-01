@@ -21,11 +21,11 @@ Use this decision matrix to select the appropriate transport for your project:
 
 | Platform | Recommended Transport | Package |
 |----------|----------------------|---------|
-| **Web Browser** | [WebUSB](web-usb) | `@onekeyfe/hd-common-connect-sdk` |
-| **React Native** | [React Native BLE](react-native-ble) | `@onekeyfe/hd-ble-sdk` |
-| **Android (Native)** | [Android Native](android) | Low-Level Transport Plugin |
-| **iOS (Native)** | [iOS Native](ios) | Low-Level Transport Plugin |
-| **Flutter** | [Flutter Native](flutter) | Low-Level Transport Plugin |
+| **Web Browser** | [WebUSB](./web-usb) | `@onekeyfe/hd-common-connect-sdk` |
+| **React Native** | [React Native BLE](./react-native-ble) | `@onekeyfe/hd-ble-sdk` |
+| **Android (Native)** | [Android Native](./android) | Low-Level Transport Plugin |
+| **iOS (Native)** | [iOS Native](./ios) | Low-Level Transport Plugin |
+| **Flutter** | [Flutter Native](./flutter) | Low-Level Transport Plugin |
 
 ## Architecture
 
@@ -52,7 +52,7 @@ For web applications running in Chrome/Edge browsers. Connect via USB cable.
 - User gesture required for device authorization
 - No native dependencies
 
-[Get Started with WebUSB](web-usb)
+[Get Started with WebUSB](./web-usb)
 
 ## Mobile Development
 
@@ -64,7 +64,7 @@ For React Native applications. Uses the `@onekeyfe/hd-ble-sdk` package with nati
 - Supports iOS and Android
 - Requires Dev Client build (not Expo Go)
 
-[Get Started with React Native BLE](react-native-ble)
+[Get Started with React Native BLE](./react-native-ble)
 
 ### Native Platforms (Android / iOS / Flutter)
 
@@ -74,9 +74,9 @@ Architecture: **WebView + JS Bridge + Native BLE**
 
 | Platform | Guide | Demo |
 |----------|-------|------|
-| Android | [Android Native](android) | [native-android-example](https://github.com/OneKeyHQ/hardware-js-sdk/tree/onekey/packages/connect-examples/native-android-example) |
-| iOS | [iOS Native](ios) | [native-ios-example](https://github.com/OneKeyHQ/hardware-js-sdk/tree/onekey/packages/connect-examples/native-ios-example) |
-| Flutter | [Flutter Native](flutter) | - |
+| Android | [Android Native](./android) | [native-android-example](https://github.com/OneKeyHQ/hardware-js-sdk/tree/onekey/packages/connect-examples/native-android-example) |
+| iOS | [iOS Native](./ios) | [native-ios-example](https://github.com/OneKeyHQ/hardware-js-sdk/tree/onekey/packages/connect-examples/native-ios-example) |
+| Flutter | [Flutter Native](./flutter) | - |
 
 ## Advanced Topics
 
@@ -86,10 +86,10 @@ These resources are primarily for developers implementing native platform suppor
 
 Defines the interface for custom transport implementations. Required reading for Android, iOS, and Flutter integrations.
 
-[View Low-Level Transport Plugin](low-level-plugin)
+[View Low-Level Transport Plugin](./low-level-plugin)
 
 ### Message Protocol
 
 Describes the 64-byte packet framing protocol used for USB and BLE communication. Required for implementing custom transport plugins.
 
-[View Message Protocol](message-protocol)
+[View Message Protocol](./message-protocol)
