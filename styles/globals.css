@@ -577,6 +577,16 @@ tbody tr:hover {
   background-color: rgba(16, 17, 26, 0.95) !important;
 }
 
+/* 顶栏下拉菜单在当前分区时高亮（与链接 aria-current 行为保持一致） */
+header.nextra-navbar button[data-onekey-nav-active="true"] {
+  font-weight: 500 !important;
+  color: #18181b !important; /* zinc-900 */
+}
+
+.dark header.nextra-navbar button[data-onekey-nav-active="true"] {
+  color: #ffffff !important;
+}
+
 /* ============================================
    Search Box Styling (Nextra)
    ============================================ */

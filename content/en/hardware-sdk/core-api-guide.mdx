@@ -1,0 +1,166 @@
+---
+title: Core API Guide
+---
+
+# Hardware SDK Core API Guide
+
+Single-page guide for setup → request flow → params → UI/safety → error codes. Use it as the default entry for implementing chain calls.
+
+## Page map (jump to what you need)
+
+- Setup: [Init & runtime](#init)
+- Flow: [Request lifecycle](#request-basics)
+- Params: [Common params](#common-params) · [HD paths](#hd-path)
+- UI & safety: [Events/UI](#events-ui) · [PIN](#pin) · [Passphrase](#passphrase)
+- Troubleshooting: [Error codes](#error-codes)
+
+<a id="init"></a>
+
+## Init & runtime
+
+Initialize the SDK and pick the environment per platform:
+
+```ts
+HardwareSDK.init({
+  debug: false,
+  fetchConfig: true,
+  env: 'webusb' | 'react-native' | 'lowlevel',
+});
+```
+
+- `webusb`: browser USB (requires HTTPS + user gesture)
+- `react-native`: RN + Bluetooth
+- `lowlevel`: custom transport plugin (64-byte frames)
+
+<a id="request-basics"></a>
+
+## Request lifecycle (copy-paste ready)
+
+Standard flow (5 steps): init → discover → identify device → subscribe events → call + confirm.
+
+```ts
+// 1) init once
+await HardwareSDK.init({ debug: false, fetchConfig: true, env: 'webusb' });
+
+// 2) discover devices
+const devices = await HardwareSDK.searchDevices();
+if (!devices.length) throw new Error('No device');
+const [{ connectId }] = devices;
+
+// 3) identify deviceId for the call
+const { payload: features } = await HardwareSDK.getFeatures(connectId);
+const deviceId = features?.device_id;
+
+// 4) subscribe to UI events and respond (PIN here as example)
+HardwareSDK.on(UI_REQUEST.REQUEST_PIN, () => {
+  // open a PIN prompt or delegate to on-device input
+});
+HardwareSDK.uiResponse({ type: UI_RESPONSE.RECEIVE_PIN, payload: '1234' });
+
+// 5) make the chain call
+await HardwareSDK.evmSignTransaction(connectId, deviceId, {
+  path: "m/44'/60'/0'/0/0",
+});
+```
+
+<a id="common-params"></a>
+
+## Parameters & account selection
+
+### Common parameters (CommonParams)
+
+- `keepSession?: boolean` reuse session/cache to reduce prompts
+- `retryCount?` / `pollIntervalTime?` / `timeout?` tune polling and timeout
+- `passphraseState?: string` / `useEmptyPassphrase?: boolean` switch hidden vs standard wallet
+- `initSession?: boolean` init session and cache `passphraseState`
+- `deriveCardano?: boolean` pre-derive Cardano for this session
+- `detectBootloaderDevice?: boolean` fail fast if device is in bootloader
+- `skipWebDevicePrompt?: boolean` skip the browser device chooser
+
+Tips: pair `passphraseState + keepSession` to avoid repeated prompts; WebUSB requires HTTPS and a user gesture.
+
+<a id="hd-path"></a>
+
+### HD paths & account selection
+
+- `path: string | number[]` follows BIP44; ed25519 chains must be fully hardened
+- Examples: EVM `m/44'/60'/0'/0/0`; BTC account `m/49'/0'/0'`; BTC address `m/49'/0'/0'/0/0`; Solana `m/44'/501'/0'/0'`
+- Number array example: `[(44 | 0x80000000) >>> 0, (0 | 0x80000000) >>> 0, 0x80000000, 0, 0]`
+
+<a id="events-ui"></a>
+
+## UI & safety interactions
+
+### Event subscription & responses
+
+- Event groups: `UI_EVENT`, `DEVICE_EVENT`, `FIRMWARE_EVENT`
+- Subscribe:
+  - High level: `HardwareSDK.on(UI_EVENT, cb)` gets `{ event, type, payload }`
+  - Targeted: `HardwareSDK.on(UI_REQUEST.REQUEST_PIN, cb)` gets payload only
+- Common responses:
+  - `UI_RESPONSE.RECEIVE_PIN`
+  - `UI_RESPONSE.RECEIVE_PASSPHRASE` (`passphraseOnDevice` forces on-device input)
+  - `UI_RESPONSE.SELECT_DEVICE_IN_BOOTLOADER_FOR_WEB_DEVICE`
+
+Frequent UI requests: `ui-request_pin`, `ui-invalid_pin`, `ui-request_passphrase`, `ui-request_passphrase_on_device`, `ui-request_select_device_in_bootloader_for_web_device`, permission prompts, firmware progress, device-mode notices.
+
+<a id="pin"></a>
+
+### PIN rules
+
+- Pro/Touch must input on-device; others support blind PIN but on-device is preferred
+- UI: one dialog with two options—“enter on device” (default) and “enter here (blind PIN)”; fixed 3x3 keypad, never echo real digits
+- Blind PIN mapping example:
+
+```ts
+const BLIND_KEYBOARD_MAP = ['7','8','9','4','5','6','1','2','3'];
+HardwareSDK.uiResponse({
+  type: UI_RESPONSE.RECEIVE_PIN,
+  payload: BLIND_KEYBOARD_MAP[label - 1],
+});
+```
+
+<a id="passphrase"></a>
+
+### Passphrase rules
+
+- Standard wallet = seed + empty passphrase; hidden wallet = seed + non-empty passphrase (case sensitive)
+- Proactive: set `useEmptyPassphrase: true` when you need the standard wallet
+- Reactive: on `UI_REQUEST.REQUEST_PASSPHRASE`, offer two inputs:
+
+```ts
+HardwareSDK.uiResponse({
+  type: UI_RESPONSE.RECEIVE_PASSPHRASE,
+  payload: { passphraseOnDevice: true, value: '' },
+});
+// Or software input (optionally saved for this session)
+HardwareSDK.uiResponse({
+  type: UI_RESPONSE.RECEIVE_PASSPHRASE,
+  payload: { value, passphraseOnDevice: false, save: true },
+});
+```
+
+- Pair `passphraseState` with `keepSession/initSession` to reduce prompts; never persist passphrases in plain text.
+
+### Quick checklist
+
+1) Init → search → get `connectId` / `deviceId`  
+2) Subscribe to `UI/DEVICE/FIRMWARE` and prepare `uiResponse`  
+3) Choose HD path and chain params; pass CommonParams  
+4) Guide user to confirm on device; read signature/result
+
+<a id="error-codes"></a>
+
+## Error codes (quick scan)
+
+Use these to branch logic and drive user messaging (source: hardware-js-sdk). Grouped for quick lookup:
+
+- **Unknown (0):** UnknownError.
+- **Device (101–118, 200):** firmware mismatch, unexpected mode, not initialized, select/missing device, busy, bootloader mode errors, passphrase not supported/opened, device_id mismatch.
+- **IFrame (300–305):** not initialized, already initialized, load fail, timeout, blocked/distrust.
+- **Method/Firmware (400–418):** invalid parameter/response, need firmware upgrade, deprecated, forbidden key path, defective firmware, force update, manual/auto boot, download fail.
+- **Network (500):** network error.
+- **Transport (600–603):** not configured/found, in-progress, invalid protobuf.
+- **Bluetooth (700–722):** scan/permission/location errors, missing UUID/service/characteristic, notify/write issues, bonding/disconnect/off/unsupported, timeout.
+- **Runtime/Bridge (800–821):** runtime error, invalid/cancelled PIN, cancelled action, blind sign disabled, not in signing mode, data overload, bridge install/permission/timeout/disconnect, firmware verify fail.
+- **Web device (901–902):** Web USB/Bluetooth not found or permission prompt error.

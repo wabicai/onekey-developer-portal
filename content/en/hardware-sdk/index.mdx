@@ -8,17 +8,17 @@ Developer‑focused documentation for integrating OneKey hardware in Web and Nat
 
 ## Quick Start
 
-For Web developers getting started quickly: a compact path from init to first call, with copy‑pastable code snippets. See [Getting Started](hardware-sdk/getting-started).
+For Web developers getting started quickly: a compact path from init to first call, with copy‑pastable code snippets. See [Getting Started](getting-started).
 
 ## Choose Your Transport
 
 | Platform (Stack)     | Transport  | SDK Package                                                                                           | Guide                                                     |
 | -------------------- | ---------- | ------------------------------------------------------------------------------------------------------ | --------------------------------------------------------- |
-| Web (Browser)        | WebUSB     | [@onekeyfe/hd-common-connect-sdk](https://github.com/OneKeyHQ/hardware-js-sdk/tree/onekey/packages/hd-common-connect-sdk) | [WebUSB Connection Guide](hardware-sdk/transport/web-usb)   |
-| React Native         | BLE        | [@onekeyfe/hd-ble-sdk](https://github.com/OneKeyHQ/hardware-js-sdk/blob/onekey/packages/hd-ble-sdk)    | [React Native BLE](hardware-sdk/transport/react-native-ble) |
-| Android (Native)     | BLE        | [@onekeyfe/hd-common-connect-sdk](https://github.com/OneKeyHQ/hardware-js-sdk/tree/onekey/packages/hd-common-connect-sdk) | [Android BLE](hardware-sdk/transport/native-ble/android) |
-| iOS (Native)         | BLE        | [@onekeyfe/hd-common-connect-sdk](https://github.com/OneKeyHQ/hardware-js-sdk/tree/onekey/packages/hd-common-connect-sdk) | [iOS BLE](hardware-sdk/transport/native-ble/ios)  |
-| Flutter              | BLE        | [@onekeyfe/hd-common-connect-sdk](https://github.com/OneKeyHQ/hardware-js-sdk/tree/onekey/packages/hd-common-connect-sdk) | [Flutter BLE](hardware-sdk/transport/native-ble/flutter) |
+| Web (Browser)        | WebUSB     | [@onekeyfe/hd-common-connect-sdk](https://github.com/OneKeyHQ/hardware-js-sdk/tree/onekey/packages/hd-common-connect-sdk) | [WebUSB Connection Guide](/en/hardware-sdk/transport/web-usb)   |
+| React Native         | BLE        | [@onekeyfe/hd-ble-sdk](https://github.com/OneKeyHQ/hardware-js-sdk/blob/onekey/packages/hd-ble-sdk)    | [React Native BLE](/en/hardware-sdk/transport/react-native-ble) |
+| Android (Native)     | BLE        | [@onekeyfe/hd-common-connect-sdk](https://github.com/OneKeyHQ/hardware-js-sdk/tree/onekey/packages/hd-common-connect-sdk) | [Android BLE](/en/hardware-sdk/transport/android) |
+| iOS (Native)         | BLE        | [@onekeyfe/hd-common-connect-sdk](https://github.com/OneKeyHQ/hardware-js-sdk/tree/onekey/packages/hd-common-connect-sdk) | [iOS BLE](/en/hardware-sdk/transport/ios)  |
+| Flutter              | BLE        | [@onekeyfe/hd-common-connect-sdk](https://github.com/OneKeyHQ/hardware-js-sdk/tree/onekey/packages/hd-common-connect-sdk) | [Flutter BLE](/en/hardware-sdk/transport/flutter) |
 
 - Try in Playground: [hardware-example.onekey.so](https://hardware-example.onekey.so/) — Try WebUSB connection, call sample APIs, and test with the built‑in emulator device.
   - Live hardware wallet simulation
@@ -28,10 +28,10 @@ For Web developers getting started quickly: a compact path from init to first ca
 
 ## API References
 
-- Per‑chain APIs: [Hardware SDK API References](hardware-sdk/api-reference)
-- Events and UI responses: [Config Event](hardware-sdk/api-reference/config-event)
-- How to unlock the device: [PIN Code](hardware-sdk/concepts/pin)
-- Need support for passphrases? [What is Passphrase](hardware-sdk/concepts/passphrase)
+- Per‑chain APIs: [Hardware SDK Core API Guide](/en/hardware-sdk/core-api-guide)
+- Events and UI responses: [Config Event](/en/hardware-sdk/core-api-guide#events-ui)
+- How to unlock the device: [PIN Code](hardware-sdk/reference/concepts/pin)
+- Need support for passphrases? [What is Passphrase](hardware-sdk/reference/concepts/passphrase)
 
 import { DeviceCompatibilityTable } from '../../../components/DeviceCompatibilityTable'
 
@@ -60,7 +60,7 @@ import { DeviceCompatibilityTable } from '../../../components/DeviceCompatibilit
 
 ## Concepts and advanced topics
 
-- Message protocol (for debugging low-level transports): [OneKey Message Protocol](hardware-sdk/transport/native-ble/onekey-message-protocol)
+- Message protocol (for debugging low-level transports): [Low-level transport plugin](/en/hardware-sdk/reference/concepts/low-level-plugin#message-protocol)
 
 ## Support
 

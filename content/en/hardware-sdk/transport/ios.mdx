@@ -6,7 +6,7 @@ title: "iOS: Connect via Bluetooth (Native)"
 
 > **Note:**
 > Demo: Native iOS example (WKWebView + CoreBluetooth) → [native-ios-example](https://github.com/OneKeyHQ/hardware-js-sdk/tree/onekey/packages/connect-examples/native-ios-example)
-> This guide builds on the [Low-Level Transport Plugin](./low-level-plugin) and its 64-byte message protocol—read that first.
+> This guide builds on the [Low-Level Transport Plugin](../reference/concepts/low-level-plugin) and its 64-byte message protocol—read that first.
 
 
 This page shows how to integrate `@onekeyfe/hd-common-connect-sdk` in a native iOS host via a low-level adapter. The JavaScript bundle runs in WKWebView; transport calls are forwarded to native CoreBluetooth and bridged back to JS.
@@ -263,17 +263,17 @@ bridge.register(handlerName: "closeUIWindow") { _, callback in
 }
 ```
 
-In JS, you would call these handlers from your adapter to mirror the demo's behavior. Otherwise, you can handle UI entirely in JS using `UI_EVENT` — see [Config Event](../../api-reference/config-event) for event wiring and responses (WebUSB guide includes minimal dialogs).
+In JS, you would call these handlers from your adapter to mirror the demo's behavior. Otherwise, you can handle UI entirely in JS using `UI_EVENT` — see [Config Event](/en/hardware-sdk/core-api-guide#events-ui) for event wiring and responses (WebUSB guide includes minimal dialogs).
 
 ## Step 8. Checklist
 
 - Register handlers before loading the HTML to avoid race conditions.
 - Scan with service UUID filter and stop within a reasonable time window.
 - Persist `connectId` (peripheral UUID) and fetch `device_id` with `getFeatures(connectId)` after the first connection.
-- Always subscribe to `UI_EVENT` in JS to avoid stalled requests (see [Config Event](../../api-reference/config-event)).
+- Always subscribe to `UI_EVENT` in JS to avoid stalled requests (see [Config Event](/en/hardware-sdk/core-api-guide#events-ui)).
 - Keep `web/web_dist/` in your app bundle and adjust the `load` path accordingly.
 
 ## References
 
-- Message Protocol (64‑byte framing): [See Low-Level Transport Plugin](../low-level-plugin#message-protocol-part-of-low-level-transport)
-- Low‑level transport plugin contract: [Low-level Transport Plugin](../low-level-plugin)
+- Message Protocol (64‑byte framing): [See Low-Level Transport Plugin](.../reference/concepts/low-level-plugin#message-protocol-part-of-low-level-transport)
+- Low‑level transport plugin contract: [Low-level Transport Plugin](.../reference/concepts/low-level-plugin)

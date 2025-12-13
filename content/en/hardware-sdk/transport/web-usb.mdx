@@ -92,7 +92,7 @@ function bindHardwareEvents() {
 ```
 
 ### Notes
-- Subscribe early to `UI_EVENT` so requests don't stall while waiting for PIN/Passphrase. See [Config Event](../api-reference/config-event).
+- Subscribe early to `UI_EVENT` so requests don't stall while waiting for PIN/Passphrase. See [Config Event](/en/hardware-sdk/core-api-guide#events-ui).
 - PIN: prefer on-device entry (`@@ONEKEY_INPUT_PIN_IN_DEVICE`). If you provide software input, use the blind keypad mapping (`7,8,9,4,5,6,1,2,3`).
 - Passphrase: support on-device input or software input, and optionally `save` for session caching.
 - Device events help you update UI if cables are unplugged.
@@ -268,4 +268,4 @@ function showPassphraseDialog(): Promise<{ mode: 'device'|'software'; value: str
 ## Continue
 
 - [Getting Started](../../getting-started)
-- [Error Code](../api-reference/error-code), [Common Params](../api-reference/common-params)
+- [Error Code](/en/hardware-sdk/core-api-guide#error-codes), [Common Params](/en/hardware-sdk/core-api-guide#common-params)

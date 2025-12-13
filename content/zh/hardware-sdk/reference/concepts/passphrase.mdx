@@ -47,7 +47,7 @@ await HardwareSDK.evmGetAddress(connectId, deviceId, {
 
 ## 缓存与会话
 
-- `passphraseState`：通过 [获取 Passphrase 状态](../basic-api/get-passphrase-state) 获取一次，并在 [通用参数](../../api-reference/common-params) 中传入，以减少重复提示。
+- `passphraseState`：通过 [获取 Passphrase 状态](../basic-api/get-passphrase-state) 获取一次，并在 [通用参数](../common-params) 中传入，以减少重复提示。
 - 结合 `keepSession` / `initSession` 使用，可减少流程中的交互次数。
 
 ## 注意事项
@@ -56,4 +56,4 @@ await HardwareSDK.evmGetAddress(connectId, deviceId, {
 - 建议在设备上输入以获得更好的安全性。
 - Pro/Touch：PIN 必须在设备上输入；Passphrase 仍可在设备或软件中输入（建议使用设备）。
 
-另请参阅：[通用参数](../../api-reference/common-params)，[事件配置](../../api-reference/config-event)。
+另请参阅：[通用参数](../common-params)，[事件配置](../../api-reference#events-ui)。

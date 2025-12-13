@@ -1,6 +1,7 @@
 import { Footer, Layout, Navbar } from 'nextra-theme-docs'
 import { getPageMap } from 'nextra/page-map'
 import { OneKeyWordmark } from '../../components/OneKeyLogo'
+import { NavbarMenuActiveMarker } from '../../components/NavbarMenuActiveMarker'
 
 // Static params for i18n routing (Next.js App Router pattern)
 // See: https://nextjs.org/docs/app/guides/internationalization#static-rendering
@@ -57,7 +58,9 @@ export default async function LocaleLayout({ children, params }) {
     <Navbar
       logo={<OneKeyWordmark />}
       projectLink="https://github.com/OneKeyHQ/hardware-js-sdk"
-    />
+    >
+      <NavbarMenuActiveMarker lang={lang} />
+    </Navbar>
   )
 
   const footer = (

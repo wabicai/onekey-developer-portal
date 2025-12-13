@@ -14,11 +14,11 @@ title: 简介
 
 | 平台（技术栈）        | 传输协议   | SDK 包                                                                                                 | 指南                                                      |
 | -------------------- | ---------- | ------------------------------------------------------------------------------------------------------ | --------------------------------------------------------- |
-| Web（浏览器）        | WebUSB     | [@onekeyfe/hd-common-connect-sdk](https://github.com/OneKeyHQ/hardware-js-sdk/tree/onekey/packages/hd-common-connect-sdk) | [WebUSB 连接指南](hardware-sdk/transport/web-usb)              |
-| React Native         | 蓝牙       | [@onekeyfe/hd-ble-sdk](https://github.com/OneKeyHQ/hardware-js-sdk/blob/onekey/packages/hd-ble-sdk)    | [React Native 蓝牙](hardware-sdk/transport/react-native-ble)   |
-| Android（原生）      | 蓝牙       | [@onekeyfe/hd-common-connect-sdk](https://github.com/OneKeyHQ/hardware-js-sdk/tree/onekey/packages/hd-common-connect-sdk) | [Android 蓝牙](hardware-sdk/transport/native-ble/android) |
-| iOS（原生）          | 蓝牙       | [@onekeyfe/hd-common-connect-sdk](https://github.com/OneKeyHQ/hardware-js-sdk/tree/onekey/packages/hd-common-connect-sdk) | [iOS 蓝牙](hardware-sdk/transport/native-ble/ios)    |
-| Flutter              | 蓝牙       | [@onekeyfe/hd-common-connect-sdk](https://github.com/OneKeyHQ/hardware-js-sdk/tree/onekey/packages/hd-common-connect-sdk) | [Flutter 蓝牙](hardware-sdk/transport/native-ble/flutter) |
+| Web（浏览器）        | WebUSB     | [@onekeyfe/hd-common-connect-sdk](https://github.com/OneKeyHQ/hardware-js-sdk/tree/onekey/packages/hd-common-connect-sdk) | [WebUSB 连接指南](/zh/hardware-sdk/transport/web-usb)              |
+| React Native         | 蓝牙       | [@onekeyfe/hd-ble-sdk](https://github.com/OneKeyHQ/hardware-js-sdk/blob/onekey/packages/hd-ble-sdk)    | [React Native 蓝牙](/zh/hardware-sdk/transport/react-native-ble)   |
+| Android（原生）      | 蓝牙       | [@onekeyfe/hd-common-connect-sdk](https://github.com/OneKeyHQ/hardware-js-sdk/tree/onekey/packages/hd-common-connect-sdk) | [Android 蓝牙](/zh/hardware-sdk/transport/android) |
+| iOS（原生）          | 蓝牙       | [@onekeyfe/hd-common-connect-sdk](https://github.com/OneKeyHQ/hardware-js-sdk/tree/onekey/packages/hd-common-connect-sdk) | [iOS 蓝牙](/zh/hardware-sdk/transport/ios)    |
+| Flutter              | 蓝牙       | [@onekeyfe/hd-common-connect-sdk](https://github.com/OneKeyHQ/hardware-js-sdk/tree/onekey/packages/hd-common-connect-sdk) | [Flutter 蓝牙](/zh/hardware-sdk/transport/flutter) |
 
 - 在线体验：[hardware-example.onekey.so](https://hardware-example.onekey.so/) — 尝试 WebUSB 连接、调用示例 API，并使用内置模拟器设备进行测试。
   - 实时硬件钱包模拟
@@ -29,9 +29,9 @@ title: 简介
 ## API 参考
 
 - 各链 API：[硬件 SDK API 参考](hardware-sdk/api-reference)
-- 事件和 UI 响应：[事件配置](hardware-sdk/api-reference/config-event)
-- 如何解锁设备：[PIN 码](hardware-sdk/concepts/pin)
-- 需要密码短语支持？[什么是 Passphrase](hardware-sdk/concepts/passphrase)
+- 事件和 UI 响应：[事件配置](hardware-sdk/core-api-guide#events-ui)
+- 如何解锁设备：[PIN 码](hardware-sdk/reference/concepts/pin)
+- 需要密码短语支持？[什么是 Passphrase](hardware-sdk/reference/concepts/passphrase)
 
 import { DeviceCompatibilityTable } from '../../../components/DeviceCompatibilityTable'
 
@@ -60,7 +60,7 @@ import { DeviceCompatibilityTable } from '../../../components/DeviceCompatibilit
 
 ## 概念和进阶主题
 
-- 消息协议（用于调试底层传输）：[OneKey 消息协议](hardware-sdk/transport/native-ble/onekey-message-protocol)
+- 消息协议（用于调试底层传输）：[低层传输插件](/zh/hardware-sdk/reference/concepts/low-level-plugin#message-protocol)
 
 ## 支持
 
