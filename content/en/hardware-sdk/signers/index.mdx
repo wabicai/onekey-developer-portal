@@ -1,0 +1,20 @@
+---
+title: Signer Guides
+---
+
+# Signer Guides
+
+Step-by-step guides that take you from initialization to a signed transaction for each chain. Read [Request Basics](../api-reference/request-basics) first.
+
+## Structure
+
+- Prerequisites: firmware/SDK versions, required transport, device confirmation
+- Step flow: connect → choose account path → build request → confirm on device → verify result
+- Minimal runnable sample: event listeners, request params, result validation
+- FAQ: wrong path, reject/timeout, network or data issues
+
+## Available guides
+
+- [EVM Signer](./evm) — EIP-1559/Legacy signing and verification
+- [BTC Signer](./btc) — UTXO building, refTx handling, signing output
+- [Solana Signer](./solana) — Fixed path and serialized transaction signing

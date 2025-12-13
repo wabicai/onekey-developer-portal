@@ -1,0 +1,81 @@
+---
+title: EVM Signer
+---
+
+# EVM Signer
+
+面向以太坊及 EVM 兼容链的分步签名指南，涵盖 EIP-1559 与 Legacy 交易。
+
+## 前置条件
+
+- 设备固件保持最新，使用 WebUSB 或 BLE 正常连接。
+- 已完成 `HardwareSDK.init` 且可获取 `connectId` / `deviceId`。
+- 确认链 ID 与 RPC 设置一致，防止跨链误签。
+
+## 流程总览
+
+1. 监听 `UI/DEVICE` 事件，准备 PIN/密码短语响应。
+2. 通过 `evmGetAddress` 显示并确认账户路径。
+3. 构造 EIP-1559 或 Legacy 交易参数。
+4. 调用 `evmSignTransaction` 获取 `{ v, r, s }`。
+5. 使用 `ethers` 等库序列化并广播。
+
+## 最小可运行示例（EIP-1559）
+
+```ts
+import HardwareSDK, { UI_REQUEST, UI_RESPONSE } from '@onekeyfe/hd-core';
+import { serialize, TransactionTypes } from '@ethersproject/transactions';
+
+await HardwareSDK.init({ env: 'webusb', debug: false });
+
+const [{ connectId }] = await HardwareSDK.searchDevices();
+const { payload: features } = await HardwareSDK.getFeatures(connectId);
+const deviceId = features?.device_id;
+
+HardwareSDK.on(UI_REQUEST.REQUEST_PIN, () => {
+  // 提示用户在设备输入 PIN（或在自定义 UI 收集后调用 uiResponse）
+});
+
+const accountPath = "m/44'/60'/0'/0/0";
+await HardwareSDK.evmGetAddress(connectId, deviceId, { path: accountPath, showOnOneKey: true });
+
+const tx = {
+  to: '0xd0d6d6c5fe4a677d343cc433536bb717bae167dd',
+  value: '0x0',
+  data: '0x',
+  nonce: '0x0',
+  gasLimit: '0x5208',
+  maxFeePerGas: '0x3b9aca00', // 1 gwei
+  maxPriorityFeePerGas: '0x59682f00', // 1.5 gwei
+  chainId: 1,
+};
+
+const { success, payload: sig } = await HardwareSDK.evmSignTransaction(connectId, deviceId, {
+  path: accountPath,
+  transaction: tx,
+  chainId: 1,
+  keepSession: true,
+});
+
+const rawTx = serialize({ ...tx, type: TransactionTypes.eip1559 }, {
+  r: sig.r,
+  s: sig.s,
+  v: Number(sig.v),
+});
+
+// 将 rawTx 交给 RPC 广播，例如 ethers.js provider.sendTransaction(rawTx)
+```
+
+## 校验与安全提示
+
+- 始终在设备上核对地址、金额、ChainId；与应用侧显示一致后再确认。
+- EIP-1559 请同时提供 `maxFeePerGas` 与 `maxPriorityFeePerGas`；Legacy 则使用 `gasPrice`。
+- 若用户拒签，SDK 返回 `success: false`，需给出重试或取消提示。
+
+## 常见问题
+
+- **路径错误**：EVM 建议 `m/44'/60'/0'/0/0`，多账户递增第三段或第五段。
+- **链 ID 不匹配**：确保 `transaction.chainId` 与 RPC 网络一致，否则广播会失败。
+- **多次密码短语提示**：结合 `keepSession` 与 `passphraseState`，避免重复输入。
+
+更多参数细节参见链方法文档：[evmSignTransaction](../chains/ethereum-and-evm/evmsigntransaction)。

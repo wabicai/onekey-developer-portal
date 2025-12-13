@@ -1,0 +1,81 @@
+---
+title: EVM Signer
+---
+
+# EVM Signer
+
+Step-by-step signing for Ethereum and EVM-compatible chains, covering EIP-1559 and legacy transactions.
+
+## Prerequisites
+
+- Keep device firmware up to date; use stable WebUSB/BLE transport.
+- `HardwareSDK.init` completed with valid `connectId` / `deviceId`.
+- Make sure the ChainId matches your RPC to avoid cross-chain signing.
+
+## Flow
+
+1. Subscribe to `UI/DEVICE` events and prepare PIN/passphrase responses.
+2. Show and confirm the account via `evmGetAddress`.
+3. Build EIP-1559 or legacy transaction params.
+4. Call `evmSignTransaction` to get `{ v, r, s }`.
+5. Serialize with `ethers` (or similar) and broadcast.
+
+## Minimal runnable sample (EIP-1559)
+
+```ts
+import HardwareSDK, { UI_REQUEST, UI_RESPONSE } from '@onekeyfe/hd-core';
+import { serialize, TransactionTypes } from '@ethersproject/transactions';
+
+await HardwareSDK.init({ env: 'webusb', debug: false });
+
+const [{ connectId }] = await HardwareSDK.searchDevices();
+const { payload: features } = await HardwareSDK.getFeatures(connectId);
+const deviceId = features?.device_id;
+
+HardwareSDK.on(UI_REQUEST.REQUEST_PIN, () => {
+  // Prompt user to enter PIN on device or collect via your UI then uiResponse
+});
+
+const accountPath = "m/44'/60'/0'/0/0";
+await HardwareSDK.evmGetAddress(connectId, deviceId, { path: accountPath, showOnOneKey: true });
+
+const tx = {
+  to: '0xd0d6d6c5fe4a677d343cc433536bb717bae167dd',
+  value: '0x0',
+  data: '0x',
+  nonce: '0x0',
+  gasLimit: '0x5208',
+  maxFeePerGas: '0x3b9aca00',
+  maxPriorityFeePerGas: '0x59682f00',
+  chainId: 1,
+};
+
+const { success, payload: sig } = await HardwareSDK.evmSignTransaction(connectId, deviceId, {
+  path: accountPath,
+  transaction: tx,
+  chainId: 1,
+  keepSession: true,
+});
+
+const rawTx = serialize({ ...tx, type: TransactionTypes.eip1559 }, {
+  r: sig.r,
+  s: sig.s,
+  v: Number(sig.v),
+});
+
+// Broadcast rawTx via your RPC provider, e.g. ethers.js provider.sendTransaction(rawTx)
+```
+
+## Validation & safety
+
+- Always confirm address, amount, and ChainId on-device before approving.
+- EIP-1559 requires both `maxFeePerGas` and `maxPriorityFeePerGas`; legacy uses `gasPrice`.
+- User rejection returns `success: false`; provide retry/cancel UX.
+
+## FAQs
+
+- **Wrong path**: default `m/44'/60'/0'/0/0`; increment account or address indices as needed.
+- **ChainId mismatch**: ensure `transaction.chainId` matches the RPC network.
+- **Repeated passphrase prompts**: pair `keepSession` with `passphraseState` to reuse the session.
+
+See chain method docs for details: [evmSignTransaction](../chains/ethereum-and-evm/evmsigntransaction).

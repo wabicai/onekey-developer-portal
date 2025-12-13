@@ -172,7 +172,7 @@ export function LandingPage({ locale = 'en' }) {
             icon: Usb,
             title: 'Hardware SDK',
             desc: 'Access OneKey devices via USB bridge or direct connection. Supports account retrieval, transaction signing, and core key management.',
-            href: `/${locale}/connect-to-hardware/hardware-sdk/quick-start`,
+            href: `/${locale}/hardware-sdk/quick-start`,
             tags: ['TypeScript', 'Core'],
             linkText: 'View SDK Docs',
           },
@@ -180,7 +180,7 @@ export function LandingPage({ locale = 'en' }) {
             icon: QrCode,
             title: 'Air-Gap (QR Code)',
             desc: 'QR code-based data transfer protocol for cold wallet environments. Provides completely air-gapped signing for maximum security.',
-            href: `/${locale}/connect-to-hardware/air-gap`,
+            href: `/${locale}/air-gap`,
             tags: ['UR Protocol', 'Offline'],
             linkText: 'View Protocol Spec',
           },
@@ -188,7 +188,7 @@ export function LandingPage({ locale = 'en' }) {
             icon: Bluetooth,
             title: 'Native BLE',
             desc: 'Bluetooth Low Energy communication support for iOS, Android, and Flutter applications to connect with OneKey hardware devices.',
-            href: `/${locale}/connect-to-hardware/hardware-sdk/transport/native-ble`,
+            href: `/${locale}/hardware-sdk/transport/native-ble`,
             tags: ['Mobile', 'Flutter', 'React Native'],
             linkText: 'View BLE Guide',
           },
@@ -247,7 +247,7 @@ export function LandingPage({ locale = 'en' }) {
             icon: Usb,
             title: 'Hardware SDK',
             desc: '通过 USB 桥接或直连访问 OneKey 设备。支持获取账户、签名交易及核心密钥管理功能。',
-            href: `/${locale}/connect-to-hardware/hardware-sdk/quick-start`,
+            href: `/${locale}/hardware-sdk/quick-start`,
             tags: ['TypeScript', 'Core'],
             linkText: '查看 SDK 文档',
           },
@@ -255,7 +255,7 @@ export function LandingPage({ locale = 'en' }) {
             icon: QrCode,
             title: 'Air-Gap (二维码)',
             desc: '基于二维码的数据传输协议，为冷钱包环境提供完全物理隔离的签名方案，极致安全。',
-            href: `/${locale}/connect-to-hardware/air-gap`,
+            href: `/${locale}/air-gap`,
             tags: ['UR Protocol', 'Offline'],
             linkText: '查看协议规范',
           },
@@ -263,7 +263,7 @@ export function LandingPage({ locale = 'en' }) {
             icon: Bluetooth,
             title: '原生 BLE',
             desc: '为 iOS、Android 和 Flutter 应用提供低功耗蓝牙通信支持，连接 OneKey 硬件设备。',
-            href: `/${locale}/connect-to-hardware/hardware-sdk/transport/native-ble`,
+            href: `/${locale}/hardware-sdk/transport/native-ble`,
             tags: ['Mobile', 'Flutter', 'React Native'],
             linkText: '查看蓝牙指南',
           },
@@ -611,12 +611,12 @@ export function LandingPage({ locale = 'en' }) {
                 </h3>
                 <ul className="flex flex-col gap-3 md:gap-4">
                   <li>
-                    <Link href={`/${locale}/connect-to-hardware/hardware-sdk/quick-start`} className="text-zinc-300 hover:text-white text-sm transition-colors">
+                    <Link href={`/${locale}/hardware-sdk/quick-start`} className="text-zinc-300 hover:text-white text-sm transition-colors">
                       {isZh ? '快速开始' : 'Getting Started'}
                     </Link>
                   </li>
                   <li>
-                    <Link href={`/${locale}/connect-to-hardware/hardware-sdk/api-reference`} className="text-zinc-300 hover:text-white text-sm transition-colors">
+                    <Link href={`/${locale}/hardware-sdk/api-reference`} className="text-zinc-300 hover:text-white text-sm transition-colors">
                       API Reference
                     </Link>
                   </li>

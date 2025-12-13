@@ -1,0 +1,20 @@
+import { ChainMethodsSidebar } from '../../../components/ChainMethodsSidebar'
+
+export default {
+  index: '概览',
+  'getting-started': '快速开始',
+  transport: '传输层',
+  'api-reference': 'API 参考',
+  signers: '交易签名向导',
+  'basic-api': '基础 API',
+  'device-api': '设备 API',
+  // Chain Methods - custom sidebar selector
+  '---chain': {
+    type: 'separator',
+    title: <ChainMethodsSidebar lang="zh" />
+  },
+  chains: { display: 'hidden' },
+  'legacy-guides': '迁移指南',
+  // Hidden folders
+  concepts: { display: 'hidden' }
+}

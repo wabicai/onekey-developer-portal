@@ -1,0 +1,100 @@
+---
+title: BTC Signer
+---
+
+# BTC Signer
+
+面向 Bitcoin 及分叉链的 UTXO 交易签名流程。
+
+## 前置条件
+
+- 设备固件保持最新，建议使用 BLE/USB 稳定连接。
+- 已准备好待花费的 UTXO（含 `txid`、`vout`、金额）以及对应 `refTxs`。
+- 账户路径与脚本类型匹配（P2WPKH、P2SH-P2WPKH 等）。
+
+## 流程总览
+
+1. 监听事件并完成初始化。
+2. 通过 `btcGetAddress` 确认收款/找零路径与脚本类型。
+3. 构建 `inputs`、`outputs`、`refTxs`，金额均为字符串格式的最小单位（satoshi）。
+4. 调用 `btcSignTransaction`，在设备上确认金额、找零与手续费。
+5. 使用 `r/s/serializedTx` 结果进行广播。
+
+## 最小可运行示例（P2SH-P2WPKH）
+
+```ts
+import HardwareSDK from '@onekeyfe/hd-common-connect-sdk';
+
+await HardwareSDK.init({ env: 'webusb', debug: false });
+
+const [{ connectId }] = await HardwareSDK.searchDevices();
+const deviceId = (await HardwareSDK.getFeatures(connectId)).payload?.device_id;
+
+const addressPath = [(49 | 0x80000000) >>> 0, (0 | 0x80000000) >>> 0, (0 | 0x80000000) >>> 0, 0, 0];
+await HardwareSDK.btcGetAddress(connectId, deviceId, {
+  path: addressPath,
+  coin: 'btc',
+  showOnOneKey: true,
+});
+
+const inputs = [
+  {
+    address_n: addressPath,
+    prev_index: 0,
+    prev_hash: 'b035d89d4543ce5713c553d69431698116a822c57c03ddacf3f04b763d1999ac',
+    amount: '3382047',
+    script_type: 'SPENDP2SHWITNESS',
+  },
+];
+
+const outputs = [
+  {
+    address_n: [(49 | 0x80000000) >>> 0, (0 | 0x80000000) >>> 0, (0 | 0x80000000) >>> 0, 1, 1],
+    amount: '3181747',
+    script_type: 'PAYTOP2SHWITNESS', // 找零
+  },
+  {
+    address: '18WL2iZKmpDYWk1oFavJapdLALxwSjcSk2',
+    amount: '200000',
+    script_type: 'PAYTOADDRESS', // 收款人
+  },
+];
+
+// refTxs 需提供完整原始交易，用于验证输入
+const refTxs = [
+  {
+    hash: 'b035d89d4543ce5713c553d69431698116a822c57c03ddacf3f04b763d1999ac',
+    version: 1,
+    lock_time: 0,
+    inputs: [/* 填入前序交易的 inputs */],
+    bin_outputs: [/* 填入前序交易的 outputs */],
+  },
+];
+
+const { success, payload } = await HardwareSDK.btcSignTransaction(connectId, deviceId, {
+  coin: 'btc',
+  inputs,
+  outputs,
+  refTxs,
+  locktime: 0,
+});
+
+if (success) {
+  // payload.serializedTx 可直接广播；v/r/s 可做自定义拼装
+  console.info('signed tx:', payload.serializedTx);
+}
+```
+
+## 校验与安全提示
+
+- 确认设备上显示的输入、输出、找零地址和手续费与预期一致。
+- `refTxs` 必须覆盖所有输入的前序交易；缺失会导致设备拒签。
+- 按脚本类型选择正确路径：P2WPKH 推荐 `84'`，P2SH-P2WPKH 推荐 `49'`，Legacy 推荐 `44'`。
+
+## 常见问题
+
+- **未提供完整 refTxs**：检查每个输入的前序交易是否完整传入。
+- **地址/脚本类型不匹配**：路径的 purpose 字段与脚本类型需一致。
+- **手续费过高或过低**：设备提示异常时，请重新计算输出和找零。
+
+更多参数细节参见链方法文档：[btcSignTransaction](../chains/bitcoin-and-bitcoin-forks/btcsigntransaction)。

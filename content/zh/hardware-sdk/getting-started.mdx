@@ -1,0 +1,158 @@
+---
+title: 快速开始
+description: 通过 USB/BLE 集成 OneKey 硬件钱包的完整指南
+---
+
+# 快速开始
+
+本指南涵盖集成 OneKey 硬件钱包的完整流程：安装 SDK、初始化、发现设备、处理 UI 提示，以及发起首次签名调用。
+
+## 安装
+
+```bash
+npm i @onekeyfe/hd-common-connect-sdk @onekeyfe/hd-shared @onekeyfe/hd-core
+```
+
+## 初始化 SDK
+
+尽早初始化，以便正确处理设备事件和 UI 提示。
+
+```ts
+import HardwareSDK from '@onekeyfe/hd-common-connect-sdk';
+
+await HardwareSDK.init({
+  env: 'webusb',  // 'webusb' | 'lowlevel' | 'react-native'
+  debug: process.env.NODE_ENV !== 'production',
+  fetchConfig: true,
+});
+```
+
+| 环境 | 使用场景 |
+|------|----------|
+| `webusb` | 浏览器 WebUSB |
+| `lowlevel` | 原生应用（iOS/Android/Flutter），通过底层适配器 |
+| `react-native` | React Native BLE 传输 |
+
+## 绑定事件
+
+设置设备连接和 UI 提示的事件监听器：
+
+```ts
+import { UI_EVENT, UI_REQUEST, DEVICE } from '@onekeyfe/hd-core';
+
+HardwareSDK.on(UI_EVENT, async (message) => {
+  switch (message.type) {
+    case UI_REQUEST.REQUEST_PIN:
+      // 处理 PIN 输入（见下文）
+      break;
+    case UI_REQUEST.REQUEST_PASSPHRASE:
+      // 处理密码短语输入（见下文）
+      break;
+  }
+});
+
+HardwareSDK.on(DEVICE.CONNECT, (payload) => console.log('已连接:', payload));
+HardwareSDK.on(DEVICE.DISCONNECT, (payload) => console.log('已断开:', payload));
+```
+
+## 发现设备
+
+### WebUSB 授权（浏览器）
+
+```ts
+import { ONEKEY_WEBUSB_FILTER } from '@onekeyfe/hd-shared';
+
+// 触发浏览器设备选择器
+await navigator.usb.requestDevice({ filters: ONEKEY_WEBUSB_FILTER });
+```
+
+### 搜索设备
+
+```ts
+const result = await HardwareSDK.searchDevices();
+if (!result.success) throw new Error(result.payload.error);
+
+const devices = result.payload;
+// [{ connectId, deviceId?, name, deviceType, ... }]
+```
+
+### 获取设备特征
+
+从 `connectId` 解析 `device_id`（BLE 连接必需）：
+
+```ts
+const features = await HardwareSDK.getFeatures(connectId);
+if (!features.success) throw new Error(features.payload.error);
+
+const deviceId = features.payload.device_id;
+```
+
+> **重要：** 保存 `connectId` 和 `device_id` 用于后续 API 调用。
+
+## 处理 PIN 输入
+
+当执行受保护的调用且设备已锁定时，处理 `REQUEST_PIN`：
+
+```ts
+import { UI_RESPONSE } from '@onekeyfe/hd-core';
+
+// 方式 1：在设备上输入（推荐）
+await HardwareSDK.uiResponse({
+  type: UI_RESPONSE.RECEIVE_PIN,
+  payload: '@@ONEKEY_INPUT_PIN_IN_DEVICE'
+});
+
+// 方式 2：软件盲输 PIN（Pro/Touch 不支持）
+await HardwareSDK.uiResponse({
+  type: UI_RESPONSE.RECEIVE_PIN,
+  payload: userInputPin  // 例如 '1234'
+});
+```
+
+> **注意：** OneKey Pro 和 Touch 设备仅支持设备端 PIN 输入。
+
+## 处理密码短语
+
+访问隐藏钱包时，处理 `REQUEST_PASSPHRASE`：
+
+```ts
+// 方式 1：在设备上输入（最安全）
+await HardwareSDK.uiResponse({
+  type: UI_RESPONSE.RECEIVE_PASSPHRASE,
+  payload: { passphraseOnDevice: true, value: '' }
+});
+
+// 方式 2：软件输入，可选会话缓存
+await HardwareSDK.uiResponse({
+  type: UI_RESPONSE.RECEIVE_PASSPHRASE,
+  payload: { value: userPassphrase, passphraseOnDevice: false, save: true }
+});
+```
+
+强制使用标准钱包（跳过密码短语），在任意方法调用中添加 `useEmptyPassphrase: true`。
+
+## 首次签名调用
+
+示例：签名 EVM 消息（EIP-191 personal_sign）：
+
+```ts
+const message = 'Hello OneKey';
+const messageHex = Buffer.from(message).toString('hex');
+
+const res = await HardwareSDK.evmSignMessage(connectId, deviceId, {
+  path: "m/44'/60'/0'",
+  messageHex,
+  chainId: 1,
+});
+
+if (!res.success) throw new Error(res.payload.error);
+
+console.log('地址:', res.payload.address);
+console.log('签名:', res.payload.signature);
+```
+
+## 下一步
+
+- **传输设置：** [WebUSB](/zh/hardware-sdk/transport/web-usb) | [React Native BLE](/zh/hardware-sdk/transport/react-native-ble) | [原生 BLE](/zh/hardware-sdk/transport/android)
+- **链 API：** 使用侧边栏的链选择器查找特定签名方法
+- **参考：** [通用参数](/zh/hardware-sdk/api-reference/common-params) | [错误码](/zh/hardware-sdk/api-reference/error-code)

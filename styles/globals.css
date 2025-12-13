@@ -567,9 +567,6 @@ tbody tr:hover {
 /* ============================================
    Navbar Styling
    ============================================ */
-header.nextra-navbar {
-  top: var(--space-3) !important;
-}
 
 .nextra-navbar-blur {
   backdrop-filter: blur(12px);
@@ -781,7 +778,7 @@ button[aria-label="Collapse sidebar"] {
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: var(--gray-400);
-  margin-top: var(--space-6);
+  /* margin-top: var(--space-6); */
   margin-bottom: var(--space-2);
 }
 

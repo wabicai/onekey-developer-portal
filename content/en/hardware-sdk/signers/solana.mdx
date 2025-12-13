@@ -1,0 +1,55 @@
+---
+title: Solana Signer
+---
+
+# Solana Signer
+
+Serialized-transaction signing flow for Solana. Path is fixed to BIP44 `m/44'/501'/0'/0'`.
+
+## Prerequisites
+
+- Up-to-date firmware and a stable BLE/USB transport.
+- `rawTx` must be serialized (base64/hex string) on the app side.
+
+## Flow
+
+1. Subscribe to events and initialize.
+2. Confirm path/address via `solGetAddress`.
+3. Prepare serialized `rawTx`.
+4. Call `solSignTransaction`, confirm on device, receive signature.
+5. Attach signature to the transaction and broadcast.
+
+## Minimal runnable sample
+
+```ts
+import HardwareSDK from '@onekeyfe/hd-common-connect-sdk';
+
+await HardwareSDK.init({ env: 'webusb', debug: false });
+
+const [{ connectId }] = await HardwareSDK.searchDevices();
+const deviceId = (await HardwareSDK.getFeatures(connectId)).payload?.device_id;
+
+const path = "m/44'/501'/0'/0'";
+await HardwareSDK.solGetAddress(connectId, deviceId, { path, showOnOneKey: true });
+
+const rawTx =
+  '4301355cc18d85809872bcbd63cb6ea5ac3c2814a1bacf2e50d8ec62367211917b79ecd1f1a98fa0d793d7cb92ebd9a479dc6aba0ae8570253aa87c0da32db5ed2bd401f3bbee52c2bc55761fd8486fae2e28f46499282f4267b8b90fc8c1cc97bb659b6cc927f2ec1701ef2928ddb84759ba5c557f549db';
+
+const { success, payload } = await HardwareSDK.solSignTransaction(connectId, deviceId, {
+  path,
+  rawTx,
+  keepSession: true,
+});
+
+if (success) {
+  console.info('signature:', payload.signature);
+}
+```
+
+## Validation & safety
+
+- Path must be hardened with length 4 (`44'/501'/account'/0'`).
+- Confirm source, destination, and amount on-device match your UI.
+- `rawTx` must contain the latest recent blockhash, account list, and instruction order; otherwise broadcasting fails.
+
+See chain method docs for details: [solSignTransaction](../chains/solana/solsigntransaction).

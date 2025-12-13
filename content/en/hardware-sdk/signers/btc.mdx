@@ -1,0 +1,98 @@
+---
+title: BTC Signer
+---
+
+# BTC Signer
+
+UTXO signing flow for Bitcoin and forks.
+
+## Prerequisites
+
+- Up-to-date firmware; stable BLE/USB transport.
+- Prepare UTXOs (`txid`, `vout`, amount) and corresponding `refTxs`.
+- Ensure account path matches script type (P2WPKH, P2SH-P2WPKH, Legacy).
+
+## Flow
+
+1. Subscribe to events and initialize.
+2. Use `btcGetAddress` to confirm receiving/change paths and script type.
+3. Build `inputs`, `outputs`, `refTxs`; amounts as strings in satoshi.
+4. Call `btcSignTransaction`; confirm amounts/change/fee on device.
+5. Broadcast with `serializedTx` or custom assembly.
+
+## Minimal runnable sample (P2SH-P2WPKH)
+
+```ts
+import HardwareSDK from '@onekeyfe/hd-common-connect-sdk';
+
+await HardwareSDK.init({ env: 'webusb', debug: false });
+
+const [{ connectId }] = await HardwareSDK.searchDevices();
+const deviceId = (await HardwareSDK.getFeatures(connectId)).payload?.device_id;
+
+const addressPath = [(49 | 0x80000000) >>> 0, (0 | 0x80000000) >>> 0, (0 | 0x80000000) >>> 0, 0, 0];
+await HardwareSDK.btcGetAddress(connectId, deviceId, {
+  path: addressPath,
+  coin: 'btc',
+  showOnOneKey: true,
+});
+
+const inputs = [
+  {
+    address_n: addressPath,
+    prev_index: 0,
+    prev_hash: 'b035d89d4543ce5713c553d69431698116a822c57c03ddacf3f04b763d1999ac',
+    amount: '3382047',
+    script_type: 'SPENDP2SHWITNESS',
+  },
+];
+
+const outputs = [
+  {
+    address_n: [(49 | 0x80000000) >>> 0, (0 | 0x80000000) >>> 0, (0 | 0x80000000) >>> 0, 1, 1],
+    amount: '3181747',
+    script_type: 'PAYTOP2SHWITNESS', // change
+  },
+  {
+    address: '18WL2iZKmpDYWk1oFavJapdLALxwSjcSk2',
+    amount: '200000',
+    script_type: 'PAYTOADDRESS', // recipient
+  },
+];
+
+const refTxs = [
+  {
+    hash: 'b035d89d4543ce5713c553d69431698116a822c57c03ddacf3f04b763d1999ac',
+    version: 1,
+    lock_time: 0,
+    inputs: [/* fill inputs from the previous transaction */],
+    bin_outputs: [/* fill outputs from the previous transaction */],
+  },
+];
+
+const { success, payload } = await HardwareSDK.btcSignTransaction(connectId, deviceId, {
+  coin: 'btc',
+  inputs,
+  outputs,
+  refTxs,
+  locktime: 0,
+});
+
+if (success) {
+  console.info('signed tx:', payload.serializedTx);
+}
+```
+
+## Validation & safety
+
+- Verify inputs, outputs, change address, and fee on-device.
+- `refTxs` must cover every input; missing entries lead to rejection.
+- Align path purpose with script type: `84'` for P2WPKH, `49'` for P2SH-P2WPKH, `44'` for legacy.
+
+## FAQs
+
+- **Missing refTxs**: ensure every input’s previous transaction is provided.
+- **Script mismatch**: path purpose and script type must match.
+- **Fee anomalies**: recompute outputs/change if the device flags unusual fee.
+
+See chain method docs for details: [btcSignTransaction](../chains/bitcoin-and-bitcoin-forks/btcsigntransaction).

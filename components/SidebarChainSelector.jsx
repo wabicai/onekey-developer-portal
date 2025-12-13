@@ -36,7 +36,7 @@ const CHAINS = [
 ]
 
 export function SidebarChainSelector({
-  basePath = '/en/connect-to-hardware/hardware-sdk/api-reference',
+  basePath = '/en/hardware-sdk/api-reference',
   currentChainId = null,
   showMethods = false,
   methods = []
@@ -163,7 +163,7 @@ export function SidebarChainSelector({
 
 // Compact version for use within content
 export function ChainSelectorCompact({
-  basePath = '/en/connect-to-hardware/hardware-sdk/api-reference',
+  basePath = '/en/hardware-sdk/api-reference',
   currentChainId = null
 }) {
   const router = useRouter()
@@ -189,7 +189,7 @@ export function ChainSelectorCompact({
 }
 
 // Grid view of all chains
-export function ChainGrid({ basePath = '/en/connect-to-hardware/hardware-sdk/api-reference' }) {
+export function ChainGrid({ basePath = '/en/hardware-sdk/api-reference' }) {
   return (
     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 my-6">
       {CHAINS.map((chain) => (

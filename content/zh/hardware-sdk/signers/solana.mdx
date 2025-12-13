@@ -1,0 +1,56 @@
+---
+title: Solana Signer
+---
+
+# Solana Signer
+
+面向 Solana 的原始交易签名流程，路径固定为 BIP44 `m/44'/501'/0'/0'`。
+
+## 前置条件
+
+- 设备固件保持最新，且使用支持 BLE/USB 的最新 OneKey 客户端。
+- 交易需先在应用侧序列化为 `rawTx`（base64/hex 字符串）。
+
+## 流程总览
+
+1. 监听事件并完成初始化。
+2. 使用 `solGetAddress` 确认路径与地址。
+3. 准备序列化后的 `rawTx`。
+4. 调用 `solSignTransaction`，设备上确认后返回签名。
+5. 将签名拼回交易并广播。
+
+## 最小可运行示例
+
+```ts
+import HardwareSDK from '@onekeyfe/hd-common-connect-sdk';
+
+await HardwareSDK.init({ env: 'webusb', debug: false });
+
+const [{ connectId }] = await HardwareSDK.searchDevices();
+const deviceId = (await HardwareSDK.getFeatures(connectId)).payload?.device_id;
+
+const path = "m/44'/501'/0'/0'";
+await HardwareSDK.solGetAddress(connectId, deviceId, { path, showOnOneKey: true });
+
+const rawTx =
+  '4301355cc18d85809872bcbd63cb6ea5ac3c2814a1bacf2e50d8ec62367211917b79ecd1f1a98fa0d793d7cb92ebd9a479dc6aba0ae8570253aa87c0da32db5ed2bd401f3bbee52c2bc55761fd8486fae2e28f46499282f4267b8b90fc8c1cc97bb659b6cc927f2ec1701ef2928ddb84759ba5c557f549db';
+
+const { success, payload } = await HardwareSDK.solSignTransaction(connectId, deviceId, {
+  path,
+  rawTx,
+  keepSession: true,
+});
+
+if (success) {
+  // payload.signature 即签名；拼回交易后广播到 RPC
+  console.info('signature:', payload.signature);
+}
+```
+
+## 校验与安全提示
+
+- 必须使用硬化路径，长度固定 4（`44'/501'/account'/0'`）。
+- 设备上确认的源账户、目标账户与金额需与前端显示一致。
+- `rawTx` 应包含正确的最近区块哈希、账户列表和指令顺序，否则广播会失败。
+
+更多参数细节参见链方法文档：[solSignTransaction](../chains/solana/solsigntransaction)。

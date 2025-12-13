@@ -8,9 +8,50 @@ export async function generateStaticParams() {
   return [{ lang: 'en' }, { lang: 'zh' }]
 }
 
+function patchPageMapForConnectToHardware(pageMap, lang) {
+  if (!Array.isArray(pageMap) || pageMap.length === 0) return pageMap
+
+  const [first, ...rest] = pageMap
+  const hasMeta = first && typeof first === 'object' && 'data' in first
+  const metaItem = hasMeta ? first : null
+  const items = hasMeta ? rest : pageMap
+
+  const hardwareSdkItem = items.find((item) => item?.name === 'hardware-sdk')
+  const airGapItem = items.find((item) => item?.name === 'air-gap')
+  if (!hardwareSdkItem || !airGapItem) return pageMap
+
+  const filteredItems = items.filter(
+    (item) => item?.name !== 'hardware-sdk' && item?.name !== 'air-gap'
+  )
+
+  const title = lang === 'zh' ? '连接硬件' : 'Connect to hardware'
+
+  const wrapper = {
+    name: '__connect-to-hardware__',
+    title,
+    route: `/${lang}/__connect-to-hardware__`,
+    frontMatter: {
+      type: 'doc',
+      display: 'children'
+    },
+    children: [
+      {
+        data: {
+          'hardware-sdk': { type: 'page' },
+          'air-gap': { type: 'page' }
+        }
+      },
+      hardwareSdkItem,
+      airGapItem
+    ]
+  }
+
+  return metaItem ? [metaItem, wrapper, ...filteredItems] : [wrapper, ...filteredItems]
+}
+
 export default async function LocaleLayout({ children, params }) {
   const { lang } = await params
-  const pageMap = await getPageMap(`/${lang}`)
+  const pageMap = patchPageMapForConnectToHardware(await getPageMap(`/${lang}`), lang)
 
   const navbar = (
     <Navbar
@@ -53,7 +94,7 @@ export default async function LocaleLayout({ children, params }) {
           title: lang === 'zh' ? '本页内容' : 'On This Page',
           backToTop: lang === 'zh' ? '返回顶部' : 'Back to top'
         }}
-        navigation
+        navigation={false}
         darkMode={true}
       >
         {children}

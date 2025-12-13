@@ -289,7 +289,7 @@ export function ChainMethodsSidebar({ lang = 'en' }) {
   // Use URL chain if available, otherwise use last selected (persists across remounts)
   const displayedChainId = urlChainId || lastSelectedChainId
   const selectedChain = CHAINS.find(c => c.id === displayedChainId) || CHAINS[0]
-  const basePath = `/${lang}/connect-to-hardware/hardware-sdk/chains`
+  const basePath = `/${lang}/hardware-sdk/chains`
 
   // Update last selected when URL chain changes
   useEffect(() => {

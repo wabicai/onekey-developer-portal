@@ -14,7 +14,19 @@ export default {
     }
   },
   'connect-to-hardware': {
-    title: 'Connect to Hardware',
+    title: 'Connect to hardware',
+    type: 'menu',
+    items: {
+      'hardware-sdk': { title: 'Hardware JS SDK', href: '/en/hardware-sdk' },
+      'air-gap': { title: 'Air-Gap', href: '/en/air-gap' }
+    }
+  },
+  'hardware-sdk': {
+    title: 'hardware-sdk',
+    type: 'page'
+  },
+  'air-gap': {
+    title: 'Air Gap',
     type: 'page'
   },
   'connect-to-software': {
