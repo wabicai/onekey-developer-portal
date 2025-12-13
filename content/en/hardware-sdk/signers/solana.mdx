@@ -4,22 +4,78 @@ title: Solana Signer
 
 # Solana Signer
 
-Serialized-transaction signing flow for Solana. Path is fixed to BIP44 `m/44'/501'/0'/0'`.
+End-to-end guide for Solana: overview → how it works → install/init → use case index → parameters/limits → device display & verification → observable behavior → example.
 
-## Prerequisites
+## Overview
 
-- Up-to-date firmware and a stable BLE/USB transport.
-- `rawTx` must be serialized (base64/hex string) on the app side.
+- Supports: `solGetAddress`, `solSignTransaction` (serialized message/tx signing).
+- Path: hardened, length 4 (`m/44'/501'/account'/0'`, e.g., `m/44'/501'/0'/0'`).
+- You must serialize the Solana message/transaction to `rawTx` (base64/hex).
 
-## Flow
+## How it works
 
-1. Subscribe to events and initialize.
-2. Confirm path/address via `solGetAddress`.
-3. Prepare serialized `rawTx`.
-4. Call `solSignTransaction`, confirm on device, receive signature.
-5. Attach signature to the transaction and broadcast.
+- `HardwareSDK` talks to the device; device shows source/destination, amount, fee summary, then confirms; returns signature.
+- Host verifies by parsing `rawTx` with `@solana/web3.js`, attaching the signature, and checking against the public key from `solGetAddress`.
 
-## Minimal runnable sample
+## Install & init
+
+```bash
+npm i @onekeyfe/hd-common-connect-sdk @onekeyfe/hd-core @onekeyfe/hd-shared
+```
+
+```ts
+import HardwareSDK from '@onekeyfe/hd-common-connect-sdk';
+await HardwareSDK.init({ env: 'webusb', fetchConfig: true, debug: false });
+const [{ connectId }] = await HardwareSDK.searchDevices();
+const deviceId = (await HardwareSDK.getFeatures(connectId)).payload?.device_id;
+```
+
+## Use cases (index)
+
+- Get Address → `solGetAddress`
+|- Sign Transaction/Message → `solSignTransaction`
+
+## Parameters & limits
+
+| Field | Notes |
+| --- | --- |
+| `path` | Hardened, length 4 (`44'/501'/account'/0'`) |
+| `rawTx` | Serialized message/transaction, base64 or hex |
+| `keepSession?` | Optional; reuse session for multiple signatures |
+
+- Limits: very large messages or unsupported instructions may be rejected; recent blockhash must be fresh.
+
+## Device display & host verification
+
+- Device: path/account, destinations, amount, fee summary; blockhash implicit.
+- Host: parse `rawTx` with `@solana/web3.js`, attach signature, verify against `solGetAddress` public key.
+
+## Observable behavior
+
+- Events: subscribe `UI_EVENT`; expect PIN/Passphrase/confirm prompts.
+- Status: not started → pending (awaiting confirm) → completed/cancelled/error; pending state should allow cancel/retry.
+- Concurrency: serial per device.
+
+## Supported operations & limits
+
+- Signs serialized Solana transactions/messages supplied as `rawTx` (base64/hex).
+- Path must be hardened, length 4: `m/44'/501'/account'/0'`.
+- Very large messages or unsupported instruction sets may be rejected; ensure recent blockhash is fresh.
+
+## Parameters & constraints
+
+| Field | Notes |
+| --- | --- |
+| `path` | Hardened, length 4 (`44'/501'/account'/0'`) |
+| `rawTx` | Serialized message/transaction, base64 or hex |
+| `keepSession?` | Optional; reuse session for multiple signatures |
+
+## Device display & host verification
+
+- Device shows: source path/account, destinations, amount, fee summary; blockhash is implicit.
+- Host verification: use `@solana/web3.js` to parse `rawTx`, attach the returned signature, and verify against the public key from `solGetAddress`.
+
+## Example
 
 ```ts
 import HardwareSDK from '@onekeyfe/hd-common-connect-sdk';
@@ -46,10 +102,16 @@ if (success) {
 }
 ```
 
-## Validation & safety
+## Sample test vector (shape)
 
-- Path must be hardened with length 4 (`44'/501'/account'/0'`).
-- Confirm source, destination, and amount on-device match your UI.
-- `rawTx` must contain the latest recent blockhash, account list, and instruction order; otherwise broadcasting fails.
+- Transfer: path `m/44'/501'/0'/0'`, `rawTx` = simple transfer (from sender to recipient, lamports, recent blockhash). Expect returned signature to verify for the sender address when attached to the transaction.
+> Signatures depend on device keys; use this as a field/flow reference.
 
-See chain method docs for details: [solSignTransaction](../chains/solana/solsigntransaction).
+## Validation & troubleshooting
+
+- Path must follow `44'/501'/account'/0'`; others are rejected.
+- `rawTx` must include fresh blockhash, correct accounts, instruction order.
+- Serial per device; use `keepSession` for multiple signatures.
+- Rejection/timeout: provide cancel/retry; no auto-replay.
+
+See method doc: [solSignTransaction](/en/hardware-sdk/chains/solana/solsigntransaction).

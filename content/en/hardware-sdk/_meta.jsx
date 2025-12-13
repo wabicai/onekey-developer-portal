@@ -16,5 +16,6 @@ export default {
   },
   chains: { display: 'hidden' },
   '---Reference': { type: 'separator', title: 'Reference' },
-  reference: { title: 'Reference', display: 'children' },
+  'legacy-guides': 'Migration Gudie',
+  'concepts': 'concepts'
 }

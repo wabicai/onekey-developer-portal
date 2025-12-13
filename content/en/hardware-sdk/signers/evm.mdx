@@ -4,23 +4,72 @@ title: EVM Signer
 
 # EVM Signer
 
-Step-by-step signing for Ethereum and EVM-compatible chains, covering EIP-1559 and legacy transactions.
+End-to-end guide for EVM chains, organized为：概览 → 工作原理 → 安装/初始化 → 用例索引 → 具体用例（含缺失的授权/显示 Safe）→ 交互与状态 → 示例。
 
-## Prerequisites
+## Overview
 
-- Keep device firmware up to date; use stable WebUSB/BLE transport.
-- `HardwareSDK.init` completed with valid `connectId` / `deviceId`.
-- Make sure the ChainId matches your RPC to avoid cross-chain signing.
+- 支持：地址获取、EIP‑1559/Legacy 交易、personal_sign、EIP‑712、EIP‑7702 授权签名、Safe 地址显示。
+- 适用：WebUSB / BLE / 低层插件环境。
+- 路径：默认 `m/44'/60'/0'/0/0`，按需递增 account/address，首次签名前用 `showOnOneKey: true` 确认。
 
-## Flow
+## How it works
 
-1. Subscribe to `UI/DEVICE` events and prepare PIN/passphrase responses.
-2. Show and confirm the account via `evmGetAddress`.
-3. Build EIP-1559 or legacy transaction params.
-4. Call `evmSignTransaction` to get `{ v, r, s }`.
-5. Serialize with `ethers` (or similar) and broadcast.
+- 通过 `HardwareSDK` 与设备交互，事件 `UI_REQUEST` 触发 PIN/Passphrase/确认；调用对应 signer API 获取 `{ v, r, s }` 或 signature hex。
+- 设备会展示路径/账号、收款地址、金额、ChainId、费用摘要；长 `data` 通常以哈希显示。
+- 主机侧用 `ethers`/`viem` 重建交易或消息哈希进行验签。
 
-## Minimal runnable sample (EIP-1559)
+## Installation
+
+确保安装：
+
+```bash
+npm i @onekeyfe/hd-common-connect-sdk @onekeyfe/hd-core @onekeyfe/hd-shared
+```
+
+## Initialization
+
+- 固件更新到最新；Web 场景使用 HTTPS + 手势；RN 需蓝牙权限。
+- 代码示例：
+
+```ts
+import HardwareSDK from '@onekeyfe/hd-common-connect-sdk';
+await HardwareSDK.init({ env: 'webusb', fetchConfig: true, debug: false });
+const [{ connectId }] = await HardwareSDK.searchDevices();
+const deviceId = (await HardwareSDK.getFeatures(connectId)).payload?.device_id;
+```
+
+## Use cases (index)
+
+- Get Address → `evmGetAddress`
+- Sign Transaction (1559/Legacy) → `evmSignTransaction`
+- Sign Message → `evmSignMessage`
+- Sign Typed Data → `evmSignTypedData`
+- Sign Delegation Authorization (EIP‑7702) → `evmSignDelegationAuthorization`
+- Display Safe Account → `evmVerifySafeAddress`（Safe 地址展示与验证）
+
+## Parameters & quick rules
+
+| 用例 | 必填 | 说明 |
+| --- | --- | --- |
+| Get Address | `path`，`showOnOneKey?` | 路径首次使用先确认 |
+| Tx 1559 | `to` `value` `data` `nonce` `gasLimit` `maxFeePerGas` `maxPriorityFeePerGas` `chainId` `type:2` `path` | 不要传 `gasPrice` |
+| Tx Legacy | `to` `value` `data` `nonce` `gasLimit` `gasPrice` `chainId` `path` | 不含 1559 费字段 |
+| Message | `messageHex` `path` (`chainId?`) | 文本/字节转 hex |
+| Typed Data | `data`(EIP‑712) `path` `chainId` | 含 `domain/types/primaryType/message` |
+| Delegation (7702) | `path` `chainId` `contractAddress` `nonce` | 按 7702 规范 |
+| Safe Address | `safeContractAddress` (`chainId`) (`skipWebDevicePrompt?`) | 设备显示并核对 Safe 地址 |
+
+## Device display & host verify
+
+- 设备：路径/账号、收款地址、金额、ChainId、费用摘要；大 `data` 以哈希呈现。
+- 主机验签：
+  - Tx：`ethers`/`viem` 序列化，确认签名哈希与展示字段一致。
+  - Message：`ethers.verifyMessage(message, sig)。
+  - Typed Data：`ethers.verifyTypedData(domain, types, message, sig)。
+  - 7702：按 EIP‑7702 规范验证恢复地址。
+  - Safe：对比设备显示的 Safe 地址与预期。
+
+## Example: EIP-1559 transaction
 
 ```ts
 import HardwareSDK, { UI_REQUEST, UI_RESPONSE } from '@onekeyfe/hd-core';
@@ -29,11 +78,10 @@ import { serialize, TransactionTypes } from '@ethersproject/transactions';
 await HardwareSDK.init({ env: 'webusb', debug: false });
 
 const [{ connectId }] = await HardwareSDK.searchDevices();
-const { payload: features } = await HardwareSDK.getFeatures(connectId);
-const deviceId = features?.device_id;
+const deviceId = (await HardwareSDK.getFeatures(connectId)).payload?.device_id;
 
 HardwareSDK.on(UI_REQUEST.REQUEST_PIN, () => {
-  // Prompt user to enter PIN on device or collect via your UI then uiResponse
+  // Prompt PIN (prefer on-device); then call uiResponse if needed
 });
 
 const accountPath = "m/44'/60'/0'/0/0";
@@ -63,19 +111,111 @@ const rawTx = serialize({ ...tx, type: TransactionTypes.eip1559 }, {
   v: Number(sig.v),
 });
 
-// Broadcast rawTx via your RPC provider, e.g. ethers.js provider.sendTransaction(rawTx)
+// Broadcast with your RPC provider, e.g. ethers.js provider.sendTransaction(rawTx)
 ```
+
+## Use case: Legacy transaction (gasPrice)
+
+```ts
+const legacyTx = {
+  to: '0xRecipient',
+  value: '0x2386f26fc10000', // 0.01 ETH
+  data: '0x',
+  nonce: '0x1',
+  gasLimit: '0x5208',
+  gasPrice: '0x3b9aca00', // 1 gwei
+  chainId: 1,
+};
+
+const sig = await HardwareSDK.evmSignTransaction(connectId, deviceId, {
+  path: accountPath,
+  transaction: legacyTx,
+  chainId: 1,
+});
+```
+
+## Use case: Message (personal_sign / EIP-191)
+
+```ts
+const message = 'Hello OneKey';
+const messageHex = Buffer.from(message).toString('hex');
+
+const res = await HardwareSDK.evmSignMessage(connectId, deviceId, {
+  path: accountPath,
+  messageHex,
+  chainId: 1,
+});
+// res.payload.signature -> verify with ethers.verifyMessage(message, signature)
+```
+
+## Use case: Typed data (EIP-712)
+
+```ts
+const typedData = {
+  types: {
+    EIP712Domain: [
+      { name: 'name', type: 'string' },
+      { name: 'version', type: 'string' },
+      { name: 'chainId', type: 'uint256' },
+      { name: 'verifyingContract', type: 'address' },
+    ],
+    Mail: [
+      { name: 'from', type: 'Person' },
+      { name: 'to', type: 'Person' },
+      { name: 'contents', type: 'string' },
+    ],
+    Person: [
+      { name: 'name', type: 'string' },
+      { name: 'wallet', type: 'address' },
+    ],
+  },
+  primaryType: 'Mail',
+  domain: {
+    name: 'Ether Mail',
+    version: '1',
+    chainId: 1,
+    verifyingContract: '0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC',
+  },
+  message: {
+    from: { name: 'Cow', wallet: '0xCD2a3d9F938E13CD947Ec05AbC7FE734Df8DD826' },
+    to: { name: 'Bob', wallet: '0xbBbBBBBbbBBBbbbBbbBbbbbBBbBbbbbBbBbbBBbB' },
+    contents: 'Hello, Bob!',
+  },
+};
+
+const res = await HardwareSDK.evmSignTypedData(connectId, deviceId, {
+  path: accountPath,
+  data: typedData,
+  chainId: 1,
+});
+// res.payload.signature -> recover with ethers.verifyTypedData(domain, types, message, signature)
+```
+
+## Sample test vector (shape)
+
+- EIP-1559：`to=0xd0d6...67dd`，`value=0`，`gasLimit=0x5208`，`maxFeePerGas=1 gwei`，`maxPriorityFeePerGas=1.5 gwei`，`chainId=1`；期望 `{ v, r, s }` 且 raw tx 与 `ethers.serializeTransaction` 一致
+- personal_sign：消息 `"Hello OneKey"` → 用 `ethers.verifyMessage` 验证
+- EIP-712：使用上述 `Mail` 数据 → 用 `verifyTypedData` 恢复签名者
+> 签名依赖设备密钥，示例用于字段/流程参考
+
+## Observable behavior & interaction
+
+- 事件：订阅 `UI_EVENT`；`REQUEST_PIN`/`REQUEST_PASSPHRASE` 触发输入，签名时设备会展示详情并等待确认。
+- 状态流：常见状态为“待开始 → 进行中（等待用户确认） → 成功/失败/取消”；在“进行中”时前端应提供取消与重试入口。
+- 并发：同一设备串行调用，避免多次弹窗。
 
 ## Validation & safety
 
-- Always confirm address, amount, and ChainId on-device before approving.
-- EIP-1559 requires both `maxFeePerGas` and `maxPriorityFeePerGas`; legacy uses `gasPrice`.
-- User rejection returns `success: false`; provide retry/cancel UX.
+- Always confirm on-device address/amount/ChainId; reject on mismatch.
+- EIP-1559 needs both fee fields; Legacy uses only `gasPrice`.
+- Show a hash/preview for message/typed data and explain scope to users.
+- Serial per device; avoid overlapping prompts; handle rejection with retry/cancel UI.
 
-## FAQs
+## Troubleshooting
 
-- **Wrong path**: default `m/44'/60'/0'/0/0`; increment account or address indices as needed.
-- **ChainId mismatch**: ensure `transaction.chainId` matches the RPC network.
-- **Repeated passphrase prompts**: pair `keepSession` with `passphraseState` to reuse the session.
+- Wrong path: default `m/44'/60'/0'/0/0`; increment account/address as needed.
+- ChainId mismatch: align `transaction.chainId` with RPC; broadcast fails otherwise.
+- Repeated passphrase prompts: use `keepSession` + `passphraseState`.
+- User rejection/timeout: surface retry/cancel; do not auto-resubmit.
 
-See chain method docs for details: [evmSignTransaction](../chains/ethereum-and-evm/evmsigntransaction).
+See chain docs: [evmSignTransaction](/en/hardware-sdk/chains/ethereum-and-evm/evmsigntransaction) · [evmSignMessage](/en/hardware-sdk/chains/ethereum-and-evm/evmsignmessage) · [evmSignTypedData](/en/hardware-sdk/chains/ethereum-and-evm/evmsigntypeddata).

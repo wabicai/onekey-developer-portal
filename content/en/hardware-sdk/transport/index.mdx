@@ -8,14 +8,13 @@ Transport is the communication layer between your application and OneKey hardwar
 
 > If the standard transports do not fit (e.g., custom hardware channel), skip to **Advanced Topics** for low-level plugins and the message protocol.
 
-## Connection Methods
+## Connection Methods (aligned with main overview)
 
-OneKey devices support two primary connection methods:
-
-| Method | Connection | Supported Devices |
-|--------|-----------|-------------------|
-| **USB** | Wired via USB cable | All OneKey devices |
-| **Bluetooth** | Wireless via BLE | OneKey Pro, OneKey Touch |
+| Method | Description | Supported devices |
+|--------|-------------|-------------------|
+| **USB / WebUSB** | Wired USB; Web uses WebUSB, native uses low-level plugin | All OneKey devices |
+| **Bluetooth BLE (native)** | Native apps over BLE (not Web Bluetooth); requires system Bluetooth + permission | OneKey Pro, Touch, Classic 1s / Classic 1s Pure; **Mini does not support BLE** |
+| **Air-Gap (QR)** | Offline QR signing | OneKey Pro only |
 
 ## Choose Your Transport
 
@@ -84,4 +83,4 @@ Architecture: **WebView + JS Bridge + Native BLE**
 
 If standard transports don't fit or you need native host integration, start here. It defines the custom transport contract and the 64-byte USB/BLE framing.
 
-[View Low-Level Transport Plugin](../reference/concepts/low-level-plugin)
+[View Low-Level Transport Plugin](../concepts/low-level-plugin)

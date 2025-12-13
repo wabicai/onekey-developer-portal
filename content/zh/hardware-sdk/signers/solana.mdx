@@ -4,22 +4,59 @@ title: Solana Signer
 
 # Solana Signer
 
-面向 Solana 的原始交易签名流程，路径固定为 BIP44 `m/44'/501'/0'/0'`。
+全链路指南：概览 → 原理 → 安装/初始化 → 用例索引 → 参数/限制 → 设备显示与验签 → 交互 → 示例。
 
-## 前置条件
+## 概览
 
-- 设备固件保持最新，且使用支持 BLE/USB 的最新 OneKey 客户端。
-- 交易需先在应用侧序列化为 `rawTx`（base64/hex 字符串）。
+- 支持：`solGetAddress`、`solSignTransaction`（对序列化消息/交易签名）。
+- 路径固定且全硬化、长度 4：`m/44'/501'/account'/0'`（如 `m/44'/501'/0'/0'`）。
+- 需自行序列化消息/交易为 `rawTx`（base64/hex）。
 
-## 流程总览
+## 工作原理
 
-1. 监听事件并完成初始化。
-2. 使用 `solGetAddress` 确认路径与地址。
-3. 准备序列化后的 `rawTx`。
-4. 调用 `solSignTransaction`，设备上确认后返回签名。
-5. 将签名拼回交易并广播。
+- `HardwareSDK` 调用 signer，设备展示源/目的账户、金额、费用，确认后返回签名。
+- 主机用 `@solana/web3.js` 解析 `rawTx`，附加签名并验证与 `solGetAddress` 返回公钥一致。
 
-## 最小可运行示例
+## 安装与初始化
+
+```bash
+npm i @onekeyfe/hd-common-connect-sdk @onekeyfe/hd-core @onekeyfe/hd-shared
+```
+
+```ts
+import HardwareSDK from '@onekeyfe/hd-common-connect-sdk';
+await HardwareSDK.init({ env: 'webusb', fetchConfig: true, debug: false });
+const [{ connectId }] = await HardwareSDK.searchDevices();
+const deviceId = (await HardwareSDK.getFeatures(connectId)).payload?.device_id;
+```
+
+## 用例索引
+
+- 获取地址：`solGetAddress`
+- 签名交易/消息：`solSignTransaction`
+
+## 参数与限制
+
+| 字段 | 说明 |
+| --- | --- |
+| `path` | 全硬化、长度 4（`44'/501'/account'/0'`） |
+| `rawTx` | 序列化消息/交易，base64 或 hex |
+| `keepSession?` | 可选，多次签名时复用会话 |
+
+- 限制：超大消息或不支持的指令可能被拒；recent blockhash 需保持最新。
+
+## 设备显示与主机验证
+
+- 设备：路径/账户、目标账户、金额、费用概览；blockhash 隐含。
+- 主机：用 `@solana/web3.js` 解析 `rawTx`，附加签名，验证与 `solGetAddress` 公钥一致。
+
+## 交互与状态
+
+- 订阅 `UI_EVENT`，等待 PIN/密码短语/确认提示。
+- 状态流：未开始 → 进行中（等待确认）→ 成功/取消/错误；进行中应允许取消/重试。
+- 并发：同一设备串行调用。
+
+## 示例
 
 ```ts
 import HardwareSDK from '@onekeyfe/hd-common-connect-sdk';
@@ -42,15 +79,20 @@ const { success, payload } = await HardwareSDK.solSignTransaction(connectId, dev
 });
 
 if (success) {
-  // payload.signature 即签名；拼回交易后广播到 RPC
   console.info('signature:', payload.signature);
 }
 ```
 
-## 校验与安全提示
+## 测试向量（形态示例）
 
-- 必须使用硬化路径，长度固定 4（`44'/501'/account'/0'`）。
-- 设备上确认的源账户、目标账户与金额需与前端显示一致。
-- `rawTx` 应包含正确的最近区块哈希、账户列表和指令顺序，否则广播会失败。
+- 转账：路径 `m/44'/501'/0'/0'`，`rawTx` 为简单转账（含 from/to、公链币金额、recent blockhash）。期望签名附加后可用 Sender 地址验证。
+> 签名取决于设备密钥，用于字段/流程参考。
 
-更多参数细节参见链方法文档：[solSignTransaction](../chains/solana/solsigntransaction)。
+## 校验与排障
+
+- 路径必须遵循 `44'/501'/account'/0'`；其他路径会被拒。
+|- `rawTx` 需包含最新 blockhash、正确的账户列表和指令顺序，否则广播失败。
+- 同一设备串行调用，多次签名可配合 `keepSession`。
+- 拒签/超时：提供重试/取消，不要自动重播。
+
+参见方法文档：[solSignTransaction](/zh/hardware-sdk/chains/solana/solsigntransaction)。

@@ -6,7 +6,7 @@ title: "Android: Connect via Bluetooth (Native)"
 
 > **Note:**
 > Demo: Native Android example (WebView + JSBridge + Nordic BLE) → [native-android-example](https://github.com/OneKeyHQ/hardware-js-sdk/tree/onekey/packages/connect-examples/native-android-example)
-> This guide builds on the [Low-Level Transport Plugin](../reference/concepts/low-level-plugin) and its 64-byte message protocol—read that first.
+> This guide builds on the [Low-Level Transport Plugin](../../concepts/low-level-plugin) and its 64-byte message protocol—read that first.
 
 
 This guide shows how to integrate `@onekeyfe/hd-common-connect-sdk` in a native Android host via a low-level adapter. The JavaScript bundle runs in a WebView; transport calls are forwarded to native (Nordic BLE) and bridged back to JS.
@@ -219,5 +219,5 @@ Handle `UI_EVENT` in your JS bundle and respond with `HardwareSDK.uiResponse`. S
 
 ## References
 
-- Message Protocol (64‑byte framing): [See Low-Level Transport Plugin](.../reference/concepts/low-level-plugin#message-protocol-part-of-low-level-transport)
-- Low‑level transport plugin contract: [Low-level Transport Plugin](.../reference/concepts/low-level-plugin)
+- Message Protocol (64‑byte framing): [See Low-Level Transport Plugin](../../concepts/low-level-plugin#message-protocol-part-of-low-level-transport)
+- Low‑level transport plugin contract: [Low-level Transport Plugin](../../concepts/low-level-plugin)

@@ -4,23 +4,63 @@ title: EVM Signer
 
 # EVM Signer
 
-面向以太坊及 EVM 兼容链的分步签名指南，涵盖 EIP-1559 与 Legacy 交易。
+实战向导：地址确认、EIP‑1559/Legacy 交易、personal_sign、EIP‑712；聚焦“能跑、看得懂、能验签”。
 
-## 前置条件
+## 能做什么
 
-- 设备固件保持最新，使用 WebUSB 或 BLE 正常连接。
-- 已完成 `HardwareSDK.init` 且可获取 `connectId` / `deviceId`。
-- 确认链 ID 与 RPC 设置一致，防止跨链误签。
+- 地址：`evmGetAddress`
+- 交易：`evmSignTransaction`（1559 / Legacy）
+- 消息：`evmSignMessage`（EIP‑191 / personal_sign）
+- Typed Data：`evmSignTypedData`（EIP‑712）
 
-## 流程总览
+## 开始前
 
-1. 监听 `UI/DEVICE` 事件，准备 PIN/密码短语响应。
-2. 通过 `evmGetAddress` 显示并确认账户路径。
-3. 构造 EIP-1559 或 Legacy 交易参数。
-4. 调用 `evmSignTransaction` 获取 `{ v, r, s }`。
-5. 使用 `ethers` 等库序列化并广播。
+- 固件最新，WebUSB/BLE 稳定；完成 `init`，持有 `connectId` / `deviceId`。
+- `chainId` 必须和要广播的网络一致。
+- 常用工具：`ethers`/`viem` 做序列化与验签。
 
-## 最小可运行示例（EIP-1559）
+## 路径与 Gas 速览
+
+- 路径：默认 `m/44'/60'/0'/0/0`；按需递增 account/address。先用 `evmGetAddress` + `showOnOneKey: true` 在设备确认。
+- Gas：
+  - 1559：`type: 2` + `maxFeePerGas` + `maxPriorityFeePerGas` + `gasLimit`
+  - Legacy：`gasPrice` + `gasLimit`
+
+## 标准流程（每次调用）
+
+1. 初始化并发现设备 → `searchDevices` → `getFeatures`（deviceId）
+2. 订阅事件 → 处理 `REQUEST_PIN` / `REQUEST_PASSPHRASE` → `uiResponse`
+3. 地址确认 → `evmGetAddress(path, showOnOneKey: true)`
+4. 构造请求 → 交易/消息/Typed Data，填好 `chainId` 与 Gas 模型
+5. 签名 → 拿到 `{ v, r, s }` 或签名 hex
+6. 序列化并广播 → 送 RPC，必要时做本地校验
+
+## 支持与限制
+
+- 交易：1559/Legacy；标准 access list 无需额外配置。
+- 消息：personal_sign / EIP‑191。
+- Typed Data：EIP‑712（JSON v4：`domain/types/primaryType/message`）。
+- 限制：超大 `data`/消息可能被拒；`chainId` 必须对齐网络。
+
+## 参数怎么填
+
+| 场景 | 必填 | 说明 |
+| --- | --- | --- |
+| 地址 | `path`，`showOnOneKey?` | 路径首次签名前先在设备确认 |
+| 交易 1559 | `to` `value` `data` `nonce` `gasLimit` `maxFeePerGas` `maxPriorityFeePerGas` `chainId` `type:2` `path` | 不传 `gasPrice` |
+| 交易 Legacy | `to` `value` `data` `nonce` `gasLimit` `gasPrice` `chainId` `path` | 不含 1559 费字段 |
+| 消息 | `messageHex` `path` (`chainId?`) | 原文转 hex |
+| Typed Data | `data`(EIP‑712) `path` `chainId` | 包含 `domain/types/primaryType/message` |
+
+## 设备会显示什么？怎么验？
+
+- 设备：路径/账号、收款地址、金额、ChainId、费用摘要；长 `data` 常以哈希展示。
+- 主机验签：
+  - 交易：用 `ethers`/`viem` 重新序列化，确认签名哈希一致。
+  - 消息：`ethers.verifyMessage(message, sig)`。
+  - Typed Data：`ethers.verifyTypedData(domain, types, message, sig)`。
+
+## 示例：EIP-1559 交易
 
 ```ts
 import HardwareSDK, { UI_REQUEST, UI_RESPONSE } from '@onekeyfe/hd-core';
@@ -29,11 +69,10 @@ import { serialize, TransactionTypes } from '@ethersproject/transactions';
 await HardwareSDK.init({ env: 'webusb', debug: false });
 
 const [{ connectId }] = await HardwareSDK.searchDevices();
-const { payload: features } = await HardwareSDK.getFeatures(connectId);
-const deviceId = features?.device_id;
+const deviceId = (await HardwareSDK.getFeatures(connectId)).payload?.device_id;
 
 HardwareSDK.on(UI_REQUEST.REQUEST_PIN, () => {
-  // 提示用户在设备输入 PIN（或在自定义 UI 收集后调用 uiResponse）
+  // 提示用户在设备输入 PIN，或在自定义 UI 收集后调用 uiResponse
 });
 
 const accountPath = "m/44'/60'/0'/0/0";
@@ -45,8 +84,8 @@ const tx = {
   data: '0x',
   nonce: '0x0',
   gasLimit: '0x5208',
-  maxFeePerGas: '0x3b9aca00', // 1 gwei
-  maxPriorityFeePerGas: '0x59682f00', // 1.5 gwei
+  maxFeePerGas: '0x3b9aca00',
+  maxPriorityFeePerGas: '0x59682f00',
   chainId: 1,
 };
 
@@ -63,19 +102,105 @@ const rawTx = serialize({ ...tx, type: TransactionTypes.eip1559 }, {
   v: Number(sig.v),
 });
 
-// 将 rawTx 交给 RPC 广播，例如 ethers.js provider.sendTransaction(rawTx)
+// 通过 RPC 广播，例如 ethers.js provider.sendTransaction(rawTx)
 ```
 
-## 校验与安全提示
+## 示例：Legacy 交易（gasPrice）
 
-- 始终在设备上核对地址、金额、ChainId；与应用侧显示一致后再确认。
-- EIP-1559 请同时提供 `maxFeePerGas` 与 `maxPriorityFeePerGas`；Legacy 则使用 `gasPrice`。
-- 若用户拒签，SDK 返回 `success: false`，需给出重试或取消提示。
+```ts
+const legacyTx = {
+  to: '0xRecipient',
+  value: '0x2386f26fc10000', // 0.01 ETH
+  data: '0x',
+  nonce: '0x1',
+  gasLimit: '0x5208',
+  gasPrice: '0x3b9aca00', // 1 gwei
+  chainId: 1,
+};
 
-## 常见问题
+const sig = await HardwareSDK.evmSignTransaction(connectId, deviceId, {
+  path: accountPath,
+  transaction: legacyTx,
+  chainId: 1,
+});
+```
 
-- **路径错误**：EVM 建议 `m/44'/60'/0'/0/0`，多账户递增第三段或第五段。
-- **链 ID 不匹配**：确保 `transaction.chainId` 与 RPC 网络一致，否则广播会失败。
-- **多次密码短语提示**：结合 `keepSession` 与 `passphraseState`，避免重复输入。
+## 示例：消息签名（personal_sign / EIP-191）
 
-更多参数细节参见链方法文档：[evmSignTransaction](../chains/ethereum-and-evm/evmsigntransaction)。
+```ts
+const message = 'Hello OneKey';
+const messageHex = Buffer.from(message).toString('hex');
+
+const res = await HardwareSDK.evmSignMessage(connectId, deviceId, {
+  path: accountPath,
+  messageHex,
+  chainId: 1,
+});
+// res.payload.signature -> 用 ethers.verifyMessage 校验
+```
+
+## 示例：Typed Data（EIP-712）
+
+```ts
+const typedData = {
+  types: {
+    EIP712Domain: [
+      { name: 'name', type: 'string' },
+      { name: 'version', type: 'string' },
+      { name: 'chainId', type: 'uint256' },
+      { name: 'verifyingContract', type: 'address' },
+    ],
+    Mail: [
+      { name: 'from', type: 'Person' },
+      { name: 'to', type: 'Person' },
+      { name: 'contents', type: 'string' },
+    ],
+    Person: [
+      { name: 'name', type: 'string' },
+      { name: 'wallet', type: 'address' },
+    ],
+  },
+  primaryType: 'Mail',
+  domain: {
+    name: 'Ether Mail',
+    version: '1',
+    chainId: 1,
+    verifyingContract: '0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC',
+  },
+  message: {
+    from: { name: 'Cow', wallet: '0xCD2a3d9F938E13CD947Ec05AbC7FE734Df8DD826' },
+    to: { name: 'Bob', wallet: '0xbBbBBBBbbBBBbbbBbbBbbbbBBbBbbbbBbBbbBBbB' },
+    contents: 'Hello, Bob!',
+  },
+};
+
+const res = await HardwareSDK.evmSignTypedData(connectId, deviceId, {
+  path: accountPath,
+  data: typedData,
+  chainId: 1,
+});
+// res.payload.signature -> 用 ethers.verifyTypedData(...) 恢复签名者
+```
+
+## 测试向量（形态示例）
+
+- EIP-1559 交易：`to=0xd0d6...67dd`，`value=0`，`gasLimit=0x5208`，`maxFeePerGas=1 gwei`，`maxPriorityFeePerGas=1.5 gwei`，`chainId=1`；期望获得 `{ v, r, s }`，raw tx 用 `ethers.serializeTransaction` 校验。
+- personal_sign：消息 `"Hello OneKey"` → 用 `ethers.verifyMessage` 验证。
+- EIP-712：使用上述 `Mail` 示例数据 → 用 `verifyTypedData` 恢复签名者。
+> 提示：签名取决于设备私钥，上述用于字段与验证流程参考。
+
+## 校验与安全
+
+- 在设备上核对地址/金额/ChainId，与前端一致再确认。
+- EIP-1559 必填 `maxFeePerGas + maxPriorityFeePerGas`；Legacy 仅填 `gasPrice`。
+- 消息/Typed Data：在 UI 显示摘要或哈希，明确签名范围，防止钓鱼。
+- 同一设备串行调用，避免 PIN/Passphrase 弹窗重叠；拒签/超时要提供重试/取消。
+
+## 排障
+
+- 路径错误：默认 `m/44'/60'/0'/0/0`，按需递增 account/address。
+- ChainId 不匹配：`transaction.chainId` 必须与 RPC/设备一致，否则广播失败。
+- 密码短语反复提示：使用 `keepSession + passphraseState` 复用会话。
+- 用户拒签或超时：展示重试/取消，勿自动重放。
+
+参见链方法文档：[evmSignTransaction](/zh/hardware-sdk/chains/ethereum-and-evm/evmsigntransaction) · [evmSignMessage](/zh/hardware-sdk/chains/ethereum-and-evm/evmsignmessage) · [evmSignTypedData](/zh/hardware-sdk/chains/ethereum-and-evm/evmsigntypeddata)。
