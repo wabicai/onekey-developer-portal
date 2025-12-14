@@ -100,18 +100,62 @@ await HardwareSDK.evmSignMessage(connectId, deviceId, {
 
 ## 事件与 UI 响应
 
-- Event groups: `UI_EVENT`, `DEVICE_EVENT`, `FIRMWARE_EVENT`.
-- Subscribe:
-  - Bus: `HardwareSDK.on(UI_EVENT, cb)` → `{ event, type, payload }`
-  - Specific: `HardwareSDK.on(UI_REQUEST.REQUEST_PIN, cb)` → payload only
-- Common request → response:
-  - PIN: `UI_REQUEST.REQUEST_PIN` → `UI_RESPONSE.RECEIVE_PIN`
-  - Passphrase: `UI_REQUEST.REQUEST_PASSPHRASE` → `UI_RESPONSE.RECEIVE_PASSPHRASE`
-  - Device select (Bootloader/Web): `UI_REQUEST.REQUEST_SELECT_DEVICE` / `..._IN_BOOTLOADER_FOR_WEB_DEVICE` → `UI_RESPONSE.SELECT_DEVICE_IN_BOOTLOADER_FOR_WEB_DEVICE`
-- Timing:
-  - Call `uiResponse` only after the request event fires.
-  - Cancellation/timeout: allow user cancel in UI and surface an error; re-initiate if needed.
-  - Unsubscribe with `HardwareSDK.off(...)` when leaving the page to avoid duplicate handlers.
+**Quick flow (numbered for scanability)**  
+1) Subscribe `UI_EVENT`.  
+2) Check type.  
+3) Call `uiResponse` only when required.  
+4) Unsubscribe on page exit.
+
+**Need-response (UI_REQUEST → UI_RESPONSE)**  
+5) PIN: `REQUEST_PIN` → `RECEIVE_PIN`。  
+6) Passphrase: `REQUEST_PASSPHRASE` / `REQUEST_PASSPHRASE_ON_DEVICE` → `RECEIVE_PASSPHRASE`（`payload` supports `passphraseOnDevice` / `attachPinOnDevice` / `save`）。  
+7) Web Bootloader select: `REQUEST_DEVICE_IN_BOOTLOADER_FOR_WEB_DEVICE` → `SELECT_DEVICE_IN_BOOTLOADER_FOR_WEB_DEVICE`（return `deviceId`）。
+
+**Display-only (no `uiResponse`)**  
+8) `REQUEST_BUTTON`、`DEVICE_PROGRESS`、`FIRMWARE_PROCESSING` / `FIRMWARE_PROGRESS` / `FIRMWARE_TIP`、`BLUETOOTH_PERMISSION` / `LOCATION_PERMISSION`、`BOOTLOADER` / `REQUIRE_MODE` / `NOT_INITIALIZE` / `FIRMWARE_NOT_SUPPORTED` 等。
+
+**Device/Firmware watch**  
+9) `DEVICE_EVENT`: lifecycle (`CONNECT`/`DISCONNECT`/`ACQUIRE`/`RELEASE`/`CHANGED`/`USED_ELSEWHERE`/`UNREADABLE`), interaction (`BUTTON`/`PIN`/`PASSPHRASE`/`PASSPHRASE_ON_DEVICE`/`SELECT_DEVICE_IN_BOOTLOADER_FOR_WEB_DEVICE`), capability (`FEATURES`/`SUPPORT_FEATURES`)。  
+10) `FIRMWARE_EVENT`: `RELEASE_INFO`、`BLE_RELEASE_INFO`。
+
+**Response rules**  
+11) Only call `uiResponse` after the matching `UI_REQUEST`；on cancel/timeout, tell the user and decide whether to rerun；cleanup with `HardwareSDK.off` / `removeAllListeners` when leaving.
+
+**Minimal wiring**
+
+```ts
+import HardwareSDK, { UI_EVENT, UI_REQUEST, UI_RESPONSE } from '@onekeyfe/hd-common-connect-sdk';
+
+const handleUiEvent = (msg: any) => {
+  switch (msg.type) {
+    case UI_REQUEST.REQUEST_PIN:
+      openPinModal(({ value }) =>
+        HardwareSDK.uiResponse({ type: UI_RESPONSE.RECEIVE_PIN, payload: value })
+      );
+      return;
+    case UI_REQUEST.REQUEST_PASSPHRASE:
+      openPassphraseModal(({ value, onDevice, save }) =>
+        HardwareSDK.uiResponse({
+          type: UI_RESPONSE.RECEIVE_PASSPHRASE,
+          payload: { value, passphraseOnDevice: onDevice, attachPinOnDevice: false, save },
+        })
+      );
+      return;
+    case UI_REQUEST.REQUEST_DEVICE_IN_BOOTLOADER_FOR_WEB_DEVICE:
+      showDeviceList((deviceId: string) =>
+        HardwareSDK.uiResponse({
+          type: UI_RESPONSE.SELECT_DEVICE_IN_BOOTLOADER_FOR_WEB_DEVICE,
+          payload: { deviceId },
+        })
+      );
+      return;
+    default:
+      console.log('UI event', msg.type, msg.payload);
+  }
+};
+
+HardwareSDK.on(UI_EVENT, handleUiEvent);
+```
 
 ## PIN 与 Passphrase 安全策略
 

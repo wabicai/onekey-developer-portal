@@ -4,24 +4,38 @@ title: Solana Signer
 
 # Solana Signer
 
-全链路指南：概览 → 原理 → 安装/初始化 → 用例索引 → 参数/限制 → 设备显示与验签 → 交互 → 示例。
+Solana 硬件签名全链路指南（OneKey 版），覆盖地址确认与交易/消息签名，强调固定硬化路径、序列化消息签名与设备可验证。  
+Solana hardware signing guide (OneKey), covering address confirmation and message/transaction signing with fixed hardened path and serialized rawTx review.
 
-## 概览
+## 🔹 Index / 目录
 
-- 支持：`solGetAddress`、`solSignTransaction`（对序列化消息/交易签名）。
-- 路径固定且全硬化、长度 4：`m/44'/501'/account'/0'`（如 `m/44'/501'/0'/0'`）。
-- 需自行序列化消息/交易为 `rawTx`（base64/hex）。
+1. [How it works / 工作原理](#-how-it-works--工作原理)
+2. [Installation / 安装](#-installation--安装)
+3. [Initialisation / 初始化](#-initialisation--初始化)
+4. [Use Cases / 用例](#-use-cases--用例)
+   - [Get Address](#use-case-1-get-address)
+   - [Sign Transaction](#use-case-2-sign-transaction)
+5. [交互与状态](#-交互与状态)
+6. [Example / 示例](#-example--示例)
+7. [Validation & Troubleshooting / 验签与排障](#-validation--troubleshooting--验签与排障)
 
-## 工作原理
+## 🔹 How it works / 工作原理
 
-- `HardwareSDK` 调用 signer，设备展示源/目的账户、金额、费用，确认后返回签名。
-- 主机用 `@solana/web3.js` 解析 `rawTx`，附加签名并验证与 `solGetAddress` 返回公钥一致。
+OneKey Solana signer uses `HardwareSDK` to talk to the device app, displaying source/destination, amount, fee summary for a serialized `rawTx` (base64/hex). After confirmation the signature is returned; host attaches it via `@solana/web3.js` and verifies against the public key.  
+通过 `HardwareSDK` 与设备端交互，使用序列化的 `rawTx`（base64/hex）在设备展示源/目的、金额与费用摘要，确认后返回签名，主机用 `@solana/web3.js` 附加并验签。
 
-## 安装与初始化
+关键点：
+
+- 路径固定为全硬化、长度 4：`m/44'/501'/account'/0'`（如 `m/44'/501'/0'/0'`）。
+- 需要主机侧自行构造并序列化消息/交易（含 recent blockhash）。
+
+## 🔹 Installation / 安装
 
 ```bash
-npm i @onekeyfe/hd-common-connect-sdk @onekeyfe/hd-core @onekeyfe/hd-shared
+npm i @onekeyfe/hd-core @onekeyfe/hd-common-connect-sdk
 ```
+
+## 🔹 Initialisation / 初始化
 
 ```ts
 import HardwareSDK from '@onekeyfe/hd-common-connect-sdk';
@@ -30,33 +44,57 @@ const [{ connectId }] = await HardwareSDK.searchDevices();
 const deviceId = (await HardwareSDK.getFeatures(connectId)).payload?.device_id;
 ```
 
-## 用例索引
+## 🔹 Use Cases / 用例
 
-- 获取地址：`solGetAddress`
-- 签名交易/消息：`solSignTransaction`
+### Use Case 1: Get Address
 
-## 参数与限制
+```ts
+const path = "m/44'/501'/0'/0'";
+const res = await HardwareSDK.solGetAddress(connectId, deviceId, {
+  path,
+  showOnOneKey: true,
+});
+// res.payload.address, publicKey?, path
+```
 
-| 字段 | 说明 |
-| --- | --- |
-| `path` | 全硬化、长度 4（`44'/501'/account'/0'`） |
-| `rawTx` | 序列化消息/交易，base64 或 hex |
-| `keepSession?` | 可选，多次签名时复用会话 |
+**Parameters / 参数**
 
-- 限制：超大消息或不支持的指令可能被拒；recent blockhash 需保持最新。
+- `path`: 必填，必须满足 `44'/501'/account'/0'` 的全硬化结构。
+- `showOnOneKey?`: 可选，是否在设备上展示并确认。
 
-## 设备显示与主机验证
+**Returns / 返回**
 
-- 设备：路径/账户、目标账户、金额、费用概览；blockhash 隐含。
-- 主机：用 `@solana/web3.js` 解析 `rawTx`，附加签名，验证与 `solGetAddress` 公钥一致。
+`Promise<{ success, payload: { address, path, publicKey? } }>`
 
-## 交互与状态
+---
 
-- 订阅 `UI_EVENT`，等待 PIN/密码短语/确认提示。
-- 状态流：未开始 → 进行中（等待确认）→ 成功/取消/错误；进行中应允许取消/重试。
-- 并发：同一设备串行调用。
+### Use Case 2: Sign Transaction
 
-## 示例
+```ts
+const res = await HardwareSDK.solSignTransaction(connectId, deviceId, {
+  path: "m/44'/501'/0'/0'",
+  rawTx,
+  keepSession: true,
+});
+// res.payload.signature
+```
+
+**Parameters / 参数**
+
+- `path`: 必填，同上。
+- `rawTx`: 必填，序列化消息/交易（base64 或 hex）。
+- `keepSession?`: 可选，多次签名复用会话。
+
+**Returns / 返回**
+
+`Promise<{ success, payload: { signature } }>`，可附加到 `Transaction` 后广播。
+
+## 🔹 交互与状态
+
+- 接口以 Promise 结束；用户提示通过 `UI_REQUEST` 事件触发（解锁设备、打开 Solana App、确认交易）。
+- 同一设备串行调用；多次签名可用 `keepSession` 减少重复提示。
+
+## 🔹 Example / 示例
 
 ```ts
 import HardwareSDK from '@onekeyfe/hd-common-connect-sdk';
@@ -83,16 +121,15 @@ if (success) {
 }
 ```
 
-## 测试向量（形态示例）
+## 🔹 Validation & Troubleshooting / 验签与排障
 
-- 转账：路径 `m/44'/501'/0'/0'`，`rawTx` 为简单转账（含 from/to、公链币金额、recent blockhash）。期望签名附加后可用 Sender 地址验证。
-> 签名取决于设备密钥，用于字段/流程参考。
-
-## 校验与排障
-
-- 路径必须遵循 `44'/501'/account'/0'`；其他路径会被拒。
-|- `rawTx` 需包含最新 blockhash、正确的账户列表和指令顺序，否则广播失败。
-- 同一设备串行调用，多次签名可配合 `keepSession`。
-- 拒签/超时：提供重试/取消，不要自动重播。
+- 路径：必须遵循 `44'/501'/account'/0'` 全硬化；其他路径会被拒。
+- 消息/交易：确保包含最新 `recentBlockhash`、正确的账户列表和指令顺序。
+- 设备核对：路径/账户、公链币金额、目标账户、费用摘要需与前端一致。
+- 验签：用 `@solana/web3.js` 将签名附加到 `Transaction`，验证签名公钥等于 `solGetAddress` 返回值。
+- 常见问题：
+  - 超大消息或不支持的指令：精简指令或拆分交易。
+  - 会话交互：同一设备串行调用，多次签名可启用 `keepSession`。
+  - 拒签/超时：提供重试/取消，不要自动重播。
 
 参见方法文档：[solSignTransaction](/zh/hardware-sdk/chains/solana/solsigntransaction)。

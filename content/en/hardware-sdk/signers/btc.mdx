@@ -4,19 +4,35 @@ title: BTC Signer
 
 # BTC Signer
 
-UTXO signing guide: what it does → how to set up → use cases → parameters → what the device shows → how to verify.
+Bitcoin UTXO signing guide (OneKey). Covers address confirmation and P2PKH / P2SH-P2WPKH / P2WPKH / Taproot signing with strict path–script matching and complete refTxs. Behavior aligned with hardware-js-sdk (Promise responses + UI events).
 
-## Overview
+## 🔹 Index
 
-- Supports: address confirmation, tx signing for P2PKH / P2SH-P2WPKH / P2WPKH / Taproot.
-- Paths must match script purpose (44/49/84/86); missing `refTxs` leads to rejection.
-- Works with WebUSB / BLE / low-level plugin.
+1. [How it works](#-how-it-works)
+2. [Installation](#-installation)
+3. [Initialization](#-initialization)
+4. [Use Cases](#-use-cases)
+   - [Get Address](#use-case-1-get-address)
+   - [Sign Transaction](#use-case-2-sign-transaction)
+5. [Interaction & Status](#-interaction--status)
+6. [Examples](#-examples)
+7. [Validation & Troubleshooting](#-validation--troubleshooting)
 
-## Install & init
+## 🔹 How it works
+
+OneKey BTC signer talks to the device app via `HardwareSDK`, wraps APDUs into UTXO review and signing tasks.
+
+- Paths must match script purpose (44/49/84/86).
+- Each input needs a full previous transaction (`refTxs`), otherwise the device rejects.
+- The device shows inputs, outputs, change, and fee; after confirmation it returns signatures or a serialized tx.
+
+## 🔹 Installation
 
 ```bash
-npm i @onekeyfe/hd-common-connect-sdk @onekeyfe/hd-core @onekeyfe/hd-shared
+npm i @onekeyfe/hd-core @onekeyfe/hd-common-connect-sdk
 ```
+
+## 🔹 Initialization
 
 ```ts
 import HardwareSDK from '@onekeyfe/hd-common-connect-sdk';
@@ -25,61 +41,71 @@ const [{ connectId }] = await HardwareSDK.searchDevices();
 const deviceId = (await HardwareSDK.getFeatures(connectId)).payload?.device_id;
 ```
 
-## Use cases
+## 🔹 Use Cases
 
-- Get Address: `btcGetAddress`
-- Sign Transaction: `btcSignTransaction`
+### Use Case 1: Get Address
 
-## Prerequisites
+```ts
+const res = await HardwareSDK.btcGetAddress(connectId, deviceId, {
+  path: "m/84'/0'/0'/0/0",
+  coin: 'btc',
+  showOnOneKey: true,
+});
+// res.payload.address, publicKey?, path
+```
 
-- Up-to-date firmware; stable USB/BLE.
-- Prepared UTXOs: each with `txid`, `vout`, `amount` (satoshi), and the full previous transaction (`refTx`).
-- Path must match script type; mismatch leads to rejection.
+**Parameters**
 
-## Path ↔ script matrix
+- `path` / `address_n`: required; must match purpose.
+- `coin`: required; e.g., `btc`, `test`.
+- `showOnOneKey?`: optional; display and confirm on device.
 
-| Purpose | Script type | Example path |
-| --- | --- | --- |
-| `44'` | Legacy P2PKH | `m/44'/0'/0'/0/0` |
-| `49'` | Nested SegWit (P2SH-P2WPKH) | `m/49'/0'/0'/0/0` |
-| `84'` | Native SegWit (P2WPKH) | `m/84'/0'/0'/0/0` |
-| `86'` | Taproot (P2TR) | `m/86'/0'/0'/0/0` |
+**Returns**
 
-Use `showOnOneKey: true` in `btcGetAddress` to confirm receive/change paths on-device.
+`Promise<{ success, payload: { address, path, publicKey?, chainCode? } }>`
 
-## Standard flow
+---
 
-1. Init & discover → `searchDevices` → `getFeatures` (deviceId)
-2. Subscribe events → handle PIN/Passphrase with `uiResponse`
-3. Confirm paths → `btcGetAddress` for receive and change (with `showOnOneKey: true`)
-4. Build inputs/outputs/refTxs → amounts as satoshi strings; script types aligned to paths
-5. Sign → `btcSignTransaction`; review inputs/outputs/change/fee on-device
-6. Broadcast → use `payload.serializedTx` or custom assembly
+### Use Case 2: Sign Transaction
 
-## Supported operations & limits
+```ts
+const { success, payload } = await HardwareSDK.btcSignTransaction(connectId, deviceId, {
+  coin: 'btc',
+  inputs,
+  outputs,
+  refTxs,
+  locktime: 0,
+});
+// payload.serializedTx (ready to broadcast)
+```
 
-- Scripts: P2PKH, P2SH-P2WPKH, P2WPKH, P2TR.
-- Networks: follow `coin` (e.g., `btc`, `test`, supported forks).
-- Flow: `btcSignTransaction` (non-PSBT); large input sets or missing `refTxs` are rejected.
+**Parameters**
 
-## Parameters & constraints
+- `coin`: required; selects network rules.
+- `inputs`: required array with:
+  - `address_n` (path matched to script)
+  - `prev_hash` (txid hex)
+  - `prev_index` (vout)
+  - `amount` (string satoshi)
+  - `script_type` (`SPENDADDRESS` / `SPENDP2SHWITNESS` / `SPENDWITNESS` / `SPENDTAPROOT`)
+- `outputs`: required array with:
+  - Recipient: `address` + `amount` + `script_type` (e.g., `PAYTOADDRESS`)
+  - Change: `address_n` + `amount` + `script_type` aligned to purpose
+- `refTxs`: required; full previous transactions for every input.
+- `locktime?`: optional.
 
-| Field | Where | Notes |
-| --- | --- | --- |
-| `coin` | request | e.g., `btc`, `test`; drives network rules |
-| `path` / `address_n` | inputs/outputs | Must match script purpose (44/49/84/86) |
-| `prev_hash`, `prev_index` | inputs | UTXO source; hex string + index |
-| `amount` | inputs/outputs | String satoshis |
-| `script_type` | inputs/outputs | Input: `SPENDP2SHWITNESS`, `SPENDWITNESS`, `SPENDTAPROOT`; Output: matching PAYTO* |
-| `refTxs` | request | Full previous transactions for all inputs |
-| `locktime` | request | Optional; number |
+**Returns**
 
-## Device display & host verification
+`Promise<{ success, payload: { serializedTx, signatures?: any } }>`
 
-- Device shows: inputs, outputs, change, fee. Ensure change path matches your account.
-- Host verification: rebuild the transaction with `bitcoinjs-lib` / `@scure/btc-signer`, confirm `serializedTx`/txid matches expectations and signatures validate.
+## 🔹 Interaction & Status
 
-## Example: P2SH-P2WPKH transaction
+- APIs resolve on completion; user prompts arrive via `UI_REQUEST` (unlock device, open BTC app, confirm inputs/outputs/change/fee).
+- Run calls serially per device; use `showOnOneKey` to confirm receive/change paths before signing.
+
+## 🔹 Examples
+
+### P2SH-P2WPKH transaction
 
 ```ts
 import HardwareSDK from '@onekeyfe/hd-common-connect-sdk';
@@ -138,29 +164,16 @@ if (success) {
 }
 ```
 
-## Sample test vector (shape)
+## 🔹 Validation & Troubleshooting
 
-- P2SH-P2WPKH: one input (`3382047` sat), outputs: change `3181747` to `m/49'/0'/0'/1/1`, recipient `200000` to `18WL2i...`.
-- Expect `serializedTx` identical to rebuilding with the same inputs/outputs and signatures for the given paths.
-> Signatures depend on device keys; use this as field/flow reference.
-
-## On-device review & host verify
-
-- Device shows: inputs, outputs, change, fee. Ensure change path is your account.
-- Host verify: rebuild with `bitcoinjs-lib` / `@scure/btc-signer`, confirm `serializedTx`/txid and signatures are correct.
-
-## Validation & safety
-
-- `refTxs` must cover every input; missing data causes rejection.
-- Path purpose must match script type (`84'` SegWit, `49'` nested, `44'` legacy, `86'` Taproot).
-- Keep change outputs under the same account to avoid confusion.
-- Serial per device; avoid concurrent sign calls.
-
-## Troubleshooting
-
-- Missing refTxs: provide full previous transactions for all inputs.
-- Script mismatch: fix derivation path to align with script type.
-- Fee anomalies: recalc outputs/change; show fee preview and dust handling.
-- User rejection/timeout: surface retry/cancel; do not auto-resubmit.
+- Path ↔ script: `44'`→P2PKH, `49'`→P2SH-P2WPKH, `84'`→P2WPKH, `86'`→P2TR.
+- `refTxs` must cover every input; missing data is rejected.
+- Change output should stay within the same account path.
+- Verify on device: inputs, outputs, change, fee must match your UI.
+- Host verify: rebuild with `bitcoinjs-lib` / `@scure/btc-signer`, check `serializedTx`/txid and signatures.
+- Common issues:
+  - Too many inputs: split transactions or simplify.
+  - Fee anomalies: recalc outputs/change; respect dust rules.
+  - User reject/timeout: offer retry/cancel; no auto-resubmission.
 
 See method docs: [btcSignTransaction](/en/hardware-sdk/chains/bitcoin-and-bitcoin-forks/btcsigntransaction) · [btcGetAddress](/en/hardware-sdk/chains/bitcoin-and-bitcoin-forks/btcgetaddress).

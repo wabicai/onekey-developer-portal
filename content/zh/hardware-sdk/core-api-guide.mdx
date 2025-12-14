@@ -100,15 +100,51 @@ await HardwareSDK.evmSignMessage(connectId, deviceId, {
 
 ## 事件与 UI 响应
 
-- 事件组：`UI_EVENT`、`DEVICE_EVENT`、`FIRMWARE_EVENT`。
-- 订阅方式：
-  - 总线：`HardwareSDK.on(UI_EVENT, cb)` → `{ event, type, payload }`
-  - 指定：`HardwareSDK.on(UI_REQUEST.REQUEST_PIN, cb)` → 直接拿 payload
-- 常见请求 → 响应：
-  - PIN：`UI_REQUEST.REQUEST_PIN` → `UI_RESPONSE.RECEIVE_PIN`
-  - Passphrase：`UI_REQUEST.REQUEST_PASSPHRASE` → `UI_RESPONSE.RECEIVE_PASSPHRASE`
-  - 设备选择（Bootloader/Web）：`UI_REQUEST.REQUEST_SELECT_DEVICE` / `..._IN_BOOTLOADER_FOR_WEB_DEVICE` → `UI_RESPONSE.SELECT_DEVICE_IN_BOOTLOADER_FOR_WEB_DEVICE`
-- 时序：只能在事件触发后调用 `uiResponse`；取消/超时要在 UI 提示，并可重新发起；离开页面时用 `HardwareSDK.off(...)` 解绑，避免重复处理。
+1) 事件总线：`UI_EVENT`（交互提示）、`DEVICE_EVENT`（设备生命周期/透传）、`FIRMWARE_EVENT`（固件可用版本）。
+2) 必须响应的 UI 请求 → UI 响应：
+   - PIN：`REQUEST_PIN` → `RECEIVE_PIN`
+   - Passphrase：`REQUEST_PASSPHRASE` / `REQUEST_PASSPHRASE_ON_DEVICE` → `RECEIVE_PASSPHRASE`（支持 `passphraseOnDevice` / `attachPinOnDevice` / `save`）
+   - Web Bootloader 设备选择：`REQUEST_DEVICE_IN_BOOTLOADER_FOR_WEB_DEVICE` → `SELECT_DEVICE_IN_BOOTLOADER_FOR_WEB_DEVICE`（回传 `deviceId`）
+3) 仅展示的 UI 请求（不需要 `uiResponse`）：`REQUEST_BUTTON`、`DEVICE_PROGRESS`、`FIRMWARE_PROCESSING` / `FIRMWARE_PROGRESS` / `FIRMWARE_TIP`、`BLUETOOTH_PERMISSION` / `LOCATION_PERMISSION`、`BOOTLOADER` / `REQUIRE_MODE` / `NOT_INITIALIZE` / `FIRMWARE_NOT_SUPPORTED` 等。
+4) 设备/固件观测：
+   - `DEVICE_EVENT`：`CONNECT` / `DISCONNECT` / `ACQUIRE` / `RELEASE` / `CHANGED` / `USED_ELSEWHERE` / `UNREADABLE`；交互透传：`BUTTON`、`PIN`、`PASSPHRASE`、`PASSPHRASE_ON_DEVICE`、`SELECT_DEVICE_IN_BOOTLOADER_FOR_WEB_DEVICE`；能力同步：`FEATURES`、`SUPPORT_FEATURES`。
+   - `FIRMWARE_EVENT`：`RELEASE_INFO`、`BLE_RELEASE_INFO`。
+5) 响应守则：仅在收到对应 `UI_REQUEST` 后调用 `uiResponse`；取消/超时要提示用户，是否重试由业务决定；页面退出记得 `HardwareSDK.off` / `removeAllListeners`。
+6) 接线模板（最小可用）：
+
+```ts
+import HardwareSDK, { UI_EVENT, UI_REQUEST, UI_RESPONSE } from '@onekeyfe/hd-common-connect-sdk';
+
+const handleUiEvent = (msg: any) => {
+  switch (msg.type) {
+    case UI_REQUEST.REQUEST_PIN:
+      openPinModal(({ value }) =>
+        HardwareSDK.uiResponse({ type: UI_RESPONSE.RECEIVE_PIN, payload: value })
+      );
+      return;
+    case UI_REQUEST.REQUEST_PASSPHRASE:
+      openPassphraseModal(({ value, onDevice, save }) =>
+        HardwareSDK.uiResponse({
+          type: UI_RESPONSE.RECEIVE_PASSPHRASE,
+          payload: { value, passphraseOnDevice: onDevice, attachPinOnDevice: false, save },
+        })
+      );
+      return;
+    case UI_REQUEST.REQUEST_DEVICE_IN_BOOTLOADER_FOR_WEB_DEVICE:
+      showDeviceList((deviceId) =>
+        HardwareSDK.uiResponse({
+          type: UI_RESPONSE.SELECT_DEVICE_IN_BOOTLOADER_FOR_WEB_DEVICE,
+          payload: { deviceId },
+        })
+      );
+      return;
+    default:
+      console.log('UI event', msg.type, msg.payload);
+  }
+};
+
+HardwareSDK.on(UI_EVENT, handleUiEvent);
+```
 
 ## PIN 与 Passphrase 安全
 

@@ -4,19 +4,36 @@ title: BTC Signer
 
 # BTC Signer
 
-UTXO 签名实战：先讲思路，再列用例与参数，最后告诉你设备会展示什么、怎么验、有哪些限制。
+比特币 UTXO 硬件签名全链路指南（OneKey 版），覆盖地址确认、P2PKH / P2SH-P2WPKH / P2WPKH / Taproot 交易签名，强调“路径与脚本匹配、refTxs 完整、设备可验证”。  
+Bitcoin UTXO signing guide (OneKey), covers address verification and P2PKH / P2SH-P2WPKH / P2WPKH / Taproot signing with path-script matching and full refTxs.
 
-## 概览
+## 🔹 Index / 目录
 
-- 支持：地址确认、交易签名（P2PKH / P2SH-P2WPKH / P2WPKH / Taproot）。
-- 路径与脚本必须对应（44/49/84/86）；缺 `refTxs` 会被拒签。
-- 适用：WebUSB / BLE / 低层插件。
+1. [How it works / 工作原理](#-how-it-works--工作原理)
+2. [Installation / 安装](#-installation--安装)
+3. [Initialisation / 初始化](#-initialisation--初始化)
+4. [Use Cases / 用例](#-use-cases--用例)
+   - [Get Address](#use-case-1-get-address)
+   - [Sign Transaction](#use-case-2-sign-transaction)
+5. [交互与状态](#-交互与状态)
+6. [Examples / 示例](#-examples--示例)
+7. [Validation & Troubleshooting / 验签与排障](#-validation--troubleshooting--验签与排障)
 
-## 安装与初始化
+## 🔹 How it works / 工作原理
+
+OneKey BTC signer talks to the device app via `HardwareSDK`, wraps APDUs into UTXO review and signing tasks. Key points / 核心要点：
+
+- Path must match script purpose (44/49/84/86) / 路径必须与脚本 purpose 对应。
+- Each input requires full previous tx (`refTxs`) / 每个输入都需要完整前序交易。
+- Device shows inputs/outputs/change/fee, confirms then returns signatures or serialized tx / 设备逐条展示输入/输出/找零/手续费后返回签名。
+
+## 🔹 Installation / 安装
 
 ```bash
-npm i @onekeyfe/hd-common-connect-sdk @onekeyfe/hd-core @onekeyfe/hd-shared
+npm i @onekeyfe/hd-core @onekeyfe/hd-common-connect-sdk
 ```
+
+## 🔹 Initialisation / 初始化
 
 ```ts
 import HardwareSDK from '@onekeyfe/hd-common-connect-sdk';
@@ -25,61 +42,72 @@ const [{ connectId }] = await HardwareSDK.searchDevices();
 const deviceId = (await HardwareSDK.getFeatures(connectId)).payload?.device_id;
 ```
 
-## 用例索引
+## 🔹 Use Cases / 用例
 
-- Get Address：`btcGetAddress`
-- Sign Transaction：`btcSignTransaction`
+### Use Case 1: Get Address
 
-## 前置条件
+```ts
+const path84 = "m/84'/0'/0'/0/0";
+const res = await HardwareSDK.btcGetAddress(connectId, deviceId, {
+  path: path84,
+  coin: 'btc',
+  showOnOneKey: true,
+});
+// res.payload.address, publicKey?, path
+```
 
-- 固件最新；USB/BLE 连接稳定。
-- 准备好 UTXO：`txid`、`vout`、`amount`（satoshi），并提供完整 `refTxs`。
-- 路径必须与脚本类型匹配，否则设备拒签。
+**Parameters / 参数**
 
-## 路径 ↔ 脚本速查
+- `path` / `address_n`: 必填，BIP44 路径或数组；需与脚本 purpose 对应。
+- `coin`: 必填，网络标识（如 `btc` / `test`）。
+- `showOnOneKey?`: 可选，是否在设备上展示并确认。
 
-| Purpose | 脚本类型 | 示例路径 |
-| --- | --- | --- |
-| `44'` | Legacy P2PKH | `m/44'/0'/0'/0/0` |
-| `49'` | P2SH-P2WPKH | `m/49'/0'/0'/0/0` |
-| `84'` | Native SegWit (P2WPKH) | `m/84'/0'/0'/0/0` |
-| `86'` | Taproot (P2TR) | `m/86'/0'/0'/0/0` |
+**Returns / 返回**
 
-在 `btcGetAddress` 里设置 `showOnOneKey: true`，先在设备确认收款/找零地址。
+`Promise<{ success, payload: { address, path, publicKey?, chainCode? } }>`
 
-## 标准流程
+---
 
-1. 初始化发现设备 → `searchDevices` → `getFeatures`（deviceId）  
-2. 订阅事件 → 处理 PIN/密码短语，使用 `uiResponse`  
-3. 确认路径 → `btcGetAddress`（收款/找零）并在设备上核对  
-4. 构建 `inputs`/`outputs`/`refTxs` → 金额用 satoshi 字符串，脚本类型与路径一致  
-5. 签名 → `btcSignTransaction`，在设备上审阅输入/输出/找零/手续费  
-6. 广播 → 使用 `payload.serializedTx`，或自行拼装 `r/s`  
+### Use Case 2: Sign Transaction
 
-## 支持与限制
+```ts
+const { success, payload } = await HardwareSDK.btcSignTransaction(connectId, deviceId, {
+  coin: 'btc',
+  inputs,
+  outputs,
+  refTxs,
+  locktime: 0,
+});
+// payload.serializedTx
+```
 
-- 脚本：P2PKH、P2SH-P2WPKH、P2WPKH、P2TR。
-- 网络：由 `coin` 参数决定（如 `btc`、`test` 及相关分叉）。
-- 范围：`btcSignTransaction`（非 PSBT）；输入过多或缺失 `refTxs` 会被拒签。
+**Parameters / 参数**
 
-## 参数与约束
+- `coin`: 必填，决定网络规则与前缀。
+- `inputs`: 必填，数组，字段包含：
+  - `address_n`（路径，与脚本匹配）
+  - `prev_hash`（UTXO txid，hex）
+  - `prev_index`（UTXO vout）
+  - `amount`（字符串 satoshi）
+  - `script_type`（`SPENDADDRESS` / `SPENDP2SHWITNESS` / `SPENDWITNESS` / `SPENDTAPROOT`）
+- `outputs`: 必填，数组，字段包含：
+  - 收款地址输出：`address` + `amount` + `script_type`（如 `PAYTOADDRESS`）
+  - 找零输出：`address_n` + `amount` + `script_type` 对应脚本
+- `refTxs`: 必填，覆盖所有输入的完整前序交易
+- `locktime?`: 可选，数字
 
-| 字段 | 位置 | 说明 |
-| --- | --- | --- |
-| `coin` | 请求 | 如 `btc`、`test`，决定网络规则 |
-| `path` / `address_n` | 输入/输出 | 必须与脚本 purpose 对应（44/49/84/86） |
-| `prev_hash`、`prev_index` | 输入 | UTXO 来源，hex + index |
-| `amount` | 输入/输出 | 字符串 satoshi |
-| `script_type` | 输入/输出 | 输入：`SPENDP2SHWITNESS`、`SPENDWITNESS`、`SPENDTAPROOT` 等；输出：对应 PAYTO* 类型 |
-| `refTxs` | 请求 | 覆盖所有输入的完整前序交易 |
-| `locktime` | 请求 | 可选，数字 |
+**Returns / 返回**
 
-## 设备显示与主机验证
+`Promise<{ success, payload: { serializedTx, signatures?: any } }>`
 
-- 设备展示：输入、输出、找零、手续费；确保找零路径属于当前账户。
-- 主机验证：用 `bitcoinjs-lib` / `@scure/btc-signer` 重建交易，确认 `serializedTx`/txid 与设备确认的内容一致，签名可验证。
+## 🔹 交互与状态
 
-## 示例：P2SH-P2WPKH 交易
+- 接口以 Promise 结束；用户提示通过 `UI_REQUEST` 事件触发（解锁设备、打开 BTC App、确认输入/输出/找零/手续费）。
+- 同一设备请串行调用；签名前用 `showOnOneKey` 确认收款/找零路径。
+
+## 🔹 Examples / 示例
+
+### Example: P2SH-P2WPKH Transaction / 嵌套 SegWit 交易
 
 ```ts
 import HardwareSDK from '@onekeyfe/hd-common-connect-sdk';
@@ -138,30 +166,20 @@ if (success) {
 }
 ```
 
-## 测试向量（形态示例）
+## 🔹 Validation & Troubleshooting / 验签与排障
 
-- P2SH-P2WPKH：单输入（`3382047` sat），输出：找零 `3181747` 到 `m/49'/0'/0'/1/1`，收款 `200000` 到 `18WL2i...`。
-- 期望 `serializedTx` 与相同输入/输出、对应路径签名后的重建结果一致。
-> 签名取决于设备密钥，上述用于字段与流程参考。
-
-## 设备核对清单
-
-- 输入：UTXO 来源与金额正确。
-- 输出：收款地址/金额正确；找零地址为同账户路径。
-- 手续费：符合预期，避免异常高/低；必要时在 UI 给出费用预览。
-
-## 校验与安全
-
-- `refTxs` 必须覆盖每个输入的完整前序交易，否则会被拒签。
-- 路径 purpose 必须与脚本类型一致：`84'` SegWit，`49'` 嵌套，`44'` Legacy，`86'` Taproot。
-- 找零尽量保持在同一账户路径，避免用户困惑。
-- 同一设备串行调用，避免并发签名。
-
-## 排障
-
-- 缺少 refTxs：为每个输入提供完整前序交易。
-- 路径/脚本不匹配：调整 derivation path 以匹配脚本类型。
-- 手续费异常：重新计算输出/找零，展示费用与 dust 规则提示。
-- 拒签/超时：提供重试/取消，勿自动重试。
+- 路径 ↔ 脚本：
+  - `44'` → P2PKH
+  - `49'` → P2SH-P2WPKH
+  - `84'` → P2WPKH
+  - `86'` → P2TR
+- 必须提供完整 `refTxs`：缺失任何输入的前序交易会被拒签。
+- 找零：确保 `address_n` 属于同一账户路径，防止用户混淆。
+- 设备确认：输入、输出、找零、手续费需与前端显示一致。
+- 验签：用 `bitcoinjs-lib` / `@scure/btc-signer` 重建交易，校验 txid 与 `serializedTx`。
+- 常见问题：
+  - 输入过多：分批签名或精简交易。
+  - 手续费异常：调整输出/找零并遵守 dust 规则。
+  - 拒签/超时：提供重试/取消，不要自动重播。
 
 参见方法文档：[btcSignTransaction](/zh/hardware-sdk/chains/bitcoin-and-bitcoin-forks/btcsigntransaction) · [btcGetAddress](/zh/hardware-sdk/chains/bitcoin-and-bitcoin-forks/btcgetaddress)。
