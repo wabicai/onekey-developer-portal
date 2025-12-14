@@ -18,7 +18,7 @@ title: 核心接口指南
 
 ## 生命周期与并发
 
-标准闭环：`init → search → getFeatures(deviceId) → 订阅事件 → 发起调用+uiResponse → （可选）清理`
+标准闭环：`init → search → getFeatures(connectId) 拿到 deviceId → 订阅事件 → 发起调用+uiResponse → （可选）清理`
 
 ```ts
 import HardwareSDK, { UI_EVENT, UI_REQUEST, UI_RESPONSE } from '@onekeyfe/hd-common-connect-sdk';
@@ -46,6 +46,16 @@ await HardwareSDK.evmSignTransaction(connectId, deviceId, {
   path: "m/44'/60'/0'/0/0",
 });
 ```
+
+## connectId 与 deviceId：分别代表什么？
+
+- `connectId`：**连接标识**，由当前传输环境决定，用来把一次调用路由到“哪一台设备/哪条连接”上。
+  - USB/WebUSB/Bridge：通常是设备序列号（对应固件 `Features.onekey_serial_no` / `onekey_serial` / `serial_no`）。
+  - BLE：通常是系统层设备标识（Android 为 MAC；iOS 为 UUID；桌面端是 BLE UUID）。
+- `deviceId`：**设备内部“当前种子/钱包状态”的标识**，来自固件 `Features.device_id`，需要通过 `getFeatures(connectId)` 获取。
+  - 当设备擦除/恢复/更换助记词（种子）后，`deviceId` 会变化；它并不等同于硬件序列号。
+  - SDK 会用它来做一致性校验（部分方法会启用 `checkDeviceId`），避免你在“同一 `connectId` 但设备种子已变化”的情况下继续签名/解密等敏感操作。
+- 实践建议：把 `connectId` + `deviceId` 作为一对在内存里缓存；遇到 `DeviceCheckDeviceIdError`/设备重置等情况，重新 `getFeatures(connectId)` 并提示用户确认设备状态。
 
 - 并发：同一设备串行调用，避免 PIN/Passphrase 死锁。
 - 复用：`keepSession + passphraseState` 可减少重复提示；切换设备需重新 `getFeatures`。

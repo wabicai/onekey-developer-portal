@@ -47,6 +47,16 @@ await HardwareSDK.evmSignTransaction(connectId, deviceId, {
 });
 ```
 
+## connectId vs deviceId
+
+- `connectId`: the **connection identifier** (transport-level). It tells the SDK “which device/connection to talk to”, and its format depends on the current environment/transport.
+  - USB/WebUSB/Bridge: usually the device serial number (from firmware `Features.onekey_serial_no` / `onekey_serial` / `serial_no`).
+  - BLE: usually the OS-level identifier (commonly MAC on Android; UUID on iOS; may be a BLE UUID on desktop).
+- `deviceId`: the **current seed/wallet-state identifier** from firmware `Features.device_id`, resolved via `getFeatures(connectId)`.
+  - It changes after device wipe / recovery / seed replacement; it is not the hardware serial number.
+  - The SDK may validate it for sensitive calls (`checkDeviceId` on some methods) to prevent signing on a device whose seed has changed while you keep using the same `connectId`.
+- Practice: keep `connectId` + `deviceId` as a pair in memory; on `DeviceCheckDeviceIdError` or after a reset, rerun `getFeatures(connectId)` and ask the user to confirm the device state.
+
 - Concurrency: keep calls serial per device to avoid PIN/Passphrase deadlocks.
 - Reuse: combine `keepSession + passphraseState` to reduce prompts; on device switch, refresh `getFeatures`.
 - Cleanup: when a page is disposed, remove listeners; call `HardwareSDK.dispose()` only if you need to reset transport state.
