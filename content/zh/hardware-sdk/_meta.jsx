@@ -3,6 +3,14 @@ import { ChainMethodsSidebar } from '../../../components/ChainMethodsSidebar'
 export default {
   index: '概览',
   'getting-started': '快速开始',
+  'mock-demo': {
+    title: '交互 Mock Demo',
+    theme: {
+      layout: 'full',
+      toc: false,
+      copyPage: false
+    }
+  },
   transport: '传输协议',
   signers: '交易签名指引',
   '---api': { type: 'separator', title: 'API' },

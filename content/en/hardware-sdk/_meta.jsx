@@ -3,6 +3,14 @@ import { ChainMethodsSidebar } from '../../../components/ChainMethodsSidebar'
 export default {
   index: 'Overview',
   'getting-started': 'Getting Started',
+  'mock-demo': {
+    title: 'Mock Demo',
+    theme: {
+      layout: 'full',
+      toc: false,
+      copyPage: false
+    }
+  },
   transport: 'Transport',
   signers: 'Signer Guides',
   '---api': { type: 'separator', title: 'APIs' },
