@@ -3,8 +3,8 @@ import { ChainMethodsSidebar } from '../../../components/ChainMethodsSidebar'
 export default {
   index: 'Overview',
   'getting-started': 'Getting Started',
-  signers: 'Signer Guides',
   transport: 'Transport',
+  signers: 'Signer Guides',
   '---api': { type: 'separator', title: 'APIs' },
   'core-api-guide': 'Core API Guide',
   'basic-api': 'Basic API',

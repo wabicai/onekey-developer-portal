@@ -12,9 +12,9 @@ We provide a new communication method where you can use the LowlevelTransportSha
 
 Native examples (all based on the Low-Level Transport Plugin):
 
-- [Android Native](./android) — WebView + JSBridge + Nordic BLE
-- [iOS Native](./ios) — WebView + JSBridge + CoreBluetooth
-- [Flutter Native](./flutter) — WebView + platform channel + BLE
+- [Android Native](../transport/android) — WebView + JSBridge + Nordic BLE
+- [iOS Native](../transport/ios) — WebView + JSBridge + CoreBluetooth
+- [Flutter Native](../transport/flutter) — WebView + platform channel + BLE
 
 Transport uses 64‑byte frames. Your plugin should send and receive one 64‑byte hex frame at a time; the JS SDK is responsible for assembling/disassembling full messages across frames. Refer to the protocol for padding of the final frame when needed.
 
@@ -105,6 +105,6 @@ Send/receive one 64-byte hex frame at a time; the SDK reassembles full messages.
 
 ## Next
 
-- iOS BLE (Native, low-level adapter) → [iOS Guide](../ios)
-- Android BLE (Native, low-level adapter) → [Android Guide](../android)
-- Flutter BLE (Native, low-level adapter) → [Flutter Guide](../flutter)
+- iOS BLE (Native, low-level adapter) → [iOS Guide](../transport/ios)
+- Android BLE (Native, low-level adapter) → [Android Guide](../transport/android)
+- Flutter BLE (Native, low-level adapter) → [Flutter Guide](../transport/flutter)

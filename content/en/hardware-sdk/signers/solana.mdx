@@ -4,34 +4,34 @@ title: Solana Signer
 
 # Solana Signer
 
-Solana hardware signing guide (OneKey). Covers address confirmation and message/transaction signing with fixed hardened path and serialized `rawTx`. Aligned with hardware-js-sdk (Promise responses + UI events).
+Solana hardware signing guide. Covers address confirmation and message/transaction signing with fixed hardened path and serialized `rawTx`. Aligned with hardware-js-sdk (Promise responses + UI events).
 
-## 🔹 Index
+## Index
 
-1. [How it works](#-how-it-works)
-2. [Installation](#-installation)
-3. [Initialization](#-initialization)
-4. [Use Cases](#-use-cases)
-   - [Get Address](#use-case-1-get-address)
-   - [Sign Transaction](#use-case-2-sign-transaction)
-5. [Interaction & Status](#-interaction--status)
-6. [Example](#-example)
-7. [Validation & Troubleshooting](#-validation--troubleshooting)
+1. [How it works](#how-it-works)
+2. [Installation](#installation)
+3. [Initialization](#initialization)
+4. [Common scenarios](#common-scenarios)
+   - [Get Address](#scenario-1-get-address)
+   - [Sign Transaction](#scenario-2-sign-transaction)
+5. [Interaction & Status](#interaction--status)
+6. [Example](#example)
+7. [Validation & Troubleshooting](#validation--troubleshooting)
 
-## 🔹 How it works
+## How it works
 
 OneKey Solana signer uses `HardwareSDK` to talk to the device app. You pass a serialized `rawTx` (base64/hex); the device displays source/destination, amount, and fee summary, then returns a signature. Host attaches the signature with `@solana/web3.js` and verifies against the public key from `solGetAddress`.
 
 - Path is fixed, fully hardened, length 4: `m/44'/501'/account'/0'`.
 - Ensure the message/tx includes a fresh recent blockhash.
 
-## 🔹 Installation
+## Installation
 
 ```bash
 npm i @onekeyfe/hd-core @onekeyfe/hd-common-connect-sdk
 ```
 
-## 🔹 Initialization
+## Initialization
 
 ```ts
 import HardwareSDK from '@onekeyfe/hd-common-connect-sdk';
@@ -40,9 +40,9 @@ const [{ connectId }] = await HardwareSDK.searchDevices();
 const deviceId = (await HardwareSDK.getFeatures(connectId)).payload?.device_id;
 ```
 
-## 🔹 Use Cases
+## Common scenarios
 
-### Use Case 1: Get Address
+### Scenario 1: Get Address
 
 ```ts
 const res = await HardwareSDK.solGetAddress(connectId, deviceId, {
@@ -59,11 +59,13 @@ const res = await HardwareSDK.solGetAddress(connectId, deviceId, {
 
 **Returns**
 
-`Promise<{ success, payload: { address, path, publicKey? } }>`
+```ts
+Promise<{ success, payload: { address, path, publicKey? } }>
+```
 
 ---
 
-### Use Case 2: Sign Transaction
+### Scenario 2: Sign Transaction
 
 ```ts
 const res = await HardwareSDK.solSignTransaction(connectId, deviceId, {
@@ -82,14 +84,16 @@ const res = await HardwareSDK.solSignTransaction(connectId, deviceId, {
 
 **Returns**
 
-`Promise<{ success, payload: { signature } }>`
+```ts
+Promise<{ success, payload: { signature } }>
+```
 
-## 🔹 Interaction & Status
+## Interaction & Status
 
 - APIs resolve on completion; user prompts surface via `UI_REQUEST` (unlock device, open Solana app, confirm transaction).
 - Run calls serially per device; `keepSession` helps reduce repeated prompts.
 
-## 🔹 Example
+## Example
 
 ```ts
 import HardwareSDK from '@onekeyfe/hd-common-connect-sdk';
@@ -116,7 +120,7 @@ if (success) {
 }
 ```
 
-## 🔹 Validation & Troubleshooting
+## Validation & Troubleshooting
 
 - Path: must follow `44'/501'/account'/0'`; other paths are rejected.
 - Message/tx: include fresh `recentBlockhash`, correct accounts, and instruction order.

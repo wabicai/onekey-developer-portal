@@ -7,21 +7,90 @@ description: 通过 USB/BLE 集成 OneKey 硬件钱包的完整指南
 
 本指南涵盖集成 OneKey 硬件钱包的完整流程：安装 SDK、初始化、发现设备、处理 UI 提示，以及发起首次签名调用。
 
-## 安装
+## 传输概览
+
+USB 场景一律推荐 `@onekeyfe/hd-common-connect-sdk`。`@onekeyfe/hd-web-sdk` 仅用于插件端（iframe 宿主）等历史场景。
+
+### 连接方式
+
+| 方式 | 描述 | 支持机型 |
+|--------|-------------|-------------------|
+| **USB / WebUSB** | 有线 USB；Web 使用 WebUSB，原生使用底层插件 | 所有 OneKey 设备 |
+| **Bluetooth BLE（原生）** | 原生 App 的 BLE；不支持 Web Bluetooth | Pro、Touch、Classic 1s / Classic 1s Pure；**Mini 不支持 BLE** |
+| **Air-Gap（二维码）** | 离线扫码签名 | 仅 OneKey Pro |
+
+### 传输决策表（与首页一致）
+
+| 平台 | 传输 | SDK 包 | 指南 |
+|----------|----------------------|---------|---------|
+| Web（浏览器） | WebUSB | `@onekeyfe/hd-common-connect-sdk` | [WebUSB 连接指南](/zh/hardware-sdk/transport/web-usb) |
+| React Native | BLE | `@onekeyfe/hd-ble-sdk` | [React Native BLE](/zh/hardware-sdk/transport/react-native-ble) |
+| Android（原生） | BLE | `@onekeyfe/hd-common-connect-sdk` | [Android BLE](/zh/hardware-sdk/transport/android) |
+| iOS（原生） | BLE | `@onekeyfe/hd-common-connect-sdk` | [iOS BLE](/zh/hardware-sdk/transport/ios) |
+| Flutter | BLE | `@onekeyfe/hd-common-connect-sdk` | [Flutter BLE](/zh/hardware-sdk/transport/flutter) |
+
+![传输架构](/images/transport/transport-architecture-zh.svg)
+
+低层协议与自定义通道参考：[底层传输插件与协议](/zh/hardware-sdk/concepts/low-level-plugin)
+
+## 安装 SDK
+
+按运行时选择一个入口安装：
+
+按需安装（选一）：
 
 ```bash
-npm i @onekeyfe/hd-common-connect-sdk @onekeyfe/hd-shared @onekeyfe/hd-core
+# Web / 桌面 WebUSB（推荐）
+npm i @onekeyfe/hd-common-connect-sdk
+
+# React Native BLE
+npm i @onekeyfe/hd-ble-sdk
+
+# 原生宿主 + 底层插件（Android/iOS/Flutter 桥接）
+npm i @onekeyfe/hd-common-connect-sdk
+
+# 插件端 iframe（仅历史场景）
+npm i @onekeyfe/hd-web-sdk
 ```
+
+传输细节：
+- WebUSB：[WebUSB 指南](/zh/hardware-sdk/transport/web-usb)
+- React Native BLE：[BLE 指南](/zh/hardware-sdk/transport/react-native-ble)
+- 原生 Android / iOS / Flutter：通过底层传输插件桥接 JS，见各平台页面。
 
 ## 初始化 SDK
 
-尽早初始化，以便正确处理设备事件和 UI 提示。
+按照运行时选择对应的初始化方式，避免混用。
+
+### Web / 桌面 WebUSB（`@onekeyfe/hd-common-connect-sdk`）
 
 ```ts
 import HardwareSDK from '@onekeyfe/hd-common-connect-sdk';
 
 await HardwareSDK.init({
-  env: 'webusb',  // 'webusb' | 'lowlevel' | 'react-native'
+  env: 'webusb',
+  debug: process.env.NODE_ENV !== 'production',
+  fetchConfig: true,
+});
+```
+
+### React Native BLE（`@onekeyfe/hd-ble-sdk`）
+
+```ts
+import HardwareSDK from '@onekeyfe/hd-ble-sdk';
+
+await HardwareSDK.init({
+  debug: __DEV__,
+});
+```
+
+### 原生桥接 / 自定义低层（`@onekeyfe/hd-common-connect-sdk`）
+
+```ts
+import HardwareSDK from '@onekeyfe/hd-common-connect-sdk';
+
+await HardwareSDK.init({
+  env: 'lowlevel',  // 'webusb' | 'lowlevel' | 'react-native' | 'emulator'
   debug: process.env.NODE_ENV !== 'production',
   fetchConfig: true,
 });
@@ -29,9 +98,21 @@ await HardwareSDK.init({
 
 | 环境 | 使用场景 |
 |------|----------|
-| `webusb` | 浏览器 WebUSB |
-| `lowlevel` | 原生应用（iOS/Android/Flutter），通过底层适配器 |
-| `react-native` | React Native BLE 传输 |
+| `webusb` | 浏览器 WebUSB（无 iframe） |
+| `lowlevel` | 原生应用通过底层适配器桥接 JS |
+| `react-native` | 基于自定义 RN 桥或 Electron BLE |
+| `emulator` | 使用内置模拟器 |
+
+### 插件端 iframe（仅当宿主要求 `@onekeyfe/hd-web-sdk`）
+
+```ts
+import { HardwareSDK } from '@onekeyfe/hd-web-sdk';
+
+await HardwareSDK.init({
+  debug: process.env.NODE_ENV !== 'production',
+  connectSrc: 'https://jssdk.onekey.so/1.1.19', // iframe host
+});
+```
 
 ## 绑定事件
 

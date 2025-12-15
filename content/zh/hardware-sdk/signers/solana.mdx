@@ -4,38 +4,37 @@ title: Solana Signer
 
 # Solana Signer
 
-Solana 硬件签名全链路指南（OneKey 版），覆盖地址确认与交易/消息签名，强调固定硬化路径、序列化消息签名与设备可验证。  
-Solana hardware signing guide (OneKey), covering address confirmation and message/transaction signing with fixed hardened path and serialized rawTx review.
+Solana 硬件签名全链路指南，覆盖地址确认与交易/消息签名，强调固定硬化路径、序列化消息签名与设备可验证。
 
-## 🔹 Index / 目录
+## 目录
 
-1. [How it works / 工作原理](#-how-it-works--工作原理)
-2. [Installation / 安装](#-installation--安装)
-3. [Initialisation / 初始化](#-initialisation--初始化)
-4. [Use Cases / 用例](#-use-cases--用例)
-   - [Get Address](#use-case-1-get-address)
-   - [Sign Transaction](#use-case-2-sign-transaction)
-5. [交互与状态](#-交互与状态)
-6. [Example / 示例](#-example--示例)
-7. [Validation & Troubleshooting / 验签与排障](#-validation--troubleshooting--验签与排障)
+1. [工作原理](#工作原理)
+2. [安装](#安装)
+3. [初始化](#初始化)
+4. [适用场景](#适用场景--use-cases)
+   - [获取地址](#场景-1获取地址)
+   - [签名交易](#场景-2签名交易)
+5. [交互与状态](#交互与状态)
+6. [示例](#示例)
+7. [验签与排障](#验签与排障)
 
-## 🔹 How it works / 工作原理
+## 工作原理
 
-OneKey Solana signer uses `HardwareSDK` to talk to the device app, displaying source/destination, amount, fee summary for a serialized `rawTx` (base64/hex). After confirmation the signature is returned; host attaches it via `@solana/web3.js` and verifies against the public key.  
-通过 `HardwareSDK` 与设备端交互，使用序列化的 `rawTx`（base64/hex）在设备展示源/目的、金额与费用摘要，确认后返回签名，主机用 `@solana/web3.js` 附加并验签。
+通过 `HardwareSDK` 与设备 App 通信，设备会展示序列化 `rawTx`（仅接受十六进制字符串，`0x` 可选）中的来源/目标/金额/费用摘要，确认后返回签名；主机将签名附加到交易（`@solana/web3.js`）并验证公钥。
 
 关键点：
 
 - 路径固定为全硬化、长度 4：`m/44'/501'/account'/0'`（如 `m/44'/501'/0'/0'`）。
-- 需要主机侧自行构造并序列化消息/交易（含 recent blockhash）。
+- `rawTx` 只接受十六进制字符串，若拿到 `Transaction`/`VersionedTransaction`，请先 `Buffer.from(tx.serialize()).toString('hex')`。
+- 需要主机侧自行构造并序列化消息/交易（含 recent blockhash）；若为 Versioned Tx，固件需 Classic1s ≥ `3.1.0`、Touch ≥ `4.3.0`。
 
-## 🔹 Installation / 安装
+## 安装
 
 ```bash
 npm i @onekeyfe/hd-core @onekeyfe/hd-common-connect-sdk
 ```
 
-## 🔹 Initialisation / 初始化
+## 初始化
 
 ```ts
 import HardwareSDK from '@onekeyfe/hd-common-connect-sdk';
@@ -44,9 +43,9 @@ const [{ connectId }] = await HardwareSDK.searchDevices();
 const deviceId = (await HardwareSDK.getFeatures(connectId)).payload?.device_id;
 ```
 
-## 🔹 Use Cases / 用例
+## 适用场景
 
-### Use Case 1: Get Address
+### 场景 1：获取地址
 
 ```ts
 const path = "m/44'/501'/0'/0'";
@@ -57,18 +56,20 @@ const res = await HardwareSDK.solGetAddress(connectId, deviceId, {
 // res.payload.address, publicKey?, path
 ```
 
-**Parameters / 参数**
+**参数**
 
 - `path`: 必填，必须满足 `44'/501'/account'/0'` 的全硬化结构。
 - `showOnOneKey?`: 可选，是否在设备上展示并确认。
 
-**Returns / 返回**
+**返回**
 
-`Promise<{ success, payload: { address, path, publicKey? } }>`
+```ts
+Promise<{ success, payload: { address, path, publicKey? } }>
+```
 
 ---
 
-### Use Case 2: Sign Transaction
+### 场景 2：签名交易
 
 ```ts
 const res = await HardwareSDK.solSignTransaction(connectId, deviceId, {
@@ -79,22 +80,28 @@ const res = await HardwareSDK.solSignTransaction(connectId, deviceId, {
 // res.payload.signature
 ```
 
-**Parameters / 参数**
+**参数**
 
 - `path`: 必填，同上。
-- `rawTx`: 必填，序列化消息/交易（base64 或 hex）。
+- `rawTx`: 必填，序列化消息/交易（十六进制字符串，`0x` 可选；如原始值为 `Transaction.serialize()` 的 `Uint8Array`，需自行转 hex）。
 - `keepSession?`: 可选，多次签名复用会话。
 
-**Returns / 返回**
+**返回**
 
-`Promise<{ success, payload: { signature } }>`，可附加到 `Transaction` 后广播。
+```ts
+Promise<{ success, payload: { signature } }>
+```
 
-## 🔹 交互与状态
+可附加到 `Transaction` 后广播。
+
+## 交互与状态
 
 - 接口以 Promise 结束；用户提示通过 `UI_REQUEST` 事件触发（解锁设备、打开 Solana App、确认交易）。
 - 同一设备串行调用；多次签名可用 `keepSession` 减少重复提示。
 
-## 🔹 Example / 示例
+## 示例
+
+### 示例：交易签名
 
 ```ts
 import HardwareSDK from '@onekeyfe/hd-common-connect-sdk';
@@ -107,6 +114,9 @@ const deviceId = (await HardwareSDK.getFeatures(connectId)).payload?.device_id;
 const path = "m/44'/501'/0'/0'";
 await HardwareSDK.solGetAddress(connectId, deviceId, { path, showOnOneKey: true });
 
+// 已有 Transaction / VersionedTransaction 时，需先转为十六进制：
+// const rawTx = Buffer.from(transaction.serialize()).toString('hex');
+// 下方示例为已序列化好的 rawTx hex，可直接用于设备确认
 const rawTx =
   '4301355cc18d85809872bcbd63cb6ea5ac3c2814a1bacf2e50d8ec62367211917b79ecd1f1a98fa0d793d7cb92ebd9a479dc6aba0ae8570253aa87c0da32db5ed2bd401f3bbee52c2bc55761fd8486fae2e28f46499282f4267b8b90fc8c1cc97bb659b6cc927f2ec1701ef2928ddb84759ba5c557f549db';
 
@@ -121,7 +131,7 @@ if (success) {
 }
 ```
 
-## 🔹 Validation & Troubleshooting / 验签与排障
+## 验签与排障
 
 - 路径：必须遵循 `44'/501'/account'/0'` 全硬化；其他路径会被拒。
 - 消息/交易：确保包含最新 `recentBlockhash`、正确的账户列表和指令顺序。

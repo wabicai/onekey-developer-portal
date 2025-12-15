@@ -4,21 +4,21 @@ title: BTC Signer
 
 # BTC Signer
 
-Bitcoin UTXO signing guide (OneKey). Covers address confirmation and P2PKH / P2SH-P2WPKH / P2WPKH / Taproot signing with strict path–script matching and complete refTxs. Behavior aligned with hardware-js-sdk (Promise responses + UI events).
+Bitcoin UTXO signing guide. Covers address confirmation and P2PKH / P2SH-P2WPKH / P2WPKH / Taproot signing with strict path–script matching and complete refTxs. Behavior aligned with hardware-js-sdk (Promise responses + UI events).
 
-## 🔹 Index
+## Index
 
-1. [How it works](#-how-it-works)
-2. [Installation](#-installation)
-3. [Initialization](#-initialization)
-4. [Use Cases](#-use-cases)
-   - [Get Address](#use-case-1-get-address)
-   - [Sign Transaction](#use-case-2-sign-transaction)
-5. [Interaction & Status](#-interaction--status)
-6. [Examples](#-examples)
-7. [Validation & Troubleshooting](#-validation--troubleshooting)
+1. [How it works](#how-it-works)
+2. [Installation](#installation)
+3. [Initialization](#initialization)
+4. [Common scenarios](#common-scenarios)
+   - [Get Address](#scenario-1-get-address)
+   - [Sign Transaction](#scenario-2-sign-transaction)
+5. [Interaction & Status](#interaction--status)
+6. [Examples](#examples)
+7. [Validation & Troubleshooting](#validation--troubleshooting)
 
-## 🔹 How it works
+## How it works
 
 OneKey BTC signer talks to the device app via `HardwareSDK`, wraps APDUs into UTXO review and signing tasks.
 
@@ -26,13 +26,13 @@ OneKey BTC signer talks to the device app via `HardwareSDK`, wraps APDUs into UT
 - Each input needs a full previous transaction (`refTxs`), otherwise the device rejects.
 - The device shows inputs, outputs, change, and fee; after confirmation it returns signatures or a serialized tx.
 
-## 🔹 Installation
+## Installation
 
 ```bash
 npm i @onekeyfe/hd-core @onekeyfe/hd-common-connect-sdk
 ```
 
-## 🔹 Initialization
+## Initialization
 
 ```ts
 import HardwareSDK from '@onekeyfe/hd-common-connect-sdk';
@@ -41,9 +41,9 @@ const [{ connectId }] = await HardwareSDK.searchDevices();
 const deviceId = (await HardwareSDK.getFeatures(connectId)).payload?.device_id;
 ```
 
-## 🔹 Use Cases
+## Common scenarios
 
-### Use Case 1: Get Address
+### Scenario 1: Get Address
 
 ```ts
 const res = await HardwareSDK.btcGetAddress(connectId, deviceId, {
@@ -62,11 +62,13 @@ const res = await HardwareSDK.btcGetAddress(connectId, deviceId, {
 
 **Returns**
 
-`Promise<{ success, payload: { address, path, publicKey?, chainCode? } }>`
+```ts
+Promise<{ success, payload: { address, path, publicKey?, chainCode? } }>
+```
 
 ---
 
-### Use Case 2: Sign Transaction
+### Scenario 2: Sign Transaction
 
 ```ts
 const { success, payload } = await HardwareSDK.btcSignTransaction(connectId, deviceId, {
@@ -96,14 +98,16 @@ const { success, payload } = await HardwareSDK.btcSignTransaction(connectId, dev
 
 **Returns**
 
-`Promise<{ success, payload: { serializedTx, signatures?: any } }>`
+```ts
+Promise<{ success, payload: { serializedTx, signatures?: any } }>
+```
 
-## 🔹 Interaction & Status
+## Interaction & Status
 
 - APIs resolve on completion; user prompts arrive via `UI_REQUEST` (unlock device, open BTC app, confirm inputs/outputs/change/fee).
 - Run calls serially per device; use `showOnOneKey` to confirm receive/change paths before signing.
 
-## 🔹 Examples
+## Examples
 
 ### P2SH-P2WPKH transaction
 
@@ -164,7 +168,7 @@ if (success) {
 }
 ```
 
-## 🔹 Validation & Troubleshooting
+## Validation & Troubleshooting
 
 - Path ↔ script: `44'`→P2PKH, `49'`→P2SH-P2WPKH, `84'`→P2WPKH, `86'`→P2TR.
 - `refTxs` must cover every input; missing data is rejected.

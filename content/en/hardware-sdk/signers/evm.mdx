@@ -4,40 +4,39 @@ title: EVM Signer
 
 # EVM Signer
 
-End-to-end EVM signing guide (OneKey). Covers address confirmation, EIP‑1559/Legacy transactions, personal_sign, EIP‑712, EIP‑7702 authorization, and Safe address display. All sections are aligned with the hardware-js-sdk behavior (Promise responses + UI events).
+End-to-end EVM signing guide. Covers address confirmation, EIP‑1559/Legacy transactions, personal_sign, and EIP‑712 typed data. Content is aligned with hardware-js-sdk behavior (Promise responses + UI events) and mirrors the Chinese page.
 
-## 🔹 Index
+## Index
 
-1. [How it works](#-how-it-works)
-2. [Installation](#-installation)
-3. [Initialization](#-initialization)
-4. [Use Cases](#-use-cases)
-   - [Get Address](#use-case-1-get-address)
-   - [Sign Transaction (1559 / Legacy)](#use-case-2-sign-transaction)
-   - [Sign Message (personal_sign)](#use-case-3-sign-message)
-   - [Sign Typed Data (EIP-712)](#use-case-4-sign-typed-data)
-   - [Sign Delegation Authorization (EIP-7702)](#use-case-5-sign-delegation-authorization-eip-7702)
-   - [Display Safe Address](#use-case-6-display-safe-address)
-5. [Interaction & Status](#-interaction--status)
-6. [Examples](#-examples)
-7. [Validation & Troubleshooting](#-validation--troubleshooting)
+1. [How it works](#how-it-works)
+2. [Installation](#installation)
+3. [Initialization](#initialization)
+4. [Common scenarios](#common-scenarios)
+   - [Get Address](#scenario-1-get-address)
+   - [Sign Transaction (1559 / Legacy)](#scenario-2-sign-transaction)
+   - [Sign Message (personal_sign)](#scenario-3-sign-message)
+   - [Sign Typed Data (EIP-712)](#scenario-4-sign-typed-data)
+5. [Interaction & Status](#interaction--status)
+6. [Examples](#examples)
+7. [Validation & Troubleshooting](#validation--troubleshooting)
 
-## 🔹 How it works
+## How it works
 
 - `HardwareSDK` talks to the OneKey device app; APIs return `Promise<{ success, payload }>`.
 - User interaction is driven by `UI_REQUEST` events (PIN, passphrase, confirm address/tx/message/typed data/app open).
 - The device shows path/account, recipient, amount, chainId, fee summary; long `data` is often summarized as a hash.
 - Host serializes and verifies with `ethers`/`viem`, then broadcasts via RPC.
 
-## 🔹 Installation
+## Installation
 
 ```bash
 npm i @onekeyfe/hd-core @onekeyfe/hd-common-connect-sdk
 ```
 
-## 🔹 Initialization
+## Initialization
 
 - Keep firmware up to date; Web requires HTTPS + user gestures; BLE needs proper permission.
+- Before signing, call `evmGetAddress(showOnOneKey: true)` once to confirm path/account on device.
 
 ```ts
 import HardwareSDK from '@onekeyfe/hd-common-connect-sdk';
@@ -46,9 +45,9 @@ const [{ connectId }] = await HardwareSDK.searchDevices();
 const deviceId = (await HardwareSDK.getFeatures(connectId)).payload?.device_id;
 ```
 
-## 🔹 Use Cases
+## Common scenarios
 
-### Use Case 1: Get Address
+### Scenario 1: Get Address
 
 ```ts
 const res = await HardwareSDK.evmGetAddress(connectId, deviceId, {
@@ -67,11 +66,13 @@ const res = await HardwareSDK.evmGetAddress(connectId, deviceId, {
 
 **Returns**
 
-`Promise<{ success, payload: { address, path, publicKey?, chainCode? } }>`
+```ts
+Promise<{ success, payload: { address, path, publicKey?, chainCode? } }>
+```
 
 ---
 
-### Use Case 2: Sign Transaction
+### Scenario 2: Sign Transaction
 
 Supports EIP‑1559 (`type: 2`) and Legacy.
 
@@ -98,11 +99,13 @@ const { success, payload } = await HardwareSDK.evmSignTransaction(connectId, dev
 
 **Returns**
 
-`Promise<{ success, payload: { v, r, s } }>`
+```ts
+Promise<{ success, payload: { v, r, s } }>
+```
 
 ---
 
-### Use Case 3: Sign Message (personal_sign)
+### Scenario 3: Sign Message (personal_sign)
 
 ```ts
 const res = await HardwareSDK.evmSignMessage(connectId, deviceId, {
@@ -121,11 +124,13 @@ const res = await HardwareSDK.evmSignMessage(connectId, deviceId, {
 
 **Returns**
 
-`Promise<{ success, payload: { signature } }>`
+```ts
+Promise<{ success, payload: { signature } }>
+```
 
 ---
 
-### Use Case 4: Sign Typed Data (EIP-712)
+### Scenario 4: Sign Typed Data (EIP-712)
 
 ```ts
 const res = await HardwareSDK.evmSignTypedData(connectId, deviceId, {
@@ -161,69 +166,19 @@ interface TypedData {
 
 **Returns**
 
-`Promise<{ success, payload: { signature } }>`
-
----
-
-### Use Case 5: Sign Delegation Authorization (EIP-7702)
-
 ```ts
-const res = await HardwareSDK.evmSignDelegationAuthorization(connectId, deviceId, {
-  path: "m/44'/60'/0'/0/0",
-  chainId: 1,
-  contractAddress: '0x...',
-  nonce: 0,
-});
-// res.payload.signature
+Promise<{ success, payload: { signature } }>
 ```
 
-**Parameters**
-
-- `path`: required.
-- `chainId`: required.
-- `contractAddress`: required; authorized contract.
-- `nonce`: required; authorization nonce.
-
-**Returns**
-
-`Promise<{ success, payload: { signature } }>`
-
----
-
-### Use Case 6: Display Safe Address
-
-Display and verify a Safe contract address on device.
-
-```ts
-const res = await HardwareSDK.evmVerifySafeAddress(connectId, deviceId, {
-  safeContractAddress: '0x...',
-  chainId: 1,
-  skipWebDevicePrompt: false,
-});
-// res.success indicates confirmation
-```
-
-**Parameters**
-
-- `safeContractAddress`: required.
-- `chainId?`: optional; shown on device.
-- `skipWebDevicePrompt?`: optional; skip browser prompt in WebUSB.
-
-**Returns**
-
-`Promise<{ success: boolean }>`
-
-## 🔹 Interaction & Status
+## Interaction & Status
 
 - APIs resolve when the operation finishes; user prompts are surfaced via `UI_REQUEST` events.
 - Common prompts: unlock device, open EVM app, verify address, sign transaction, sign personal message, sign typed data.
 - For repeated calls, use `keepSession` to reduce PIN/passphrase prompts; run calls serially per device.
 
-## 🔹 Examples
+## Examples
 
 ### EIP-1559 transaction
-
-## Example: EIP-1559 transaction
 
 ```ts
 import HardwareSDK, { UI_REQUEST, UI_RESPONSE } from '@onekeyfe/hd-core';
@@ -345,12 +300,11 @@ const res = await HardwareSDK.evmSignTypedData(connectId, deviceId, {
 // res.payload.signature -> recover with ethers.verifyTypedData(domain, types, message, signature)
 ```
 
-## 🔹 Validation & Troubleshooting
+## Validation & Troubleshooting
 
 - Verify on device: path/account, recipient, amount, chainId, fee summary; ensure they match your UI.
 - Gas: 1559 requires `maxFeePerGas + maxPriorityFeePerGas`; Legacy uses `gasPrice` only.
 - Message/Typed Data: show clear summaries/hashes in UI to avoid phishing; recover signer with `ethers.verifyMessage` / `ethers.verifyTypedData`.
-- 7702: validate recovered address per spec.
 - Common issues:
   - Path mismatch: default `m/44'/60'/0'/0/0`, increment account/address as needed; confirm once with `showOnOneKey`.
 - ChainId mismatch: must match the target network.

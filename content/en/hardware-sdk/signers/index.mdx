@@ -13,6 +13,15 @@ Step-by-step guides that take you from initialization to a signed transaction fo
 - Minimal runnable sample: event listeners, request params, result validation
 - FAQ: wrong path, reject/timeout, network or data issues
 
+## Quick checklist (read before any signer)
+
+- Environment & versions: latest firmware + aligned SDK/Bridge; pick the transport guide for your platform.
+- Paths: use chain-specific HD paths; double-check hardened vs non-hardened (see each signer page).
+- Session & wallet: include `deviceId` (BLE) and `passphraseState` if using hidden wallet.
+- UI: subscribe to `UI_EVENT`; handle PIN/passphrase prompts with `uiResponse`.
+- Verify result: always check `success` then validate the returned address/signature with chain libs.
+- Safety: reject on unexpected prompts, and fail fast if device is in Bootloader.
+
 ## Available guides
 
 - [EVM Signer](./evm) — paths, EIP-1559 vs Legacy params, device prompts, post-sign broadcast

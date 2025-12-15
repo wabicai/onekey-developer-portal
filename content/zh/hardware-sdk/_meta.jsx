@@ -3,8 +3,8 @@ import { ChainMethodsSidebar } from '../../../components/ChainMethodsSidebar'
 export default {
   index: '概览',
   'getting-started': '快速开始',
-  signers: '交易签名指引',
   transport: '传输协议',
+  signers: '交易签名指引',
   '---api': { type: 'separator', title: 'API' },
   'core-api-guide': '核心接口速查',
   'basic-api': '基础 API',

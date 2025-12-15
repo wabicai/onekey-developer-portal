@@ -4,36 +4,35 @@ title: BTC Signer
 
 # BTC Signer
 
-比特币 UTXO 硬件签名全链路指南（OneKey 版），覆盖地址确认、P2PKH / P2SH-P2WPKH / P2WPKH / Taproot 交易签名，强调“路径与脚本匹配、refTxs 完整、设备可验证”。  
-Bitcoin UTXO signing guide (OneKey), covers address verification and P2PKH / P2SH-P2WPKH / P2WPKH / Taproot signing with path-script matching and full refTxs.
+比特币 UTXO 硬件签名全链路指南，覆盖地址确认、P2PKH / P2SH-P2WPKH / P2WPKH / Taproot 交易签名，强调“路径与脚本匹配、refTxs 完整、设备可验证”。
 
-## 🔹 Index / 目录
+## 目录
 
-1. [How it works / 工作原理](#-how-it-works--工作原理)
-2. [Installation / 安装](#-installation--安装)
-3. [Initialisation / 初始化](#-initialisation--初始化)
-4. [Use Cases / 用例](#-use-cases--用例)
-   - [Get Address](#use-case-1-get-address)
-   - [Sign Transaction](#use-case-2-sign-transaction)
-5. [交互与状态](#-交互与状态)
-6. [Examples / 示例](#-examples--示例)
-7. [Validation & Troubleshooting / 验签与排障](#-validation--troubleshooting--验签与排障)
+1. [工作原理](#工作原理)
+2. [安装](#安装)
+3. [初始化](#初始化)
+4. [适用场景](#适用场景--use-cases)
+   - [获取地址](#场景-1获取地址)
+   - [签名交易](#场景-2签名交易)
+5. [交互与状态](#交互与状态)
+6. [示例](#示例)
+7. [验签与排障](#验签与排障)
 
-## 🔹 How it works / 工作原理
+## 工作原理
 
-OneKey BTC signer talks to the device app via `HardwareSDK`, wraps APDUs into UTXO review and signing tasks. Key points / 核心要点：
+OneKey BTC signer 通过 `HardwareSDK` 与设备交互，将 APDU 封装为 UTXO 审核与签名任务。核心要点：
 
-- Path must match script purpose (44/49/84/86) / 路径必须与脚本 purpose 对应。
-- Each input requires full previous tx (`refTxs`) / 每个输入都需要完整前序交易。
-- Device shows inputs/outputs/change/fee, confirms then returns signatures or serialized tx / 设备逐条展示输入/输出/找零/手续费后返回签名。
+- 路径必须与脚本 purpose 对应（44/49/84/86）。
+- 每个输入都需要完整前序交易（`refTxs`）。
+- 设备逐条展示输入/输出/找零/手续费，确认后返回签名或序列化交易。
 
-## 🔹 Installation / 安装
+## 安装
 
 ```bash
 npm i @onekeyfe/hd-core @onekeyfe/hd-common-connect-sdk
 ```
 
-## 🔹 Initialisation / 初始化
+## 初始化
 
 ```ts
 import HardwareSDK from '@onekeyfe/hd-common-connect-sdk';
@@ -42,9 +41,9 @@ const [{ connectId }] = await HardwareSDK.searchDevices();
 const deviceId = (await HardwareSDK.getFeatures(connectId)).payload?.device_id;
 ```
 
-## 🔹 Use Cases / 用例
+## 适用场景
 
-### Use Case 1: Get Address
+### 场景 1：获取地址
 
 ```ts
 const path84 = "m/84'/0'/0'/0/0";
@@ -56,19 +55,21 @@ const res = await HardwareSDK.btcGetAddress(connectId, deviceId, {
 // res.payload.address, publicKey?, path
 ```
 
-**Parameters / 参数**
+**参数**
 
 - `path` / `address_n`: 必填，BIP44 路径或数组；需与脚本 purpose 对应。
 - `coin`: 必填，网络标识（如 `btc` / `test`）。
 - `showOnOneKey?`: 可选，是否在设备上展示并确认。
 
-**Returns / 返回**
+**返回**
 
-`Promise<{ success, payload: { address, path, publicKey?, chainCode? } }>`
+```ts
+Promise<{ success, payload: { address, path, publicKey?, chainCode? } }>
+```
 
 ---
 
-### Use Case 2: Sign Transaction
+### 场景 2：签名交易
 
 ```ts
 const { success, payload } = await HardwareSDK.btcSignTransaction(connectId, deviceId, {
@@ -78,13 +79,13 @@ const { success, payload } = await HardwareSDK.btcSignTransaction(connectId, dev
   refTxs,
   locktime: 0,
 });
-// payload.serializedTx
+// payload: { serializedTx, signatures?, txid? }
 ```
 
-**Parameters / 参数**
+**参数**
 
 - `coin`: 必填，决定网络规则与前缀。
-- `inputs`: 必填，数组，字段包含：
+- `inputs`: 必填，数组，字段包含（SegWit/Taproot 必填 `amount`，Legacy 可选但建议填写）：
   - `address_n`（路径，与脚本匹配）
   - `prev_hash`（UTXO txid，hex）
   - `prev_index`（UTXO vout）
@@ -93,21 +94,23 @@ const { success, payload } = await HardwareSDK.btcSignTransaction(connectId, dev
 - `outputs`: 必填，数组，字段包含：
   - 收款地址输出：`address` + `amount` + `script_type`（如 `PAYTOADDRESS`）
   - 找零输出：`address_n` + `amount` + `script_type` 对应脚本
-- `refTxs`: 必填，覆盖所有输入的完整前序交易
+- `refTxs`: 必填，覆盖所有输入的完整前序交易（需包含 `hash`、`version`、`lock_time`、`inputs`、`bin_outputs` 或 `outputs`，按前序交易实际结构填写）
 - `locktime?`: 可选，数字
 
-**Returns / 返回**
+**返回**
 
-`Promise<{ success, payload: { serializedTx, signatures?: any } }>`
+```ts
+Promise<{ success, payload: { serializedTx, signatures?: string[], txid?: string } }>
+```
 
-## 🔹 交互与状态
+## 交互与状态
 
 - 接口以 Promise 结束；用户提示通过 `UI_REQUEST` 事件触发（解锁设备、打开 BTC App、确认输入/输出/找零/手续费）。
 - 同一设备请串行调用；签名前用 `showOnOneKey` 确认收款/找零路径。
 
-## 🔹 Examples / 示例
+## 示例
 
-### Example: P2SH-P2WPKH Transaction / 嵌套 SegWit 交易
+### 示例：P2SH-P2WPKH 交易（嵌套 SegWit）
 
 ```ts
 import HardwareSDK from '@onekeyfe/hd-common-connect-sdk';
@@ -166,7 +169,7 @@ if (success) {
 }
 ```
 
-## 🔹 Validation & Troubleshooting / 验签与排障
+## 验签与排障
 
 - 路径 ↔ 脚本：
   - `44'` → P2PKH

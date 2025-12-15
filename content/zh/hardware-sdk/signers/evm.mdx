@@ -4,26 +4,25 @@ title: EVM Signer
 
 # EVM Signer
 
-EVM 硬件签名全链路指南（OneKey 版），基于 @onekeyfe/hd-core 的能力，覆盖地址确认、EIP‑1559 / Legacy 交易、personal_sign、EIP‑712 / EIP‑7702 等场景。文档双语呈现，便于集成者对照使用。
+EVM 硬件签名全链路指南，基于 @onekeyfe/hd-core 的能力，覆盖地址确认、EIP‑1559 / Legacy 交易、personal_sign、EIP‑712 等场景。文档双语呈现，便于集成者对照使用。
 
-## 🔹 Index / 目录
+## 目录
 
-1. [How it works / 工作原理](#-how-it-works--工作原理)
-2. [Installation / 安装](#-installation--安装)
-3. [Initialisation / 初始化](#-initialisation--初始化)
-4. [Use Cases / 用例](#-use-cases--用例)
-   - [Get Address](#use-case-1-get-address)
-   - [Sign Transaction (1559 / Legacy)](#use-case-2-sign-transaction)
-   - [Sign Message (personal_sign)](#use-case-3-sign-message)
-   - [Sign Typed Data (EIP-712)](#use-case-4-sign-typed-data)
-   - [Sign Delegation Authorization (EIP-7702)](#use-case-5-sign-delegation-authorization-eip-7702)
-5. [交互与状态](#-交互与状态)
-6. [Examples / 示例](#-examples--示例)
-7. [Validation & Troubleshooting / 验签与排障](#-validation--troubleshooting--验签与排障)
+1. [工作原理](#工作原理)
+2. [安装](#安装)
+3. [初始化](#初始化)
+4. [适用场景](#适用场景--use-cases)
+   - [获取地址](#场景-1获取地址)
+   - [签名交易 (1559 / Legacy)](#场景-2签名交易)
+   - [签名消息 (personal_sign)](#场景-3签名消息personal_sign)
+   - [签名 Typed Data (EIP-712)](#场景-4签名-typed-dataeip-712)
+5. [交互与状态](#交互与状态)
+6. [示例](#示例)
+7. [验签与排障](#验签与排障)
 
-## 🔹 How it works / 工作原理
+## 工作原理
 
-The EVM signer talks to the OneKey hardware app through `HardwareSDK`，内部使用 APDU 完成设备交互，外部以独立用例暴露（地址、交易、消息、Typed Data、授权）。接口以 Promise `{ success, payload }` 返回结果，交互提示通过 `UI_REQUEST` 事件触发（PIN、密码短语、打开 App、确认地址/交易/消息/Typed Data/授权）。
+EVM 签名通过 `HardwareSDK` 与 OneKey 硬件 App 通信，内部使用 APDU 完成交互，外部以独立用例暴露（地址、交易、消息、Typed Data）。接口以 Promise `{ success, payload }` 返回结果，交互提示通过 `UI_REQUEST` 事件触发（PIN、密码短语、打开 App、确认地址/交易/消息/Typed Data）。
 
 EVM 签名的基本链路：
 
@@ -35,7 +34,7 @@ EVM 签名的基本链路：
 
 > 中文思路：把“能跑、看得懂、能验签”作为首要目标，任何字段都以链上广播与设备显示一致为准。
 
-## 🔹 Installation / 安装
+## 安装
 
 > 本模块依赖 `@onekeyfe/hd-core` 及连接层（如 `@onekeyfe/hd-common-connect-sdk`），请先完成基础 SDK 安装。
 
@@ -43,7 +42,7 @@ EVM 签名的基本链路：
 npm install @onekeyfe/hd-core @onekeyfe/hd-common-connect-sdk
 ```
 
-## 🔹 Initialisation / 初始化
+## 初始化
 
 ```ts
 import HardwareSDK from '@onekeyfe/hd-core';
@@ -57,13 +56,13 @@ const deviceId = (await HardwareSDK.getFeatures(connectId)).payload?.device_id;
 
 > 保持固件为最新版本，确保 WebUSB/BLE 连接稳定；建议在签名前先完成一次 `evmGetAddress(showOnOneKey: true)` 以确认路径与账户。
 
-## 🔹 Use Cases / 用例
+## 适用场景
 
-`evmGetAddress` / `evmSignTransaction` / `evmSignMessage` / `evmSignTypedData` / `evmSignDelegationAuthorization` 五个方法分别对应独立用例，返回 Promise `{ success, payload }`（用户交互通过事件通知，见下文）。
+`evmGetAddress` / `evmSignTransaction` / `evmSignMessage` / `evmSignTypedData` 对应独立用例，返回 Promise `{ success, payload }`（用户交互通过事件通知，见下文）。
 
 ---
 
-### Use Case 1: Get Address
+### 场景 1：获取地址
 
 获取指定路径的 EVM 地址，可选择在设备上核对。
 
@@ -76,15 +75,17 @@ const res = await HardwareSDK.evmGetAddress(connectId, deviceId, {
 // res.payload.address, publicKey?, chainCode?
 ```
 
-**Parameters / 参数**
+**参数**
 
 - `path` (string | number[]): 必填，BIP44 路径，例如 `"44'/60'/0'/0/0"`。
 - `showOnOneKey?` (boolean): 可选，是否在设备上展示并让用户确认地址。
 - `chainId?` (number): 可选，显示在设备上的链 ID，建议填真实网络。
 
-**Returns / 返回**
+**返回**
 
-`Promise<{ success, payload: { address, path, publicKey?, chainCode? } }>`
+```ts
+Promise<{ success, payload: { address, path, publicKey?, chainCode? } }>
+```
 
 ```ts
 type GetAddressResult = {
@@ -97,9 +98,9 @@ type GetAddressResult = {
 
 ---
 
-### Use Case 2: Sign Transaction
+### 场景 2：签名交易
 
-支持 EIP‑1559 (`type: 2`) 与 Legacy 交易，需传入序列化前的字段。
+支持 EIP‑1559 (`type: 2`) 与 Legacy 交易，需传入序列化前的字段。除 `chainId` 外，数值字段必须为 `0x` 十六进制字符串（SDK 会去掉前导 0）。
 
 ```ts
 const { success, payload } = await HardwareSDK.evmSignTransaction(
@@ -108,30 +109,32 @@ const { success, payload } = await HardwareSDK.evmSignTransaction(
   {
     path: "m/44'/60'/0'/0/0",
     transaction: tx,
-    chainId: 1,
     keepSession: true,
   },
 );
-// payload: { v, r, s }
+// payload: { v, r, s, authorizationSignatures? }
 ```
 
-**Parameters / 参数**
+**参数**
 
 - `path` (string | number[]): 必填，签名路径。
 - `transaction` (object): 必填，EIP‑1559 或 Legacy 字段：
   - 1559：`to` `value` `data` `nonce` `gasLimit` `maxFeePerGas` `maxPriorityFeePerGas` `chainId` `type: 2`
   - Legacy：`to` `value` `data` `nonce` `gasLimit` `gasPrice` `chainId`
-- `chainId` (number): 必填，网络链 ID。
 - `keepSession?` (boolean): 可选，多次签名时复用会话。
 - `domain?` (string): 可选，交易中的域名标签（如 ENS），用于设备显示。
 
-**Returns / 返回**
+**返回**
 
-`Promise<{ success, payload: { v, r, s } }>`，可配合 `ethers/viem` 序列化为 raw tx。
+```ts
+Promise<{ success, payload: { v, r, s } }>
+```
+
+可配合 `ethers/viem` 序列化为 raw tx。
 
 ---
 
-### Use Case 3: Sign Message (personal_sign)
+### 场景 3：签名消息（personal_sign）
 
 ```ts
 const res = await HardwareSDK.evmSignMessage(connectId, deviceId, {
@@ -141,19 +144,19 @@ const res = await HardwareSDK.evmSignMessage(connectId, deviceId, {
 });
 ```
 
-**Parameters / 参数**
+**参数**
 
 - `path`：必填，签名路径。
 - `messageHex`：必填，原文转 hex（不含 `0x` 或含 `0x` 皆可）。
 - `chainId?`：可选，设备显示的链 ID。
 
-**Returns / 返回**
+**返回**
 
-`signature`（十六进制或 `{ r, s, v }`），可用 `ethers.verifyMessage` 校验。
+签名十六进制或 `{ r, s, v }`，可用 `ethers.verifyMessage` 校验。
 
 ---
 
-### Use Case 4: Sign Typed Data (EIP-712)
+### 场景 4：签名 Typed Data（EIP-712）
 
 ```ts
 const res = await HardwareSDK.evmSignTypedData(
@@ -167,7 +170,7 @@ const res = await HardwareSDK.evmSignTypedData(
 );
 ```
 
-**Parameters / 参数**
+**参数**
 
 - `path`：必填。
 - `data`：必填，EIP‑712 JSON v4，包含 `domain/types/primaryType/message`。
@@ -190,49 +193,23 @@ interface TypedData {
 }
 ```
 
-**Returns / 返回**
-
-`Promise<{ success, payload: { signature } }>`，可用 `ethers.verifyTypedData` 校验。
-
----
-
-### Use Case 5: Sign Delegation Authorization (EIP-7702)
-
-针对 EIP‑7702 授权消息的专用签名。
+**返回**
 
 ```ts
-const res = await HardwareSDK.evmSignDelegationAuthorization(
-  connectId,
-  deviceId,
-  {
-    path: "m/44'/60'/0'/0/0",
-    chainId: 1,
-    contractAddress: '0x...',
-    nonce: 0,
-  },
-);
+Promise<{ success, payload: { signature } }>
 ```
 
-**Parameters / 参数**
+可用 `ethers.verifyTypedData` 校验。
 
-- `path`：必填。
-- `chainId`：必填。
-- `contractAddress`：必填，被授权合约地址。
-- `nonce`：必填，授权 nonce。
-
-**Returns / 返回**
-
-`Promise<{ success, payload: { signature } }>`，与授权消息对应。
-
-## 🔹 交互与状态
+## 交互与状态
 
 - 接口以 Promise 结束；用户提示通过 `UI_REQUEST` 事件触发（解锁设备、打开 EVM App、确认地址/交易/消息/Typed Data/授权）。
 - 同一设备请串行调用；多次签名可使用 `keepSession` 减少 PIN/密码短语提示。
 - 在 UI 中监听 `UI_REQUEST` 并引导用户操作，允许手动取消/重试。
 
-## 🔹 Examples / 示例
+## 示例
 
-### Example: EIP-1559 Transaction / 1559 交易签名
+### 示例：EIP-1559 交易签名
 
 ```ts
 import HardwareSDK, { UI_REQUEST, UI_RESPONSE } from '@onekeyfe/hd-core';
@@ -262,7 +239,6 @@ const tx = {
 const { success, payload: sig } = await HardwareSDK.evmSignTransaction(connectId, deviceId, {
   path: accountPath,
   transaction: tx,
-  chainId: 1,
   keepSession: true,
 });
 
@@ -275,7 +251,7 @@ const rawTx = serialize({ ...tx, type: TransactionTypes.eip1559 }, {
 // 通过 RPC 广播，例如 ethers.js provider.sendTransaction(rawTx)
 ```
 
-### Example: Legacy Transaction / Legacy 交易
+### 示例：Legacy 交易
 
 ```ts
 const legacyTx = {
@@ -291,11 +267,10 @@ const legacyTx = {
 const sig = await HardwareSDK.evmSignTransaction(connectId, deviceId, {
   path: accountPath,
   transaction: legacyTx,
-  chainId: 1,
 });
 ```
 
-### Example: personal_sign / 消息签名
+### 示例：personal_sign 消息签名
 
 ```ts
 const message = 'Hello OneKey';
@@ -309,7 +284,7 @@ const res = await HardwareSDK.evmSignMessage(connectId, deviceId, {
 // res.payload.signature -> 用 ethers.verifyMessage 校验
 ```
 
-### Example: Typed Data / EIP-712
+### 示例：Typed Data（EIP-712）
 
 ```ts
 const typedData = {
@@ -352,13 +327,12 @@ const res = await HardwareSDK.evmSignTypedData(connectId, deviceId, {
 // res.payload.signature -> 用 ethers.verifyTypedData(...) 恢复签名者
 ```
 
-## 🔹 Validation & Troubleshooting / 验签与排障
+## 验签与排障
 
 - 验签：
   - 交易：用 `ethers/viem` 重新序列化，校验签名哈希与设备显示一致。
   - personal_sign：`ethers.verifyMessage(message, sig.signature)`。
   - EIP‑712：`ethers.verifyTypedData(domain, types, message, sig.signature)`。
-  - EIP‑7702：按授权消息格式验证恢复地址。
 - 常见限制：超大 `data` 或异常字段可能被拒；`chainId` 必须与广播网络一致。
 - 常见错误：
   - 路径不一致：默认 `m/44'/60'/0'/0/0`，按账户/地址递增；务必与地址确认一致。

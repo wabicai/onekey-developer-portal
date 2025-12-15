@@ -7,21 +7,91 @@ description: Complete guide to integrate OneKey hardware wallet via USB/BLE
 
 This guide covers the complete flow for integrating OneKey hardware wallet: install the SDK, initialize, discover devices, handle UI prompts, and make your first signing call.
 
-## Install
+## Transport Overview
+
+USB integrations should use `@onekeyfe/hd-common-connect-sdk`; use `@onekeyfe/hd-web-sdk` only when the host mandates an iframe/plugin setup.
+
+### Connection Methods
+
+| Method | Description | Supported devices |
+|--------|-------------|-------------------|
+| **USB / WebUSB** | Wired USB; Web via WebUSB, native via low-level plugin | All OneKey devices |
+| **Bluetooth BLE (native)** | Native apps over BLE (not Web Bluetooth); requires OS Bluetooth & permission | OneKey Pro, Touch, Classic 1s / Classic 1s Pure; **Mini does not support BLE** |
+| **Air-Gap (QR)** | Offline QR signing | OneKey Pro only |
+
+### Choose Your Transport (aligned with overview)
+
+| Platform | Transport | SDK Package | Guide |
+|----------|-----------|-------------|-------|
+| Web (Browser) | WebUSB | `@onekeyfe/hd-common-connect-sdk` | [WebUSB Connection Guide](/en/hardware-sdk/transport/web-usb) |
+| React Native | BLE | `@onekeyfe/hd-ble-sdk` | [React Native BLE](/en/hardware-sdk/transport/react-native-ble) |
+| Android (Native) | BLE | `@onekeyfe/hd-common-connect-sdk` | [Android BLE](/en/hardware-sdk/transport/android) |
+| iOS (Native) | BLE | `@onekeyfe/hd-common-connect-sdk` | [iOS BLE](/en/hardware-sdk/transport/ios) |
+| Flutter | BLE | `@onekeyfe/hd-common-connect-sdk` | [Flutter BLE](/en/hardware-sdk/transport/flutter) |
+
+![Transport architecture](/images/transport/transport-architecture-en.svg)
+
+Low-level protocol and custom channels: [Low-Level Transport Plugin & Protocol](/en/hardware-sdk/concepts/low-level-plugin)
+
+## Install SDK
+
+Pick one entry by runtime:
+
+Install as needed (pick one):
 
 ```bash
-npm i @onekeyfe/hd-common-connect-sdk @onekeyfe/hd-shared @onekeyfe/hd-core
+# Web / desktop WebUSB (recommended)
+npm i @onekeyfe/hd-common-connect-sdk
+
+# React Native BLE
+npm i @onekeyfe/hd-ble-sdk
+
+# Native host with low-level plugin (Android/iOS/Flutter bridge)
+npm i @onekeyfe/hd-common-connect-sdk
+
+# Plugin iframe host only (legacy)
+npm i @onekeyfe/hd-web-sdk
 ```
+
+Transport details:
+- WebUSB: [WebUSB guide](/en/hardware-sdk/transport/web-usb)
+- React Native BLE: [BLE guide](/en/hardware-sdk/transport/react-native-ble)
+- Native Android / iOS / Flutter: bridge JS calls through low-level transport plugins (see pages for examples).
+- Custom channel & protocol: [Low-Level Transport Plugin & Protocol](/en/hardware-sdk/concepts/low-level-plugin)
 
 ## Initialize the SDK
 
-Initialize as early as possible so device events and UI prompts are handled correctly.
+Use the initialization method that matches your runtime—avoid mixing SDK entries.
+
+### Web / desktop WebUSB (`@onekeyfe/hd-common-connect-sdk`)
 
 ```ts
 import HardwareSDK from '@onekeyfe/hd-common-connect-sdk';
 
 await HardwareSDK.init({
-  env: 'webusb',  // 'webusb' | 'lowlevel' | 'react-native'
+  env: 'webusb',
+  debug: process.env.NODE_ENV !== 'production',
+  fetchConfig: true,
+});
+```
+
+### React Native BLE (`@onekeyfe/hd-ble-sdk`)
+
+```ts
+import HardwareSDK from '@onekeyfe/hd-ble-sdk';
+
+await HardwareSDK.init({
+  debug: __DEV__,
+});
+```
+
+### Native bridge / low-level (`@onekeyfe/hd-common-connect-sdk`)
+
+```ts
+import HardwareSDK from '@onekeyfe/hd-common-connect-sdk';
+
+await HardwareSDK.init({
+  env: 'lowlevel',  // 'webusb' | 'lowlevel' | 'react-native' | 'emulator'
   debug: process.env.NODE_ENV !== 'production',
   fetchConfig: true,
 });
@@ -29,9 +99,21 @@ await HardwareSDK.init({
 
 | Environment | Use Case |
 |-------------|----------|
-| `webusb` | Browser with WebUSB |
-| `lowlevel` | Native apps (iOS/Android/Flutter) via low-level adapter |
-| `react-native` | React Native with BLE transport |
+| `webusb` | Browser WebUSB (no iframe) |
+| `lowlevel` | Native apps bridging JS via low-level adapter |
+| `react-native` | Custom RN bridge or Electron BLE |
+| `emulator` | Built-in emulator transport |
+
+### Plugin iframe host only (`@onekeyfe/hd-web-sdk`)
+
+```ts
+import { HardwareSDK } from '@onekeyfe/hd-web-sdk';
+
+await HardwareSDK.init({
+  debug: process.env.NODE_ENV !== 'production',
+  connectSrc: 'https://jssdk.onekey.so/1.1.19/', // iframe host
+});
+```
 
 ## Bind Events
 
