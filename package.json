@@ -8,6 +8,7 @@
     "start": "npx serve@latest out"
   },
   "dependencies": {
+    "@reactour/tour": "^3.8.0",
     "@tailwindcss/postcss": "^4.1.17",
     "@xstate/react": "^6.0.0",
     "autoprefixer": "^10.4.22",
