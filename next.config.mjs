@@ -20,7 +20,7 @@ const withNextra = nextra({
     rehypePrettyCodeOptions: {
       theme: {
         dark: 'github-dark',
-        light: 'github-light'
+        light: 'github-light-high-contrast'
       }
     }
   }

@@ -390,7 +390,7 @@ export const handlers = [
         const pin = typeof params?.pin === 'string' ? params.pin.trim() : ''
         if (!pin) return badRequest('PIN 不能为空。', 'PIN_EMPTY')
 
-        if (pin !== '1234') {
+        if (pin !== '1111') {
           session.pinTriesLeft = Math.max(0, session.pinTriesLeft - 1)
           return ok({
             unlocked: false,

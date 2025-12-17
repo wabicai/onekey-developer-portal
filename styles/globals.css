@@ -38,6 +38,14 @@
   /* OneKey Brand Colors */
   --ok-green-500: #00B812;
 
+  /* Tour（reactour） */
+  --ok-tour-bg: #ffffff;
+  --ok-tour-text: #0f172a;
+  --ok-tour-muted: #64748b;
+  --ok-tour-border: #d5dbe1;
+  --ok-tour-shadow: 0px 10px 30px rgba(2, 6, 23, 0.12);
+  --ok-tour-accent: #00B812;
+
   /* Semantic Colors */
   --info-500: #0570de;
   --info-400: #0096eb;
@@ -122,6 +130,13 @@
   --shadow-md: 0px 4px 8px rgba(0, 0, 0, 0.4);
   --shadow-lg: 0px 8px 16px rgba(0, 0, 0, 0.4);
   --shadow-focus: 0 0 0 2px rgba(79, 245, 95, 0.25);
+
+  --ok-tour-bg: #10111a;
+  --ok-tour-text: #e5e7eb;
+  --ok-tour-muted: #a1a1aa;
+  --ok-tour-border: #30313d;
+  --ok-tour-shadow: 0px 12px 36px rgba(0, 0, 0, 0.5);
+  --ok-tour-accent: #4FF55F;
 }
 
 /* ============================================

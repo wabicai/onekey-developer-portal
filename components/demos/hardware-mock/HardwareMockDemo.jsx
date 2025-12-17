@@ -4,7 +4,9 @@ import { useMachine } from '@xstate/react'
 import gsap from 'gsap'
 import { Copy, Send } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { flushSync } from 'react-dom'
 import { createHardwareMockMachine } from './createHardwareMockMachine'
+import { EditorCodeBlock } from './EditorCodeBlock'
 import { ProDeviceScreen } from './pro/ProDeviceScreen'
 import { HardwareMockTour } from './tour/HardwareMockTour'
 import { hardwareMockTourBus } from './tour/hardwareMockTourBus'
@@ -55,7 +57,7 @@ const I18N = {
     deviceUi: {
       disconnected: '未连接设备。点击「连接」开始。',
       pinTitle: '解锁设备',
-      pinPrompt: '请输入 PIN 码继续（默认 PIN：1234）',
+      pinPrompt: '请输入 PIN 码继续（默认 PIN：1111）',
       pinPlaceholder: '请输入 PIN',
       pinSubmit: '提交',
       confirmTitle: '确认签名',
@@ -112,7 +114,7 @@ const I18N = {
     deviceUi: {
       disconnected: 'No device connected. Click "Connect" to start.',
       pinTitle: 'Unlock device',
-      pinPrompt: 'Enter PIN to continue (default: 1234)',
+      pinPrompt: 'Enter PIN to continue (default: 1111)',
       pinPlaceholder: 'Enter PIN',
       pinSubmit: 'Submit',
       confirmTitle: 'Confirm signing',
@@ -157,6 +159,13 @@ function formatJsonPretty(data) {
   } catch {
     return String(data)
   }
+}
+
+function findLineNumber(text, includes) {
+  if (!text) return null
+  const lines = String(text).split('\n')
+  const idx = lines.findIndex((line) => line.includes(includes))
+  return idx >= 0 ? idx + 1 : null
 }
 
 function getLevelStyle(level) {
@@ -233,9 +242,6 @@ export function HardwareMockDemo({ locale = 'zh' }) {
 
   const logsRef = useRef(null)
   const deviceRef = useRef(null)
-  const codeRef = useRef(null)
-  const callbackCodeRef = useRef(null)
-  const resultCodeRef = useRef(null)
   const lastSentRef = useRef({ command: null, params: null })
 
   const [command, setCommand] = useState('btcGetAddress')
@@ -244,10 +250,15 @@ export function HardwareMockDemo({ locale = 'zh' }) {
   const [useEmptyDevice, setUseEmptyDevice] = useState(false)
   const [messageHex, setMessageHex] = useState('6578616d706c65206d657373616765')
   const [copied, setCopied] = useState(false)
-  const [tourEnabled, setTourEnabled] = useState(false)
-  const tourEnabledRef = useRef(false)
+  const [tourEnabled, setTourEnabled] = useState(true)
+  const tourEnabledRef = useRef(true)
   const handleTourExit = useCallback(() => setTourEnabled(false), [])
+  const [tourStarted, setTourStarted] = useState(false)
+  const tourStartedRef = useRef(false)
   const [rightTab, setRightTab] = useState('example')
+  const [editorFocus, setEditorFocus] = useState({ tab: 'example', activeLine: null })
+  const currentTourStepIdRef = useRef(null)
+  const preferredCallbackLineRef = useRef(null)
 
   const logs = state.context.logs
   const ui = state.context.ui
@@ -276,33 +287,169 @@ export function HardwareMockDemo({ locale = 'zh' }) {
     [command, btcPath, addressShowOnOneKey, messageHex, useEmptyDevice]
   )
 
+  const exampleFilename = useMemo(() => {
+    if (command === 'searchDevices') return 'examples/searchDevices.ts'
+    if (command === 'btcGetAddress') return 'examples/btcGetAddress.ts'
+    if (command === 'btcSignMessage') return 'examples/btcSignMessage.ts'
+    return 'examples/demo.ts'
+  }, [command])
+
+  const callbackFilename = useMemo(() => {
+    return 'src/hardware-ui-events.ts'
+  }, [])
+
+  const resultFilename = useMemo(() => {
+    return `results/${command}.json`
+  }, [command])
+
   useEffect(() => {
     tourEnabledRef.current = Boolean(tourEnabled)
+    if (!tourEnabled) {
+      setTourStarted(false)
+      tourStartedRef.current = false
+      currentTourStepIdRef.current = null
+    }
   }, [tourEnabled])
 
   useEffect(() => {
-    const off = hardwareMockTourBus.on('tour.focus', (payload) => {
-      if (!tourEnabledRef.current) return
-      const tab = payload?.tab
-      if (tab === 'example' || tab === 'callback' || tab === 'result') {
-        setRightTab(tab)
-      }
-    })
-    return off
-  }, [])
+    tourStartedRef.current = Boolean(tourStarted)
+    if (!tourStarted) currentTourStepIdRef.current = null
+  }, [tourStarted])
 
   const callbackCode = useMemo(() => {
     const isEn = locale === 'en'
     if (command !== 'btcGetAddress' || !addressShowOnOneKey) {
       return isEn
-        ? `// UI callbacks (template)\n// Tip: When showOnOneKey=false, there is usually no interactive UI.\n// You can focus on parsing the result and updating your app state.\n`
-        : `// UI 回调（模板）\n// 提示：showOnOneKey=false 时通常不会触发需要你响应的交互事件。\n// 你可以把重点放在解析返回值，并更新业务 UI/状态。\n`
+        ? `// UI callbacks (template)
+// Tip: When showOnOneKey=false, there is usually no interactive UI.
+// You can focus on parsing the result and updating your app state.
+`
+        : `// UI 回调（模板）
+// 提示：showOnOneKey=false 时通常不会触发需要你响应的交互事件。
+// 你可以把重点放在解析返回值，并更新业务 UI/状态。
+`
     }
 
     return isEn
-      ? `import HardwareSDK, { UI_EVENT, UI_REQUEST, UI_RESPONSE } from '@onekeyfe/hd-common-connect-sdk'\n\n// Subscribe once at app startup (subscribe early to avoid blocking on PIN/Passphrase)\nHardwareSDK.on(UI_EVENT, (msg) => {\n  switch (msg.type) {\n    case UI_REQUEST.REQUEST_PIN: {\n      // Show a PIN modal (mock default PIN: 1234)\n      openPinModal(({ value }) =>\n        HardwareSDK.uiResponse({ type: UI_RESPONSE.RECEIVE_PIN, payload: value })\n      )\n      return\n    }\n\n    case UI_REQUEST.REQUEST_PASSPHRASE: {\n      openPassphraseModal(({ value, onDevice, save }) =>\n        HardwareSDK.uiResponse({\n          type: UI_RESPONSE.RECEIVE_PASSPHRASE,\n          payload: { value, passphraseOnDevice: onDevice, attachPinOnDevice: false, save },\n        })\n      )\n      return\n    }\n\n    // Hint-only events: e.g. REQUEST_BUTTON (confirm on device)\n    default:\n      console.log('UI event', msg.type, msg.payload)\n  }\n})\n\n// When you call btcGetAddress({ showOnOneKey: true }),\n// the SDK emits UI_EVENT messages. Your UI should react to those and call uiResponse\n// only for input-type requests.\n`
-      : `import HardwareSDK, { UI_EVENT, UI_REQUEST, UI_RESPONSE } from '@onekeyfe/hd-common-connect-sdk'\n\n// 在应用入口订阅一次（尽早订阅，避免 PIN/Passphrase 等交互阻塞请求）\nHardwareSDK.on(UI_EVENT, (msg) => {\n  switch (msg.type) {\n    case UI_REQUEST.REQUEST_PIN: {\n      // 打开 PIN 输入 UI（本 Mock 默认 PIN：1234）\n      openPinModal(({ value }) =>\n        HardwareSDK.uiResponse({ type: UI_RESPONSE.RECEIVE_PIN, payload: value })\n      )\n      return\n    }\n\n    case UI_REQUEST.REQUEST_PASSPHRASE: {\n      openPassphraseModal(({ value, onDevice, save }) =>\n        HardwareSDK.uiResponse({\n          type: UI_RESPONSE.RECEIVE_PASSPHRASE,\n          payload: { value, passphraseOnDevice: onDevice, attachPinOnDevice: false, save },\n        })\n      )\n      return\n    }\n\n    // 仅提示类事件：比如 REQUEST_BUTTON（请在设备确认）\n    default:\n      console.log('UI event', msg.type, msg.payload)\n  }\n})\n\n// 当你调用 btcGetAddress({ showOnOneKey: true }) 时\n// SDK 会通过 UI_EVENT 发出交互提示，你需要在 UI 层响应并调用 uiResponse（仅限需要输入的请求）。\n`
+      ? `import HardwareSDK, { UI_EVENT, UI_REQUEST, UI_RESPONSE } from '@onekeyfe/hd-common-connect-sdk'
+
+// Subscribe once at app startup (subscribe early to avoid blocking on PIN/Passphrase)
+HardwareSDK.on(UI_EVENT, (msg) => {
+  switch (msg.type) {
+    case UI_REQUEST.REQUEST_PIN: {
+      // Show a PIN modal (mock default PIN: 1111)
+      openPinModal(({ value }) =>
+        HardwareSDK.uiResponse({ type: UI_RESPONSE.RECEIVE_PIN, payload: value })
+      )
+      return
+    }
+
+    case UI_REQUEST.REQUEST_PASSPHRASE: {
+      openPassphraseModal(({ value, onDevice, save }) =>
+        HardwareSDK.uiResponse({
+          type: UI_RESPONSE.RECEIVE_PASSPHRASE,
+          payload: { value, passphraseOnDevice: onDevice, attachPinOnDevice: false, save },
+        })
+      )
+      return
+    }
+
+    // Hint-only events: e.g. REQUEST_BUTTON (confirm on device)
+    default:
+      console.log('UI event', msg.type, msg.payload)
+  }
+})
+
+// When you call btcGetAddress({ showOnOneKey: true }),
+// the SDK emits UI_EVENT messages. Your UI should react to those and call uiResponse
+// only for input-type requests.
+`
+      : `import HardwareSDK, { UI_EVENT, UI_REQUEST, UI_RESPONSE } from '@onekeyfe/hd-common-connect-sdk'
+
+// 在应用入口订阅一次（尽早订阅，避免 PIN/Passphrase 等交互阻塞请求）
+HardwareSDK.on(UI_EVENT, (msg) => {
+  switch (msg.type) {
+    case UI_REQUEST.REQUEST_PIN: {
+      // 打开 PIN 输入 UI（本 Mock 默认 PIN：1111）
+      openPinModal(({ value }) =>
+        HardwareSDK.uiResponse({ type: UI_RESPONSE.RECEIVE_PIN, payload: value })
+      )
+      return
+    }
+
+    case UI_REQUEST.REQUEST_PASSPHRASE: {
+      openPassphraseModal(({ value, onDevice, save }) =>
+        HardwareSDK.uiResponse({
+          type: UI_RESPONSE.RECEIVE_PASSPHRASE,
+          payload: { value, passphraseOnDevice: onDevice, attachPinOnDevice: false, save },
+        })
+      )
+      return
+    }
+
+    // 仅提示类事件：比如 REQUEST_BUTTON（请在设备确认）
+    default:
+      console.log('UI event', msg.type, msg.payload)
+  }
+})
+
+// 当你调用 btcGetAddress({ showOnOneKey: true }) 时
+// SDK 会通过 UI_EVENT 发出交互提示，你需要在 UI 层响应并调用 uiResponse（仅限需要输入的请求）。
+`
   }, [addressShowOnOneKey, command, locale])
+
+  const editorMarks = useMemo(() => {
+    const exampleCall =
+      command === 'btcGetAddress'
+        ? findLineNumber(code, 'HardwareSDK.btcGetAddress')
+        : command === 'btcSignMessage'
+          ? findLineNumber(code, 'HardwareSDK.btcSignMessage')
+          : command === 'searchDevices'
+            ? findLineNumber(code, 'HardwareSDK.searchDevices')
+            : null
+
+    const callbackOn = findLineNumber(callbackCode, 'HardwareSDK.on(UI_EVENT')
+    const callbackPin = findLineNumber(callbackCode, 'case UI_REQUEST.REQUEST_PIN')
+    const callbackPassphrase = findLineNumber(callbackCode, 'case UI_REQUEST.REQUEST_PASSPHRASE')
+    const callbackReceivePin = findLineNumber(callbackCode, 'UI_RESPONSE.RECEIVE_PIN')
+    const callbackButtonHint = findLineNumber(callbackCode, 'REQUEST_BUTTON')
+
+    return {
+      example: {
+        exampleCall
+      },
+      callback: {
+        callbackOn,
+        callbackPin,
+        callbackPassphrase,
+        callbackReceivePin,
+        callbackButtonHint
+      }
+    }
+  }, [callbackCode, code, command])
+
+  useEffect(() => {
+    const off = hardwareMockTourBus.on('tour.focus', (payload) => {
+      if (!tourEnabledRef.current || !tourStartedRef.current) return
+      const tab = payload?.tab
+      currentTourStepIdRef.current = payload?.stepId ?? null
+      if (tab === 'example' || tab === 'callback' || tab === 'result') {
+        flushSync(() => {
+          setRightTab(tab)
+          setEditorFocus((prev) => {
+            if (tab === 'example') return { ...prev, tab, activeLine: editorMarks.example.exampleCall ?? null }
+            if (tab === 'callback') {
+              const preferred = preferredCallbackLineRef.current
+              return { ...prev, tab, activeLine: preferred ?? editorMarks.callback.callbackOn ?? null }
+            }
+            if (tab === 'result') return { ...prev, tab, activeLine: 1 }
+            return { ...prev, tab }
+          })
+        })
+      }
+    })
+    return off
+  }, [editorMarks])
 
   useEffect(() => {
     if (!tourEnabled) return
@@ -322,10 +469,25 @@ export function HardwareMockDemo({ locale = 'zh' }) {
   }, [tourEnabled, command, btcPath, addressShowOnOneKey, messageHex, useEmptyDevice, code, state.context.device])
 
   useEffect(() => {
-    if (!tourEnabled) return
+    if (!tourEnabled || !tourStarted) return
     if (!ui?.type) return
     hardwareMockTourBus.emit('ui.shown', { uiType: ui.type, action: ui?.action ?? null })
-  }, [tourEnabled, ui?.type, ui?.action])
+    // 仅记录“如果导览稍后聚焦到 callback-code，应当标记哪一行”。
+    if (ui.type === 'pin') preferredCallbackLineRef.current = editorMarks.callback.callbackPin ?? null
+    if (ui.type === 'passphrase') preferredCallbackLineRef.current = editorMarks.callback.callbackPassphrase ?? null
+    if (ui.type === 'confirm') {
+      preferredCallbackLineRef.current =
+        editorMarks.callback.callbackButtonHint ?? editorMarks.callback.callbackOn ?? null
+    }
+    if (rightTab === 'callback') {
+      const preferred = preferredCallbackLineRef.current
+      if (preferred) {
+        flushSync(() => {
+          setEditorFocus((prev) => (prev.tab === 'callback' ? { ...prev, activeLine: preferred } : prev))
+        })
+      }
+    }
+  }, [editorMarks, rightTab, tourEnabled, tourStarted, ui?.type, ui?.action])
 
   useEffect(() => {
     const el = deviceRef.current
@@ -337,7 +499,7 @@ export function HardwareMockDemo({ locale = 'zh' }) {
   // 结果/日志区域不再逐行滚动动画；保留核心交互区域的轻量动画即可。
 
   useEffect(() => {
-    if (!tourEnabled) return
+    if (!tourEnabled || !tourStarted) return
     const last = logs[logs.length - 1]
     if (!last) return
     if (last.level !== 'response' && last.level !== 'error') return
@@ -350,31 +512,17 @@ export function HardwareMockDemo({ locale = 'zh' }) {
 
     const sent = lastSentRef.current ?? { command: null, params: null }
     hardwareMockTourBus.emit('command.result', { command: sent.command, params: sent.params, log: last })
-  }, [tourEnabled, logs])
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return undefined
-
-    let cancelled = false
-    async function highlight() {
-      try {
-        const prismModule = await import('prismjs')
-        await import('prismjs/components/prism-typescript')
-        await import('prismjs/components/prism-json')
-        const Prism = prismModule?.default ?? prismModule
-        if (cancelled) return
-        if (codeRef.current) Prism.highlightElement(codeRef.current)
-        if (callbackCodeRef.current) Prism.highlightElement(callbackCodeRef.current)
-        if (resultCodeRef.current) Prism.highlightElement(resultCodeRef.current)
-      } catch {
-        // ignore highlight errors
-      }
+    // Tour 期间的“结果”展示由导览步骤驱动（避免 callback-code 步骤还没看完就自动跳到 Result）。
+    // 如果当前导览本身已经聚焦到 result，再同步激活该 tab。
+    if (currentTourStepIdRef.current === 'result') {
+      flushSync(() => {
+        setRightTab('result')
+        setEditorFocus((prev) => ({ ...prev, tab: 'result', activeLine: 1 }))
+      })
     }
-    highlight()
-    return () => {
-      cancelled = true
-    }
-  }, [code, callbackCode, rightTab, logs.length])
+  }, [tourEnabled, tourStarted, logs])
+
+  // Prism 高亮已由 EditorCodeBlock 负责，这里不再手动调用 Prism。
 
   function handleSendCommand() {
     const connectId = state.context.device?.connectId ?? null
@@ -389,8 +537,19 @@ export function HardwareMockDemo({ locale = 'zh' }) {
 
     lastSentRef.current = { command, params }
     if (tourEnabledRef.current) {
+      // 先标记“导览已开始”，确保 Tour 触发的 tour.focus 能被立即消费。
+      tourStartedRef.current = true
+      setTourStarted(true)
+      currentTourStepIdRef.current = null
+      preferredCallbackLineRef.current = null
       hardwareMockTourBus.emit('command.sent', { command, params })
     }
+    setRightTab('example')
+    setEditorFocus((prev) => ({
+      ...prev,
+      tab: 'example',
+      activeLine: editorMarks.example.exampleCall ?? null
+    }))
     send({ type: 'SEND', command, params })
   }
 
@@ -408,7 +567,7 @@ export function HardwareMockDemo({ locale = 'zh' }) {
   }
 
   return (
-    <div className="not-prose my-4 overflow-x-hidden">
+    <div className="not-prose my-4 overflow-x-hidden" style={{ fontFamily: 'var(--font-ui)' }}>
       <div className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-950">
         <HardwareMockTour locale={locale} enabled={tourEnabled} onExit={handleTourExit} />
 
@@ -436,14 +595,24 @@ export function HardwareMockDemo({ locale = 'zh' }) {
                   device={state.context.device}
                   ui={ui}
                   onSubmitPin={(pinValue) => {
-                    if (tourEnabled) {
+                    if (tourEnabled && tourStarted) {
                       hardwareMockTourBus.emit('ui.pin.submit', { pinLength: String(pinValue ?? '').length })
+                    } else {
+                      setRightTab('callback')
+                      setEditorFocus((prev) => ({
+                        ...prev,
+                        tab: 'callback',
+                        activeLine: editorMarks.callback.callbackReceivePin ?? null
+                      }))
                     }
                     send({ type: 'SUBMIT_PIN', pin: pinValue })
                   }}
                   onConfirm={() => {
-                    if (tourEnabled) {
+                    if (tourEnabled && tourStarted) {
                       hardwareMockTourBus.emit('ui.confirm', { action: ui?.action ?? null, approved: true })
+                    } else if (ui?.action === 'btcGetAddress') {
+                      setRightTab('callback')
+                      setEditorFocus((prev) => ({ ...prev, tab: 'callback', activeLine: editorMarks.callback.callbackOn ?? null }))
                     }
                     send({ type: 'CONFIRM', approved: true })
                   }}
@@ -590,7 +759,15 @@ export function HardwareMockDemo({ locale = 'zh' }) {
                     <button
                       key={tab.key}
                       type="button"
-                      onClick={() => setRightTab(tab.key)}
+                      onClick={() => {
+                        setRightTab(tab.key)
+                        setEditorFocus((prev) => {
+                          if (tab.key === 'example') return { ...prev, tab: tab.key, activeLine: editorMarks.example.exampleCall ?? null }
+                          if (tab.key === 'callback') return { ...prev, tab: tab.key, activeLine: editorMarks.callback.callbackOn ?? null }
+                          if (tab.key === 'result') return { ...prev, tab: tab.key, activeLine: 1 }
+                          return { ...prev, tab: tab.key }
+                        })
+                      }}
                       className={[
                         'rounded px-2.5 py-1 font-medium transition-colors',
                         rightTab === tab.key
@@ -620,22 +797,44 @@ export function HardwareMockDemo({ locale = 'zh' }) {
                     </button>
                   </div>
 
-                  <pre className="mt-2 max-h-[520px] overflow-auto rounded-lg border border-zinc-200 bg-white p-3 font-mono text-xs leading-relaxed text-zinc-900 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-100">
-                    <code ref={codeRef} data-tour="example-code" className="language-ts">
-                      {code}
-                    </code>
-                  </pre>
+                  <div className="mt-2">
+                    <EditorCodeBlock
+                      dataTour="example-code"
+                      code={code}
+                      language="typescript"
+                      filename={exampleFilename}
+                      activeLine={tourEnabled && tourStarted && editorFocus.tab === 'example' ? editorFocus.activeLine : null}
+                      breakpoints={
+                        tourEnabled && tourStarted && editorFocus.tab === 'example' && editorFocus.activeLine
+                          ? [editorFocus.activeLine]
+                          : []
+                      }
+                      showBreakpoints={tourEnabled && tourStarted}
+                      maxHeight={560}
+                    />
+                  </div>
                 </>
               ) : null}
 
               {rightTab === 'callback' ? (
                 <>
                   <div className="mt-3 text-xs text-zinc-500 dark:text-zinc-400">{dict.labels.callbackHint}</div>
-                  <pre className="mt-2 max-h-[560px] overflow-auto rounded-lg border border-zinc-200 bg-white p-3 font-mono text-[11px] leading-relaxed text-zinc-900 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-100">
-                    <code ref={callbackCodeRef} data-tour="callback-code" className="language-ts">
-                      {callbackCode}
-                    </code>
-                  </pre>
+                  <div className="mt-2">
+                    <EditorCodeBlock
+                      dataTour="callback-code"
+                      code={callbackCode}
+                      language="typescript"
+                      filename={callbackFilename}
+                      activeLine={tourEnabled && tourStarted && editorFocus.tab === 'callback' ? editorFocus.activeLine : null}
+                      breakpoints={
+                        tourEnabled && tourStarted && editorFocus.tab === 'callback' && editorFocus.activeLine
+                          ? [editorFocus.activeLine]
+                          : []
+                      }
+                      showBreakpoints={tourEnabled && tourStarted}
+                      maxHeight={560}
+                    />
+                  </div>
                 </>
               ) : null}
 
@@ -661,11 +860,14 @@ export function HardwareMockDemo({ locale = 'zh' }) {
                             className="mt-2 overflow-auto rounded-lg border border-zinc-200 bg-white p-3 dark:border-zinc-800 dark:bg-zinc-950"
                           >
                             {last.data !== undefined ? (
-                              <pre className="m-0 font-mono text-[11px] leading-relaxed text-zinc-900 dark:text-zinc-100">
-                                <code ref={resultCodeRef} className="language-json">
-                                  {formatJsonPretty(last.data)}
-                                </code>
-                              </pre>
+                              <EditorCodeBlock
+                                code={formatJsonPretty(last.data)}
+                                language="json"
+                                filename={resultFilename}
+                                activeLine={editorFocus.tab === 'result' ? editorFocus.activeLine : null}
+                                breakpoints={[]}
+                                maxHeight={420}
+                              />
                             ) : (
                               <div className="text-xs text-zinc-500 dark:text-zinc-500">{dict.labels.noPayload}</div>
                             )}
