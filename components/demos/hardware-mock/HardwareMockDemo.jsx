@@ -2,12 +2,13 @@
 
 import { useMachine } from '@xstate/react'
 import gsap from 'gsap'
-import { Copy, Send } from 'lucide-react'
+import { Check, ChevronDown, Copy, Delete, ExternalLink, Info, Send, X } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { flushSync } from 'react-dom'
 import { createHardwareMockMachine } from './createHardwareMockMachine'
 import { EditorCodeBlock } from './EditorCodeBlock'
 import { ProDeviceScreen } from './pro/ProDeviceScreen'
+import { Classic1sDeviceScreen } from './classic1s/Classic1sDeviceScreen'
 import { HardwareMockTour } from './tour/HardwareMockTour'
 import { hardwareMockTourBus } from './tour/hardwareMockTourBus'
 
@@ -41,32 +42,18 @@ const I18N = {
       sendCommand: '发送命令',
       showOnDevice: 'showOnOneKey（在设备上显示并确认）',
       deviceScreen: '设备屏幕（Mock）',
-      deviceUiHint: 'UI：PIN / Confirm',
       terminal: '终端日志',
-      noLogs: '暂无日志。试试点击锁屏并输入 PIN，或发送命令触发交互。',
+      noLogs: '暂无日志。试试先解锁设备并输入 PIN，或发送命令触发交互。',
+      demoNotice: 'Mock 演示（不连接真实硬件）',
+      pinNote: 'PIN：任意 4 位（Mock 不校验）',
+      openEmulator: '打开 OneKey Emulator',
       devViewTitle: '开发者视角',
-      devViewSubtitle: '示例代码 · UI 回调 · 结果',
       tabExample: '示例代码',
       tabCallback: '回调处理',
       tabResult: '结果',
-      callbackHint: '这里展示真实的 UI_EVENT 接线模板（按你的 UI 框架改成弹窗/表单即可）。',
       noResult: '暂无结果。发送命令后这里会展示返回值。',
       showRawLogs: '查看完整日志',
       noPayload: '无返回数据。'
-    },
-    deviceUi: {
-      disconnected: '未连接设备。点击「连接」开始。',
-      pinTitle: '解锁设备',
-      pinPrompt: '请输入 PIN 码继续（默认 PIN：1111）',
-      pinPlaceholder: '请输入 PIN',
-      pinSubmit: '提交',
-      confirmTitle: '确认签名',
-      confirmPrompt: '请在设备上确认交易',
-      approve: '同意',
-      reject: '拒绝',
-      connectedTitle: '设备已连接',
-      connectedHint: '发送 btcSignMessage 触发签名流程。',
-      unlockedState: '当前解锁状态'
     }
   },
   en: {
@@ -98,32 +85,18 @@ const I18N = {
       sendCommand: 'Send',
       showOnDevice: 'showOnOneKey (confirm on device)',
       deviceScreen: 'Device screen (Mock)',
-      deviceUiHint: 'UI: PIN / Confirm',
       terminal: 'Terminal logs',
-      noLogs: 'No logs yet. Tap the lockscreen or send a command to start.',
+      noLogs: 'No logs yet. Try unlocking the device or send a command to start.',
+      demoNotice: 'Mock demo (no real hardware)',
+      pinNote: 'PIN: any 4 digits (not validated)',
+      openEmulator: 'Open OneKey Emulator',
       devViewTitle: 'Developer View',
-      devViewSubtitle: 'Example code · UI callbacks · Result',
       tabExample: 'Example',
       tabCallback: 'Callbacks',
       tabResult: 'Result',
-      callbackHint: 'This shows the real UI_EVENT wiring template (adapt it to your UI framework).',
       noResult: 'No result yet. Send a command to see output.',
       showRawLogs: 'Show raw logs',
       noPayload: 'No payload.'
-    },
-    deviceUi: {
-      disconnected: 'No device connected. Click "Connect" to start.',
-      pinTitle: 'Unlock device',
-      pinPrompt: 'Enter PIN to continue (default: 1111)',
-      pinPlaceholder: 'Enter PIN',
-      pinSubmit: 'Submit',
-      confirmTitle: 'Confirm signing',
-      confirmPrompt: 'Confirm the transaction on the device',
-      approve: 'Approve',
-      reject: 'Reject',
-      connectedTitle: 'Device connected',
-      connectedHint: "Send 'btcSignMessage' to trigger signing steps.",
-      unlockedState: 'Unlocked'
     }
   }
 }
@@ -181,53 +154,93 @@ function getLevelStyle(level) {
   }
 }
 
-function buildExampleCode({ command, btcPath, addressShowOnOneKey, messageHex, useEmptyDevice }) {
+function buildExampleCode({ locale, command, btcPath, addressShowOnOneKey, messageHex }) {
   const init = [
     "import HardwareSDK from '@onekeyfe/hd-common-connect-sdk'",
     '',
-    "await HardwareSDK.init({ env: 'webusb', fetchConfig: true, debug: false })",
+    'await HardwareSDK.init({',
+    "  env: 'webusb',",
+    '  fetchConfig: true,',
+    '  debug: false,',
+    '})',
     ''
   ]
 
   if (command === 'searchDevices') {
-    return [...init, 'const result = await HardwareSDK.searchDevices()', 'console.log(result)'].join('\n')
+    return [
+      ...init,
+      'const res = await HardwareSDK.searchDevices()',
+      'if (!res.success) throw new Error(res.payload.error)',
+      '',
+      'console.log(res.payload)'
+    ].join('\n')
   }
 
   const shared = [
     ...init,
-    'const devices = await HardwareSDK.searchDevices()',
-    'if (!devices.success) throw new Error(devices.payload.error)',
-    'const connectId = devices.payload?.[0]?.connectId',
+    'const devicesRes = await HardwareSDK.searchDevices()',
+    'if (!devicesRes.success) throw new Error(devicesRes.payload.error)',
+    'const connectId = devicesRes.payload[0].connectId',
     '',
-    'const features = await HardwareSDK.getFeatures(connectId)',
-    'if (!features.success) throw new Error(features.payload.error)',
-    'const deviceId = features.payload?.device_id',
+    'const featuresRes = await HardwareSDK.getFeatures(connectId)',
+    'if (!featuresRes.success) throw new Error(featuresRes.payload.error)',
+    'const deviceId = featuresRes.payload.device_id',
     ''
   ]
 
   if (command === 'btcGetAddress') {
     return [
       ...shared,
-      'const result = await HardwareSDK.btcGetAddress(connectId, deviceId, {',
+      'const res = await HardwareSDK.btcGetAddress(connectId, deviceId, {',
       `  path: ${JSON.stringify(btcPath)},`,
       "  coin: 'btc',",
       `  showOnOneKey: ${String(Boolean(addressShowOnOneKey))},`,
-      `  useEmptyDevice: ${String(Boolean(useEmptyDevice))},`,
       '})',
-      'console.log(result)'
+      'if (!res.success) throw new Error(res.payload.error)',
+      '',
+      'console.log(res.payload)'
     ].join('\n')
   }
 
   return [
     ...shared,
-    'const result = await HardwareSDK.btcSignMessage(connectId, deviceId, {',
+    'const res = await HardwareSDK.btcSignMessage(connectId, deviceId, {',
     `  path: ${JSON.stringify(btcPath)},`,
     `  messageHex: ${JSON.stringify(messageHex)},`,
     "  coin: 'btc',",
-    `  useEmptyDevice: ${String(Boolean(useEmptyDevice))},`,
     '})',
-    'console.log(result)'
+    'if (!res.success) throw new Error(res.payload.error)',
+    '',
+    'console.log(res.payload)'
   ].join('\n')
+}
+
+function createSeededRng(seed) {
+  let state = 2166136261
+  const s = String(seed ?? '')
+  for (let i = 0; i < s.length; i += 1) {
+    state ^= s.charCodeAt(i)
+    state = Math.imul(state, 16777619)
+  }
+  return () => {
+    state = Math.imul(1664525, state) + 1013904223
+    return ((state >>> 0) % 1_000_000) / 1_000_000
+  }
+}
+
+function seededShuffle(items, seed) {
+  const rng = createSeededRng(seed)
+  const arr = [...items]
+  for (let i = arr.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(rng() * (i + 1))
+    ;[arr[i], arr[j]] = [arr[j], arr[i]]
+  }
+  return arr
+}
+
+function buildClassicPinLayout(seed) {
+  const digits = seededShuffle([0, 1, 2, 3, 4, 5, 6, 7, 8, 9], seed)
+  return digits.slice(0, 10)
 }
 
 export function HardwareMockDemo({ locale = 'zh' }) {
@@ -243,18 +256,26 @@ export function HardwareMockDemo({ locale = 'zh' }) {
   const logsRef = useRef(null)
   const deviceRef = useRef(null)
   const lastSentRef = useRef({ command: null, params: null })
+  const deviceTypeRef = useRef('pro')
+  const uiTypeRef = useRef(null)
+  const classicPinEntryOnDeviceRef = useRef(false)
 
   const [command, setCommand] = useState('btcGetAddress')
   const [btcPath, setBtcPath] = useState("m/44'/0'/0'/0/0")
   const [addressShowOnOneKey, setAddressShowOnOneKey] = useState(true)
-  const [useEmptyDevice, setUseEmptyDevice] = useState(false)
   const [messageHex, setMessageHex] = useState('6578616d706c65206d657373616765')
+  const [deviceTypeControl, setDeviceTypeControl] = useState('pro')
+  const [classicPinModalOpen, setClassicPinModalOpen] = useState(false)
+  const [classicPinValue, setClassicPinValue] = useState('')
+  const [classicPinEntryOnDevice, setClassicPinEntryOnDevice] = useState(false)
+  const pinOriginRef = useRef(null) // manual | command | null
   const [copied, setCopied] = useState(false)
   const [tourEnabled, setTourEnabled] = useState(true)
   const tourEnabledRef = useRef(true)
   const handleTourExit = useCallback(() => setTourEnabled(false), [])
   const [tourStarted, setTourStarted] = useState(false)
   const tourStartedRef = useRef(false)
+  const [currentTourStepId, setCurrentTourStepId] = useState(null)
   const [rightTab, setRightTab] = useState('example')
   const [editorFocus, setEditorFocus] = useState({ tab: 'example', activeLine: null })
   const currentTourStepIdRef = useRef(null)
@@ -262,6 +283,10 @@ export function HardwareMockDemo({ locale = 'zh' }) {
 
   const logs = state.context.logs
   const ui = state.context.ui
+
+  const tourGuided = Boolean(tourEnabled && tourStarted)
+  const allowPinInteraction = !tourGuided || currentTourStepId === 'pin'
+  const allowConfirmInteraction = !tourGuided || currentTourStepId === 'confirm'
 
   const isBusy =
     state.matches('booting') ||
@@ -281,10 +306,89 @@ export function HardwareMockDemo({ locale = 'zh' }) {
   const mockError = state.context.mockError
   const lastError = state.context.lastError
   const deviceUnlocked = Boolean(state.context.device?.unlocked)
+  const deviceType = state.context.device?.deviceType ?? 'pro'
+  const statusDotClass = mockError || lastError ? 'bg-red-500' : mockReady ? 'bg-[#00B812]' : 'bg-zinc-400'
+  const statusBadgeClass =
+    mockError || lastError
+      ? 'bg-red-50 text-red-700 ring-red-100 dark:bg-red-500/10 dark:text-red-100 dark:ring-red-500/30'
+      : mockReady
+        ? 'bg-emerald-50 text-emerald-700 ring-emerald-100 dark:bg-emerald-500/15 dark:text-emerald-100 dark:ring-emerald-500/30'
+        : 'bg-zinc-100 text-zinc-700 ring-zinc-200 dark:bg-zinc-800/70 dark:text-zinc-200 dark:ring-zinc-700'
+  const statusText = useMemo(() => {
+    if (state.matches('booting')) return dict.status.booting
+    if (state.matches('notReady')) return dict.status.notReady
+    if (state.matches('unavailable')) return dict.status.unavailable
+    if (state.matches('canceling')) return dict.status.canceling
+    if (state.matches('sending')) return dict.status.sending
+    if (state.matches('awaitingPin')) return dict.status.awaitingPin
+    if (state.matches('submittingPin')) return dict.status.submittingPin
+    if (state.matches('awaitingConfirm')) return dict.status.awaitingConfirm
+    if (state.matches('submittingConfirm')) return dict.status.submittingConfirm
+    if (state.matches('ready')) return dict.status.ready
+    return mockReady ? dict.status.ready : dict.status.notReady
+  }, [dict.status, mockReady, state])
+  const pinRequestId = ui?.type === 'pin' ? ui?.requestId ?? null : null
+  const classicPinMatrix = useMemo(() => {
+    if (deviceType !== 'classic1s') return null
+    if (ui?.type !== 'pin') return null
+    return buildClassicPinLayout(String(ui?.requestId ?? 'pin'))
+  }, [deviceType, ui?.requestId, ui?.type])
+
+  deviceTypeRef.current = deviceType
+  uiTypeRef.current = ui?.type ?? null
+  classicPinEntryOnDeviceRef.current = Boolean(classicPinEntryOnDevice)
+
+  useEffect(() => {
+    setDeviceTypeControl(deviceType)
+  }, [deviceType])
+
+	  useEffect(() => {
+	    if (deviceType !== 'classic1s') {
+	      setClassicPinModalOpen(false)
+	      setClassicPinEntryOnDevice(false)
+	      setClassicPinValue('')
+	      pinOriginRef.current = null
+	      return
+	    }
+
+    if (ui?.type !== 'pin') {
+      setClassicPinModalOpen(false)
+      setClassicPinEntryOnDevice(false)
+      setClassicPinValue('')
+      pinOriginRef.current = null
+      return
+    }
+
+    // Classic 1s：
+    // - 手动点击 unlock：直接进入设备端 PIN 界面（不弹窗）
+    // - 发起受保护交互触发 REQUEST_PIN：弹出手机侧盲输 PIN 弹窗，可切换到设备输入
+	    if (pinOriginRef.current === 'manual') {
+	      setClassicPinModalOpen(false)
+	      setClassicPinEntryOnDevice(true)
+	      setClassicPinValue('')
+	      return
+	    }
+
+	    setClassicPinValue('')
+	    setClassicPinEntryOnDevice(false)
+	    setClassicPinModalOpen(Boolean(allowPinInteraction))
+	    if (tourGuided && allowPinInteraction) {
+	      window.setTimeout(() => {
+	        hardwareMockTourBus.emit('tour.refresh', { reason: 'classic1s.pin.modal.effect' })
+	      }, 0)
+	    }
+	  }, [allowPinInteraction, deviceType, pinRequestId, tourGuided, ui?.type])
 
   const code = useMemo(
-    () => buildExampleCode({ command, btcPath, addressShowOnOneKey, messageHex, useEmptyDevice }),
-    [command, btcPath, addressShowOnOneKey, messageHex, useEmptyDevice]
+    () =>
+      buildExampleCode({
+        locale,
+        command,
+        btcPath,
+        addressShowOnOneKey,
+        messageHex
+      }),
+    [addressShowOnOneKey, btcPath, command, locale, messageHex]
   )
 
   const exampleFilename = useMemo(() => {
@@ -308,95 +412,158 @@ export function HardwareMockDemo({ locale = 'zh' }) {
       setTourStarted(false)
       tourStartedRef.current = false
       currentTourStepIdRef.current = null
+      setCurrentTourStepId(null)
     }
   }, [tourEnabled])
 
   useEffect(() => {
     tourStartedRef.current = Boolean(tourStarted)
-    if (!tourStarted) currentTourStepIdRef.current = null
+    if (!tourStarted) {
+      currentTourStepIdRef.current = null
+      setCurrentTourStepId(null)
+    }
   }, [tourStarted])
 
   const callbackCode = useMemo(() => {
     const isEn = locale === 'en'
-    if (command !== 'btcGetAddress' || !addressShowOnOneKey) {
-      return isEn
-        ? `// UI callbacks (template)
-// Tip: When showOnOneKey=false, there is usually no interactive UI.
-// You can focus on parsing the result and updating your app state.
-`
-        : `// UI 回调（模板）
-// 提示：showOnOneKey=false 时通常不会触发需要你响应的交互事件。
-// 你可以把重点放在解析返回值，并更新业务 UI/状态。
-`
-    }
+    const isPro = (deviceTypeControl ?? 'pro') !== 'classic1s'
+    const extraHint =
+      command === 'btcGetAddress' && !addressShowOnOneKey
+        ? isEn
+          ? `\n// Note: showOnOneKey=false usually skips device confirmation, so REQUEST_BUTTON may not happen.\n`
+          : `\n// 注意：showOnOneKey=false 通常会跳过“设备上确认”，因此可能不会触发 REQUEST_BUTTON。\n`
+        : ''
 
-    return isEn
-      ? `import HardwareSDK, { UI_EVENT, UI_REQUEST, UI_RESPONSE } from '@onekeyfe/hd-common-connect-sdk'
+    if (isEn) {
+      if (isPro) {
+        return `import HardwareSDK from '@onekeyfe/hd-common-connect-sdk'
+import { UI_EVENT, UI_REQUEST } from '@onekeyfe/hd-core'
 
-// Subscribe once at app startup (subscribe early to avoid blocking on PIN/Passphrase)
-HardwareSDK.on(UI_EVENT, (msg) => {
-  switch (msg.type) {
-    case UI_REQUEST.REQUEST_PIN: {
-      // Show a PIN modal (mock default PIN: 1111)
-      openPinModal(({ value }) =>
-        HardwareSDK.uiResponse({ type: UI_RESPONSE.RECEIVE_PIN, payload: value })
-      )
+// Pro: PIN is entered on device, so REQUEST_PIN will NOT be emitted.
+// Subscribe once at app startup (subscribe early to avoid blocking).
+HardwareSDK.on(UI_EVENT, (message) => {
+  switch (message.type) {
+    case UI_REQUEST.REQUEST_BUTTON: {
+      // The device needs user confirmation (e.g. btcGetAddress showOnOneKey=true).
+      // This callback happens when the confirm screen is shown (not at the end).
+      // Usually you only show a "Confirm on device" hint (no uiResponse needed).
       return
     }
 
-    case UI_REQUEST.REQUEST_PASSPHRASE: {
-      openPassphraseModal(({ value, onDevice, save }) =>
-        HardwareSDK.uiResponse({
-          type: UI_RESPONSE.RECEIVE_PASSPHRASE,
-          payload: { value, passphraseOnDevice: onDevice, attachPinOnDevice: false, save },
-        })
-      )
+    case UI_REQUEST.CLOSE_UI_WINDOW: {
+      // Close any modal/dialog you opened (Classic/Pure PIN prompt etc.)
       return
     }
 
-    // Hint-only events: e.g. REQUEST_BUTTON (confirm on device)
     default:
-      console.log('UI event', msg.type, msg.payload)
+      return
   }
 })
+${extraHint}`
+      }
 
-// When you call btcGetAddress({ showOnOneKey: true }),
-// the SDK emits UI_EVENT messages. Your UI should react to those and call uiResponse
-// only for input-type requests.
-`
-      : `import HardwareSDK, { UI_EVENT, UI_REQUEST, UI_RESPONSE } from '@onekeyfe/hd-common-connect-sdk'
+      return `import HardwareSDK from '@onekeyfe/hd-common-connect-sdk'
+import { UI_EVENT, UI_REQUEST, UI_RESPONSE } from '@onekeyfe/hd-core'
 
-// 在应用入口订阅一次（尽早订阅，避免 PIN/Passphrase 等交互阻塞请求）
-HardwareSDK.on(UI_EVENT, (msg) => {
-  switch (msg.type) {
+// Classic 1s / Pure: REQUEST_PIN may happen. Pro will NOT emit REQUEST_PIN (PIN is entered on device).
+// Subscribe once at app startup (subscribe early to avoid blocking on PIN).
+HardwareSDK.on(UI_EVENT, (message) => {
+  switch (message.type) {
     case UI_REQUEST.REQUEST_PIN: {
-      // 打开 PIN 输入 UI（本 Mock 默认 PIN：1111）
-      openPinModal(({ value }) =>
-        HardwareSDK.uiResponse({ type: UI_RESPONSE.RECEIVE_PIN, payload: value })
-      )
+      // Option A (recommended): input PIN on device
+      HardwareSDK.uiResponse({
+        type: UI_RESPONSE.RECEIVE_PIN,
+        payload: '@@ONEKEY_INPUT_PIN_IN_DEVICE',
+      })
+
+      // Option B: blind PIN input in software (Classic 1s / Pure only)
+      // HardwareSDK.uiResponse({ type: UI_RESPONSE.RECEIVE_PIN, payload: userInputPin })
       return
     }
 
-    case UI_REQUEST.REQUEST_PASSPHRASE: {
-      openPassphraseModal(({ value, onDevice, save }) =>
-        HardwareSDK.uiResponse({
-          type: UI_RESPONSE.RECEIVE_PASSPHRASE,
-          payload: { value, passphraseOnDevice: onDevice, attachPinOnDevice: false, save },
-        })
-      )
+    case UI_REQUEST.REQUEST_BUTTON: {
+      // The device needs user confirmation (e.g. btcGetAddress showOnOneKey=true).
+      // This callback happens when the confirm screen is shown (not at the end).
+      // Usually you only show a "Confirm on device" hint (no uiResponse needed).
       return
     }
 
-    // 仅提示类事件：比如 REQUEST_BUTTON（请在设备确认）
+    case UI_REQUEST.CLOSE_UI_WINDOW: {
+      // Close any modal/dialog you opened for blind PIN input.
+      return
+    }
+
     default:
-      console.log('UI event', msg.type, msg.payload)
+      return
   }
 })
+${extraHint}`
+    }
 
-// 当你调用 btcGetAddress({ showOnOneKey: true }) 时
-// SDK 会通过 UI_EVENT 发出交互提示，你需要在 UI 层响应并调用 uiResponse（仅限需要输入的请求）。
-`
-  }, [addressShowOnOneKey, command, locale])
+    if (isPro) {
+      return `import HardwareSDK from '@onekeyfe/hd-common-connect-sdk'
+import { UI_EVENT, UI_REQUEST } from '@onekeyfe/hd-core'
+
+// Pro：PIN 在设备上输入，因此不会触发 REQUEST_PIN，也不需要 uiResponse。
+// 建议：应用启动时订阅一次（越早越好），避免交互流程阻塞。
+HardwareSDK.on(UI_EVENT, (message) => {
+  switch (message.type) {
+    case UI_REQUEST.REQUEST_BUTTON: {
+      // 设备进入需要确认的阶段（例如 btcGetAddress showOnOneKey=true）。
+      // 该回调发生在“确认页面出现时”（不是最后）。
+      // 通常你只需要提示“请在设备确认”（一般不需要 uiResponse）。
+      return
+    }
+
+    case UI_REQUEST.CLOSE_UI_WINDOW: {
+      // 关闭你打开的弹窗（例如 Classic/Pure 的 PIN 弹窗）
+      return
+    }
+
+    default:
+      return
+  }
+})
+${extraHint}`
+    }
+
+    return `import HardwareSDK from '@onekeyfe/hd-common-connect-sdk'
+import { UI_EVENT, UI_REQUEST, UI_RESPONSE } from '@onekeyfe/hd-core'
+
+// Classic 1s / Pure：可能触发 REQUEST_PIN；Pro 不会（因为 PIN 在设备上输入）。
+// 建议：应用启动时订阅一次（越早越好），避免 PIN 交互导致调用卡住。
+HardwareSDK.on(UI_EVENT, (message) => {
+  switch (message.type) {
+    case UI_REQUEST.REQUEST_PIN: {
+      // 方式 1（推荐）：在设备上输入 PIN
+      HardwareSDK.uiResponse({
+        type: UI_RESPONSE.RECEIVE_PIN,
+        payload: '@@ONEKEY_INPUT_PIN_IN_DEVICE',
+      })
+
+      // 方式 2：软件盲输 PIN（Classic 1s / Pure 才支持）
+      // HardwareSDK.uiResponse({ type: UI_RESPONSE.RECEIVE_PIN, payload: userInputPin })
+      return
+    }
+
+    case UI_REQUEST.REQUEST_BUTTON: {
+      // 设备进入需要确认的阶段（例如 btcGetAddress showOnOneKey=true）。
+      // 该回调发生在“确认页面出现时”（不是最后）。
+      // 通常你只需要提示“请在设备确认”（一般不需要 uiResponse）。
+      return
+    }
+
+    case UI_REQUEST.CLOSE_UI_WINDOW: {
+      // 用户完成输入/取消后，SDK 会要求你关闭弹窗（盲输 PIN 场景）
+      return
+    }
+
+    default:
+      return
+  }
+})
+${extraHint}`
+  }, [addressShowOnOneKey, command, deviceTypeControl, locale])
 
   const editorMarks = useMemo(() => {
     const exampleCall =
@@ -410,7 +577,6 @@ HardwareSDK.on(UI_EVENT, (msg) => {
 
     const callbackOn = findLineNumber(callbackCode, 'HardwareSDK.on(UI_EVENT')
     const callbackPin = findLineNumber(callbackCode, 'case UI_REQUEST.REQUEST_PIN')
-    const callbackPassphrase = findLineNumber(callbackCode, 'case UI_REQUEST.REQUEST_PASSPHRASE')
     const callbackReceivePin = findLineNumber(callbackCode, 'UI_RESPONSE.RECEIVE_PIN')
     const callbackButtonHint = findLineNumber(callbackCode, 'REQUEST_BUTTON')
 
@@ -421,7 +587,6 @@ HardwareSDK.on(UI_EVENT, (msg) => {
       callback: {
         callbackOn,
         callbackPin,
-        callbackPassphrase,
         callbackReceivePin,
         callbackButtonHint
       }
@@ -429,10 +594,34 @@ HardwareSDK.on(UI_EVENT, (msg) => {
   }, [callbackCode, code, command])
 
   useEffect(() => {
+    const offStep = hardwareMockTourBus.on('tour.step.changed', (payload) => {
+      const stepId = payload?.stepId ?? null
+      currentTourStepIdRef.current = stepId
+      setCurrentTourStepId(stepId)
+
+      // Classic 1s：Step=输入 PIN 时应优先锁定弹窗（而不是设备屏幕）。
+      if (
+        stepId === 'pin' &&
+        deviceTypeRef.current === 'classic1s' &&
+        uiTypeRef.current === 'pin' &&
+        pinOriginRef.current !== 'manual' &&
+        !classicPinEntryOnDeviceRef.current
+      ) {
+        setClassicPinValue('')
+        setClassicPinEntryOnDevice(false)
+        setClassicPinModalOpen(true)
+        window.setTimeout(() => {
+          hardwareMockTourBus.emit('tour.refresh', { reason: 'classic1s.pin.modal.open' })
+        }, 0)
+      }
+    })
+    return offStep
+  }, [])
+
+  useEffect(() => {
     const off = hardwareMockTourBus.on('tour.focus', (payload) => {
       if (!tourEnabledRef.current || !tourStartedRef.current) return
       const tab = payload?.tab
-      currentTourStepIdRef.current = payload?.stepId ?? null
       if (tab === 'example' || tab === 'callback' || tab === 'result') {
         flushSync(() => {
           setRightTab(tab)
@@ -442,7 +631,7 @@ HardwareSDK.on(UI_EVENT, (msg) => {
               const preferred = preferredCallbackLineRef.current
               return { ...prev, tab, activeLine: preferred ?? editorMarks.callback.callbackOn ?? null }
             }
-            if (tab === 'result') return { ...prev, tab, activeLine: 1 }
+            if (tab === 'result') return { ...prev, tab, activeLine: null }
             return { ...prev, tab }
           })
         })
@@ -458,15 +647,27 @@ HardwareSDK.on(UI_EVENT, (msg) => {
 
     const params =
       command === 'btcGetAddress'
-        ? { connectId, deviceId, path: btcPath, coin: 'btc', showOnOneKey: addressShowOnOneKey, useEmptyDevice }
+        ? {
+            connectId,
+            deviceId,
+            path: btcPath,
+            coin: 'btc',
+            showOnOneKey: addressShowOnOneKey
+          }
         : command === 'btcSignMessage'
-          ? { connectId, deviceId, path: btcPath, coin: 'btc', messageHex, useEmptyDevice }
+          ? {
+              connectId,
+              deviceId,
+              path: btcPath,
+              coin: 'btc',
+              messageHex
+            }
           : command === 'searchDevices'
             ? undefined
             : undefined
 
     hardwareMockTourBus.emit('code.updated', { command, params, code })
-  }, [tourEnabled, command, btcPath, addressShowOnOneKey, messageHex, useEmptyDevice, code, state.context.device])
+  }, [tourEnabled, command, btcPath, addressShowOnOneKey, messageHex, code, state.context.device])
 
   useEffect(() => {
     if (!tourEnabled || !tourStarted) return
@@ -474,7 +675,6 @@ HardwareSDK.on(UI_EVENT, (msg) => {
     hardwareMockTourBus.emit('ui.shown', { uiType: ui.type, action: ui?.action ?? null })
     // 仅记录“如果导览稍后聚焦到 callback-code，应当标记哪一行”。
     if (ui.type === 'pin') preferredCallbackLineRef.current = editorMarks.callback.callbackPin ?? null
-    if (ui.type === 'passphrase') preferredCallbackLineRef.current = editorMarks.callback.callbackPassphrase ?? null
     if (ui.type === 'confirm') {
       preferredCallbackLineRef.current =
         editorMarks.callback.callbackButtonHint ?? editorMarks.callback.callbackOn ?? null
@@ -488,6 +688,22 @@ HardwareSDK.on(UI_EVENT, (msg) => {
       }
     }
   }, [editorMarks, rightTab, tourEnabled, tourStarted, ui?.type, ui?.action])
+
+  useEffect(() => {
+    if (!tourEnabled || !tourStarted) return
+    if (currentTourStepId === 'callback-request-button') {
+      preferredCallbackLineRef.current =
+        editorMarks.callback.callbackButtonHint ?? editorMarks.callback.callbackOn ?? null
+      if (rightTab === 'callback') {
+        const preferred = preferredCallbackLineRef.current
+        if (preferred) {
+          flushSync(() => {
+            setEditorFocus((prev) => (prev.tab === 'callback' ? { ...prev, activeLine: preferred } : prev))
+          })
+        }
+      }
+    }
+  }, [currentTourStepId, editorMarks, rightTab, tourEnabled, tourStarted])
 
   useEffect(() => {
     const el = deviceRef.current
@@ -517,7 +733,7 @@ HardwareSDK.on(UI_EVENT, (msg) => {
     if (currentTourStepIdRef.current === 'result') {
       flushSync(() => {
         setRightTab('result')
-        setEditorFocus((prev) => ({ ...prev, tab: 'result', activeLine: 1 }))
+        setEditorFocus((prev) => ({ ...prev, tab: 'result', activeLine: null }))
       })
     }
   }, [tourEnabled, tourStarted, logs])
@@ -528,25 +744,44 @@ HardwareSDK.on(UI_EVENT, (msg) => {
     const connectId = state.context.device?.connectId ?? null
     const deviceId = state.context.device?.deviceId ?? null
 
+    if (deviceTypeControl === 'classic1s') {
+      pinOriginRef.current = 'command'
+    } else {
+      pinOriginRef.current = null
+    }
+
     const params =
       command === 'btcGetAddress'
-        ? { connectId, deviceId, path: btcPath, coin: 'btc', showOnOneKey: addressShowOnOneKey, useEmptyDevice }
+        ? {
+            connectId,
+            deviceId,
+            path: btcPath,
+            coin: 'btc',
+            showOnOneKey: addressShowOnOneKey
+          }
         : command === 'btcSignMessage'
-          ? { connectId, deviceId, path: btcPath, coin: 'btc', messageHex, useEmptyDevice }
+          ? {
+              connectId,
+              deviceId,
+              path: btcPath,
+              coin: 'btc',
+              messageHex
+            }
           : undefined
 
-    lastSentRef.current = { command, params }
-    if (tourEnabledRef.current) {
-      // 先标记“导览已开始”，确保 Tour 触发的 tour.focus 能被立即消费。
-      tourStartedRef.current = true
-      setTourStarted(true)
-      currentTourStepIdRef.current = null
-      preferredCallbackLineRef.current = null
-      hardwareMockTourBus.emit('command.sent', { command, params })
-    }
-    setRightTab('example')
-    setEditorFocus((prev) => ({
-      ...prev,
+	    lastSentRef.current = { command, params }
+	    if (tourEnabledRef.current) {
+	      // 先标记“导览已开始”，确保 Tour 触发的 tour.focus 能被立即消费。
+	      tourStartedRef.current = true
+	      setTourStarted(true)
+	      currentTourStepIdRef.current = null
+	      setCurrentTourStepId(null)
+	      preferredCallbackLineRef.current = null
+	      hardwareMockTourBus.emit('command.sent', { command, params, deviceType: deviceTypeControl })
+	    }
+	    setRightTab('example')
+	    setEditorFocus((prev) => ({
+	      ...prev,
       tab: 'example',
       activeLine: editorMarks.example.exampleCall ?? null
     }))
@@ -568,87 +803,381 @@ HardwareSDK.on(UI_EVENT, (msg) => {
 
   return (
     <div className="not-prose my-4 overflow-x-hidden" style={{ fontFamily: 'var(--font-ui)' }}>
-      <div className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-950">
+      <div className="p-4">
         <HardwareMockTour locale={locale} enabled={tourEnabled} onExit={handleTourExit} />
 
+	        {deviceType === 'classic1s' && classicPinModalOpen && ui?.type === 'pin' ? (
+	          <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
+	            <div
+	              className="w-full max-w-[400px] overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-2xl dark:border-zinc-800 dark:bg-zinc-950"
+	              data-tour="classic-pin-modal"
+	            >
+		              <div className="flex items-start justify-between gap-4 px-5 py-4">
+			                <div className="min-w-0">
+			                  <div className="text-2xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-100">
+			                    {locale === 'en' ? 'Enter PIN' : '输入 PIN'}
+			                  </div>
+			                  <div className="mt-2 text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">
+			                    {locale === 'en'
+			                      ? 'Check the PIN matrix on your device, then click the matching positions here. Any 4 digits work (not validated in mock).'
+			                      : '请先在设备屏幕上查看 PIN 矩阵，再在此处点击对应位置输入。任意 4 位即可提交（Mock 不校验）。'}
+			                  </div>
+			                </div>
+
+	                <button
+	                  type="button"
+	                  onClick={() => {
+	                    setClassicPinModalOpen(false)
+	                    setClassicPinEntryOnDevice(false)
+	                    setClassicPinValue('')
+	                    send({ type: 'CANCEL' })
+	                  }}
+		                  className="grid h-9 w-9 place-items-center rounded-lg text-zinc-500 hover:bg-zinc-100 hover:text-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-900 dark:hover:text-zinc-200"
+	                  aria-label={locale === 'en' ? 'Close' : '关闭'}
+	                >
+	                  <X className="h-5 w-5" />
+	                </button>
+		              </div>
+
+		              <div className="px-5 pb-4">
+		                <div className="overflow-hidden rounded-2xl border border-zinc-200 bg-zinc-200 shadow-sm dark:border-zinc-800 dark:bg-zinc-800/60">
+		                  <div className="grid grid-cols-3 gap-px bg-zinc-200 dark:bg-zinc-800/60">
+		                      <div className="col-span-3 bg-white px-4 py-3 dark:bg-zinc-950">
+		                      <div className="flex h-10 items-center justify-center gap-2">
+		                        {Array.from({ length: Math.min(4, classicPinValue.length) }).map((_, idx) => (
+		                          <span
+		                            key={`pin-dot-${idx}`}
+		                            className="h-2.5 w-2.5 rounded-full bg-zinc-900 dark:bg-zinc-100"
+		                          />
+		                        ))}
+		                      </div>
+		                    </div>
+
+		                    {Array.from({ length: 12 }).map((_, cellIndex) => {
+		                      const isDeleteKey = cellIndex === 9
+		                      const isConfirmKey = cellIndex === 11
+		                      const positionIndex = cellIndex < 9 ? cellIndex : cellIndex === 10 ? 9 : null // 0-8 dots + bottom-middle dot(9)
+		                      const baseDisabled = isBusy || !allowPinInteraction
+
+		                      if (isDeleteKey) {
+		                        const disabled = baseDisabled || !classicPinValue
+		                        return (
+		                          <button
+		                            key="pin-delete"
+		                            type="button"
+		                            disabled={disabled}
+		                            onClick={() => {
+		                              if (disabled) return
+		                              setClassicPinValue((prev) => prev.slice(0, -1))
+		                            }}
+		                            className={[
+		                              'h-[68px] w-full',
+		                              'grid place-items-center',
+		                              'bg-zinc-200 text-zinc-700',
+		                              'transition-colors',
+		                              'hover:bg-zinc-300 active:bg-zinc-400',
+		                              'focus:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400/40 dark:focus-visible:ring-zinc-500/40',
+		                              'disabled:pointer-events-none disabled:opacity-50',
+		                              'dark:bg-zinc-800 dark:text-zinc-100 dark:hover:bg-zinc-700 dark:active:bg-zinc-600'
+		                            ].join(' ')}
+		                            aria-label={locale === 'en' ? 'Delete' : '删除'}
+		                          >
+		                            <Delete className="h-5 w-5" />
+		                          </button>
+		                        )
+		                      }
+
+		                      if (isConfirmKey) {
+		                        const disabled = baseDisabled || classicPinValue.length < 4
+		                        return (
+		                          <button
+		                            key="pin-confirm"
+		                            type="button"
+		                            disabled={disabled}
+		                            onClick={() => {
+		                              if (disabled) return
+		                              setClassicPinModalOpen(false)
+		                              if (tourEnabled && tourStarted) {
+		                                hardwareMockTourBus.emit('ui.pin.submit', { pinLength: String(classicPinValue ?? '').length })
+		                              } else {
+		                                setRightTab('callback')
+		                                setEditorFocus((prev) => ({
+		                                  ...prev,
+		                                  tab: 'callback',
+		                                  activeLine: editorMarks.callback.callbackReceivePin ?? null
+		                                }))
+		                              }
+		                              send({ type: 'SUBMIT_PIN', pin: String(classicPinValue ?? '').slice(0, 4) })
+		                            }}
+		                            className={[
+		                              'h-[68px] w-full',
+		                              'grid place-items-center',
+		                              'bg-zinc-600 text-white',
+		                              'transition-colors',
+		                              'hover:bg-zinc-700 active:bg-zinc-800',
+		                              'focus:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400/40 dark:focus-visible:ring-zinc-500/40',
+		                              'disabled:pointer-events-none disabled:opacity-50',
+		                              'dark:bg-zinc-300 dark:text-zinc-900 dark:hover:bg-zinc-200 dark:active:bg-zinc-100'
+		                            ].join(' ')}
+		                            aria-label={locale === 'en' ? 'Confirm' : '确认'}
+		                          >
+		                            <Check className="h-6 w-6" />
+		                          </button>
+		                        )
+		                      }
+
+		                      if (positionIndex === null) return null
+
+		                      return (
+		                        <button
+		                          key={`dot-${positionIndex}`}
+		                          type="button"
+		                          disabled={baseDisabled}
+		                          onClick={() => {
+		                            if (!allowPinInteraction) return
+		                            const mapping = classicPinMatrix ?? [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+		                            const digit = mapping[positionIndex]
+		                            setClassicPinValue((prev) => `${prev}${String(digit)}`.slice(0, 4))
+		                          }}
+		                          className={[
+		                            'h-[68px] w-full',
+		                            'grid place-items-center',
+		                            'bg-zinc-50',
+		                            'transition-colors',
+		                            'hover:bg-zinc-100 active:bg-zinc-200',
+		                            'focus:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400/40 dark:focus-visible:ring-zinc-500/40',
+		                            'disabled:pointer-events-none disabled:opacity-50',
+		                            'dark:bg-zinc-900/40 dark:hover:bg-zinc-900/70 dark:active:bg-zinc-800'
+		                          ].join(' ')}
+		                          aria-label={`pin-dot-${positionIndex}`}
+		                        >
+		                          <span className="h-3 w-3 rounded-full bg-zinc-800 dark:bg-zinc-100" />
+		                        </button>
+		                      )
+		                    })}
+		                  </div>
+		                </div>
+
+		                <button
+		                  type="button"
+		                  disabled={isBusy || !allowPinInteraction}
+		                  onClick={() => {
+		                    if (!allowPinInteraction) return
+		                    setClassicPinModalOpen(false)
+		                    setClassicPinValue('')
+		                    setClassicPinEntryOnDevice(true)
+		                    if (tourGuided && currentTourStepIdRef.current === 'pin') {
+		                      window.setTimeout(() => {
+		                        hardwareMockTourBus.emit('tour.refresh', { reason: 'classic1s.pin.switchToDevice' })
+		                      }, 0)
+		                    }
+		                  }}
+		                  className="mt-4 w-full text-center text-sm font-medium text-zinc-500 transition-colors hover:text-zinc-900 disabled:opacity-50 dark:text-zinc-400 dark:hover:text-zinc-100"
+		                >
+		                  {locale === 'en' ? 'Use device input' : '使用设备输入'}
+		                </button>
+		              </div>
+	            </div>
+	          </div>
+	        ) : null}
+
         {(mockError || lastError) && (
-          <div className="mt-3 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-200">
+          <div className="mt-2 rounded-xl bg-red-50 p-3 text-sm text-red-700 dark:bg-red-950/30 dark:text-red-200">
             {mockError ? `${locale === 'en' ? 'Mock error' : 'Mock 错误'}：${mockError}` : null}
             {mockError && lastError ? ' · ' : null}
             {lastError ? `${locale === 'en' ? 'Error' : '最近错误'}：${lastError}` : null}
           </div>
         )}
 
-        <div className="mt-2 grid gap-4 lg:grid-cols-[minmax(300px,380px)_minmax(0,1fr)] lg:items-stretch">
-          <div className="flex h-full flex-col gap-3">
-            <div className="flex-1 rounded-xl border border-zinc-200 bg-zinc-50 p-2.5 dark:border-zinc-800 dark:bg-zinc-950">
-              <div className="flex items-center justify-between gap-2">
+        <div className="mt-2 rounded-2xl bg-zinc-50/60 p-4 dark:bg-zinc-900/30">
+          <div className="grid min-h-0 gap-6 lg:grid-cols-[minmax(300px,380px)_minmax(0,1fr)] lg:items-stretch">
+            <div className="flex h-full min-h-0 flex-col">
+            <div className="pb-6">
+              <div className="flex flex-wrap items-center gap-2">
                 <div className="text-sm font-medium text-zinc-900 dark:text-zinc-100">{dict.labels.deviceScreen}</div>
-                <div className="text-xs text-zinc-500 dark:text-zinc-400">{dict.labels.deviceUiHint}</div>
+                <div
+                  className={[
+                    'inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ring-1',
+                    statusBadgeClass
+                  ].join(' ')}
+                >
+                  <span className={['h-2 w-2 rounded-full', statusDotClass].join(' ')} />
+                  <span className="whitespace-nowrap">{statusText}</span>
+                </div>
+                <div className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium text-zinc-600 ring-1 ring-zinc-200/80 dark:text-zinc-200 dark:ring-zinc-800/70">
+                  <Info size={14} strokeWidth={2} className="text-zinc-400 dark:text-zinc-500" />
+                  <span className="whitespace-nowrap">{dict.labels.pinNote}</span>
+                </div>
+
+                <a
+                  href="https://hardware-example.onekey.so/#/emulator"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-zinc-200/70 bg-white/90 px-2.5 text-xs font-semibold text-zinc-800 shadow-sm transition-all hover:-translate-y-[1px] hover:border-zinc-300 hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00B812]/30 dark:border-zinc-800 dark:bg-zinc-900/60 dark:text-zinc-100 dark:hover:border-zinc-700"
+                >
+                  {dict.labels.openEmulator}
+                  <ExternalLink size={14} strokeWidth={1.8} />
+                </a>
+
+                <div className="relative">
+                  <select
+                    value={deviceTypeControl}
+                    onChange={(e) => {
+                      const next = e.target.value === 'classic1s' ? 'classic1s' : 'pro'
+                      setDeviceTypeControl(next)
+                      send({ type: 'SEND', command: 'setDeviceModel', params: { deviceType: next } })
+                    }}
+                    disabled={!mockReady || isBusy || isAwaitingUi || tourStarted}
+                    className="h-9 appearance-none rounded-lg border border-zinc-200/70 bg-white/80 pl-3 pr-9 text-sm font-medium text-zinc-900 shadow-sm transition-all hover:border-zinc-300 hover:bg-white focus:border-[#00B812]/50 focus:ring-2 focus:ring-[#00B812]/25 disabled:cursor-not-allowed disabled:opacity-60 dark:border-zinc-800 dark:bg-zinc-900/50 dark:text-zinc-100 dark:hover:border-zinc-700"
+                    aria-label={locale === 'en' ? 'Device model' : '设备型号'}
+                  >
+                    <option value="pro">OneKey Pro</option>
+                    <option value="classic1s">OneKey Classic 1s</option>
+                  </select>
+                  <ChevronDown
+                    className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400 dark:text-zinc-500"
+                    aria-hidden="true"
+                  />
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    const next = !tourEnabledRef.current
+                    tourEnabledRef.current = next
+                    setTourEnabled(next)
+                  }}
+                  className={[
+                    'inline-flex h-9 items-center gap-2 rounded-lg border px-2.5 text-sm font-semibold transition-all shadow-sm',
+                    tourEnabled
+                      ? 'border-[#00B812]/60 bg-[#00B812]/10 text-[#0a7024] hover:bg-[#00B812]/15 dark:border-[#00B812]/50 dark:bg-[#00B812]/20 dark:text-[#a4ffba]'
+                      : 'border-zinc-200/70 bg-white/80 text-zinc-900 hover:border-zinc-300 hover:bg-white dark:border-zinc-800 dark:bg-zinc-900/50 dark:text-zinc-100 dark:hover:border-zinc-700'
+                  ].join(' ')}
+                  aria-pressed={tourEnabled}
+                >
+                  <span
+                    className={[
+                      'h-2.5 w-2.5 rounded-full',
+                      tourEnabled ? 'bg-[#00B812] shadow-[0_0_0_4px_rgba(0,184,18,0.16)]' : 'bg-zinc-400'
+                    ].join(' ')}
+                  />
+                  <span>{locale === 'en' ? 'Tour' : '导览'}</span>
+                </button>
               </div>
 
               <div ref={deviceRef} className="mt-3 flex justify-center" data-tour="device-screen">
-                <ProDeviceScreen
-                  basePath={basePath}
-                  locale={locale}
-                  busy={isBusy}
-                  device={state.context.device}
-                  ui={ui}
-                  onSubmitPin={(pinValue) => {
-                    if (tourEnabled && tourStarted) {
-                      hardwareMockTourBus.emit('ui.pin.submit', { pinLength: String(pinValue ?? '').length })
-                    } else {
-                      setRightTab('callback')
-                      setEditorFocus((prev) => ({
-                        ...prev,
-                        tab: 'callback',
-                        activeLine: editorMarks.callback.callbackReceivePin ?? null
-                      }))
-                    }
-                    send({ type: 'SUBMIT_PIN', pin: pinValue })
-                  }}
-                  onConfirm={() => {
-                    if (tourEnabled && tourStarted) {
-                      hardwareMockTourBus.emit('ui.confirm', { action: ui?.action ?? null, approved: true })
-                    } else if (ui?.action === 'btcGetAddress') {
-                      setRightTab('callback')
-                      setEditorFocus((prev) => ({ ...prev, tab: 'callback', activeLine: editorMarks.callback.callbackOn ?? null }))
-                    }
-                    send({ type: 'CONFIRM', approved: true })
-                  }}
-                  onReject={() => {
-                    if (tourEnabled) {
-                      hardwareMockTourBus.emit('ui.confirm', { action: ui?.action ?? null, approved: false })
-                    }
-                    send({ type: 'CONFIRM', approved: false })
-                  }}
-                  onCancel={() => send({ type: 'CANCEL' })}
-                  onTapToUnlock={() => {
-                    if (!mockReady || isBusy || isAwaitingUi) return
-                    if (tourEnabled) {
-                      hardwareMockTourBus.emit('ui.unlock.tap', {})
-                    }
-                    send({ type: 'SEND', command: 'deviceUnlock', params: { connectId: state.context.device?.connectId ?? null } })
-                  }}
-                />
+                {deviceType === 'classic1s' ? (
+	                  <Classic1sDeviceScreen
+	                    locale={locale}
+	                    busy={isBusy}
+	                    device={state.context.device}
+	                    ui={ui}
+	                    pinEntryOnDevice={classicPinEntryOnDevice}
+	                    pinMatrix={classicPinMatrix}
+	                    allowPinInput={allowPinInteraction}
+	                    allowConfirmInput={allowConfirmInteraction}
+	                    onSubmitPin={(pinValue) => {
+	                      if (!allowPinInteraction) return
+	                      if (tourEnabled && tourStarted) {
+	                        hardwareMockTourBus.emit('ui.pin.submit', { pinLength: String(pinValue ?? '').length })
+	                      } else {
+	                        setRightTab('callback')
+	                        setEditorFocus((prev) => ({
+                          ...prev,
+                          tab: 'callback',
+                          activeLine: editorMarks.callback.callbackReceivePin ?? null
+                        }))
+                      }
+	                      send({ type: 'SUBMIT_PIN', pin: pinValue })
+	                    }}
+	                    onConfirm={() => {
+	                      if (!allowConfirmInteraction) return
+	                      if (tourEnabled && tourStarted) {
+	                        hardwareMockTourBus.emit('ui.confirm', { action: ui?.action ?? null, approved: true })
+	                      } else if (ui?.action === 'btcGetAddress') {
+	                        setRightTab('callback')
+	                        setEditorFocus((prev) => ({ ...prev, tab: 'callback', activeLine: editorMarks.callback.callbackOn ?? null }))
+                      }
+	                      send({ type: 'CONFIRM', approved: true })
+	                    }}
+	                    onReject={() => {
+	                      if (!allowConfirmInteraction) return
+	                      if (tourEnabled) {
+	                        hardwareMockTourBus.emit('ui.confirm', { action: ui?.action ?? null, approved: false })
+	                      }
+	                      send({ type: 'CONFIRM', approved: false })
+	                    }}
+	                    onTapToUnlock={() => {
+	                      if (tourGuided) return
+	                      if (!mockReady || isBusy || isAwaitingUi) return
+	                      pinOriginRef.current = 'manual'
+	                      setClassicPinModalOpen(false)
+	                      setClassicPinEntryOnDevice(true)
+	                      setClassicPinValue('')
+                      if (tourEnabled) {
+                        hardwareMockTourBus.emit('ui.unlock.tap', {})
+                      }
+                      send({ type: 'SEND', command: 'deviceUnlock', params: { connectId: state.context.device?.connectId ?? null } })
+                    }}
+                  />
+                ) : (
+	                  <ProDeviceScreen
+	                    basePath={basePath}
+	                    locale={locale}
+	                    busy={isBusy}
+	                    device={state.context.device}
+	                    ui={ui}
+	                    allowPinInput={allowPinInteraction}
+	                    allowConfirmInput={allowConfirmInteraction}
+	                    onSubmitPin={(pinValue) => {
+	                      if (!allowPinInteraction) return
+	                      if (tourEnabled && tourStarted) {
+	                        hardwareMockTourBus.emit('ui.pin.submit', { pinLength: String(pinValue ?? '').length })
+	                      } else {
+	                        setRightTab('callback')
+	                        setEditorFocus((prev) => ({
+                          ...prev,
+                          tab: 'callback',
+                          activeLine: editorMarks.callback.callbackReceivePin ?? null
+                        }))
+	                      }
+	                      send({ type: 'SUBMIT_PIN', pin: pinValue })
+	                    }}
+	                    onConfirm={() => {
+	                      if (!allowConfirmInteraction) return
+	                      if (tourEnabled && tourStarted) {
+	                        hardwareMockTourBus.emit('ui.confirm', { action: ui?.action ?? null, approved: true })
+	                      } else if (ui?.action === 'btcGetAddress') {
+	                        setRightTab('callback')
+	                        setEditorFocus((prev) => ({ ...prev, tab: 'callback', activeLine: editorMarks.callback.callbackOn ?? null }))
+	                      }
+	                      send({ type: 'CONFIRM', approved: true })
+	                    }}
+	                    onReject={() => {
+	                      if (!allowConfirmInteraction) return
+	                      if (tourEnabled) {
+	                        hardwareMockTourBus.emit('ui.confirm', { action: ui?.action ?? null, approved: false })
+	                      }
+	                      send({ type: 'CONFIRM', approved: false })
+	                    }}
+	                    onCancel={() => send({ type: 'CANCEL' })}
+	                    onTapToUnlock={() => {
+	                      if (tourGuided) return
+	                      if (!mockReady || isBusy || isAwaitingUi) return
+	                      if (tourEnabled) {
+	                        hardwareMockTourBus.emit('ui.unlock.tap', {})
+	                      }
+                      send({ type: 'SEND', command: 'deviceUnlock', params: { connectId: state.context.device?.connectId ?? null } })
+                    }}
+                  />
+                )}
               </div>
             </div>
 
-            <div className="flex-1 rounded-xl border border-zinc-200 bg-zinc-50 p-3 dark:border-zinc-800 dark:bg-zinc-950">
-                <div className="flex items-center justify-between gap-2">
-                  <div className="text-sm font-medium text-zinc-900 dark:text-zinc-100">{dict.labels.commandPanel}</div>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const next = !tourEnabledRef.current
-                      tourEnabledRef.current = next
-                      setTourEnabled(next)
-                    }}
-                    className="rounded-md border border-zinc-200 bg-white px-2.5 py-1.5 text-xs font-medium text-zinc-900 transition-colors hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-100 dark:hover:bg-zinc-900"
-                  >
-                    {locale === 'en' ? (tourEnabled ? 'Tour: On' : 'Tour: Off') : tourEnabled ? '导览：已开启' : '导览：已关闭'}
-                  </button>
-                </div>
+            <div className="mt-6">
+              <div className="flex items-center justify-between gap-2">
+                <div className="text-sm font-medium text-zinc-900 dark:text-zinc-100">{dict.labels.commandPanel}</div>
+              </div>
 
               <div className="mt-3 space-y-3">
                 <div className="grid gap-2 lg:grid-cols-2">
@@ -656,23 +1185,29 @@ HardwareSDK.on(UI_EVENT, (msg) => {
                     <label className="mb-1 block text-xs font-medium text-zinc-700 dark:text-zinc-300">
                       {dict.labels.command}
                     </label>
-                    <select
-                      data-tour="command-select"
-                      value={command}
-                      onChange={(e) => {
-                        const nextCommand = e.target.value
-                        setCommand(nextCommand)
-                        if (tourEnabled) {
-                          hardwareMockTourBus.emit('command.changed', { command: nextCommand })
-                        }
-                      }}
-                      disabled={!mockReady || isBusy || isAwaitingUi}
-                      className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 shadow-sm outline-none transition-colors focus:border-[#00B812] dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-100"
-                    >
-                      <option value="searchDevices">searchDevices</option>
-                      <option value="btcGetAddress">btcGetAddress</option>
-                      <option value="btcSignMessage">btcSignMessage</option>
-                    </select>
+                    <div className="relative">
+                      <select
+                        data-tour="command-select"
+                        value={command}
+                        onChange={(e) => {
+                          const nextCommand = e.target.value
+                          setCommand(nextCommand)
+                          if (tourEnabled) {
+                            hardwareMockTourBus.emit('command.changed', { command: nextCommand })
+                          }
+                        }}
+                        disabled={!mockReady || isBusy || isAwaitingUi || tourGuided}
+                        className="h-9 w-full appearance-none rounded-lg bg-zinc-100/80 pl-3 pr-9 text-sm font-medium text-zinc-900 outline-none transition-colors hover:bg-zinc-100 focus:ring-2 focus:ring-[#00B812]/25 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-zinc-900/40 dark:text-zinc-100 dark:hover:bg-zinc-900/55"
+                      >
+                        <option value="searchDevices">searchDevices</option>
+                        <option value="btcGetAddress">btcGetAddress</option>
+                        <option value="btcSignMessage">btcSignMessage</option>
+                      </select>
+                      <ChevronDown
+                        className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400 dark:text-zinc-500"
+                        aria-hidden="true"
+                      />
+                    </div>
                   </div>
 
                   <div>
@@ -680,14 +1215,18 @@ HardwareSDK.on(UI_EVENT, (msg) => {
                     <input
                       value={btcPath}
                       onChange={(e) => setBtcPath(e.target.value)}
-                      disabled={command === 'searchDevices' || !mockReady || isBusy || isAwaitingUi}
-                      className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 shadow-sm outline-none transition-colors focus:border-[#00B812] dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-100 disabled:bg-zinc-100 disabled:text-zinc-400 dark:disabled:bg-zinc-900 dark:disabled:text-zinc-600"
+                      disabled={command === 'searchDevices' || !mockReady || isBusy || isAwaitingUi || tourGuided}
+                      className="h-9 w-full rounded-lg bg-zinc-100/80 px-3 text-sm font-medium text-zinc-900 outline-none transition-colors placeholder:text-zinc-400 hover:bg-zinc-100 focus:ring-2 focus:ring-[#00B812]/25 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-zinc-900/40 dark:text-zinc-100 dark:placeholder:text-zinc-600 dark:hover:bg-zinc-900/55"
                     />
                   </div>
                 </div>
 
                 <div className="flex flex-wrap items-center gap-4">
-                  <label data-tour="show-on-onekey" className="flex items-center gap-2 text-xs text-zinc-600 dark:text-zinc-400">
+                  <label
+                    data-tour="show-on-onekey"
+                    className="inline-flex items-center gap-3 rounded-lg bg-zinc-100/80 px-3 py-2 text-xs font-medium text-zinc-700 dark:bg-zinc-900/40 dark:text-zinc-200"
+                  >
+                    <span className="text-zinc-700 dark:text-zinc-200">{dict.labels.showOnDevice}</span>
                     <input
                       type="checkbox"
                       checked={addressShowOnOneKey}
@@ -698,21 +1237,12 @@ HardwareSDK.on(UI_EVENT, (msg) => {
                           hardwareMockTourBus.emit('param.changed', { key: 'showOnOneKey', value: next })
                         }
                       }}
-                      disabled={command !== 'btcGetAddress' || !mockReady || isBusy || isAwaitingUi}
-                      className="h-4 w-4 rounded border-zinc-300 text-[#00B812] focus:ring-[#00B812] disabled:cursor-not-allowed disabled:opacity-60 dark:border-zinc-700"
+                      disabled={command !== 'btcGetAddress' || !mockReady || isBusy || isAwaitingUi || tourGuided}
+                      className="peer sr-only"
                     />
-                    {dict.labels.showOnDevice}
-                  </label>
-
-                  <label className="flex items-center gap-2 text-xs text-zinc-600 dark:text-zinc-400">
-                    <input
-                      type="checkbox"
-                      checked={useEmptyDevice}
-                      onChange={(e) => setUseEmptyDevice(e.target.checked)}
-                      disabled={!mockReady || isBusy || isAwaitingUi}
-                      className="h-4 w-4 rounded border-zinc-300 text-[#00B812] focus:ring-[#00B812] disabled:cursor-not-allowed disabled:opacity-60 dark:border-zinc-700"
-                    />
-                    {locale === 'en' ? 'useEmptyDevice (mock)' : 'useEmptyDevice（Mock）'}
+                    <span className="relative h-5 w-9 rounded-full bg-zinc-200 transition-colors peer-checked:bg-[#00B812] peer-disabled:opacity-60 dark:bg-zinc-800">
+                      <span className="absolute left-0.5 top-0.5 h-4 w-4 rounded-full bg-white shadow-sm transition-transform peer-checked:translate-x-4 dark:bg-zinc-50" />
+                    </span>
                   </label>
                 </div>
 
@@ -722,9 +1252,9 @@ HardwareSDK.on(UI_EVENT, (msg) => {
                     <textarea
                       value={messageHex}
                       onChange={(e) => setMessageHex(e.target.value)}
-                      disabled={!mockReady || isBusy || isAwaitingUi}
+                      disabled={!mockReady || isBusy || isAwaitingUi || tourGuided}
                       rows={3}
-                      className="w-full resize-none rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 shadow-sm outline-none transition-colors focus:border-[#00B812] dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-100"
+                      className="w-full resize-none rounded-lg bg-zinc-100/80 px-3 py-2 text-sm font-medium text-zinc-900 outline-none transition-colors hover:bg-zinc-100 focus:ring-2 focus:ring-[#00B812]/25 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-zinc-900/40 dark:text-zinc-100 dark:hover:bg-zinc-900/55"
                     />
                   </div>
                 )}
@@ -732,9 +1262,9 @@ HardwareSDK.on(UI_EVENT, (msg) => {
                 <button
                   type="button"
                   onClick={handleSendCommand}
-                  disabled={!mockReady || isBusy || isAwaitingUi}
+                  disabled={!mockReady || isBusy || isAwaitingUi || tourGuided}
                   data-tour="send-button"
-                  className="inline-flex w-full items-center justify-center gap-2 rounded-md bg-zinc-900 px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-white"
+                  className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-lg bg-[#00B812] px-4 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-[#00A311] focus:outline-none focus:ring-2 focus:ring-[#00B812]/25 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   <Send size={16} strokeWidth={1.8} />
                   {dict.labels.sendCommand}
@@ -743,158 +1273,145 @@ HardwareSDK.on(UI_EVENT, (msg) => {
             </div>
           </div>
 
-          <div className="flex h-full flex-col">
-            <div className="flex-1 rounded-xl border border-zinc-200 bg-zinc-50 p-3 dark:border-zinc-800 dark:bg-zinc-950">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <div className="text-sm font-medium text-zinc-900 dark:text-zinc-100">{dict.labels.devViewTitle}</div>
-                  <div className="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400">{dict.labels.devViewSubtitle}</div>
+          <div className="flex h-full min-h-0 flex-col">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex min-w-0 items-center gap-2">
+                <div className="text-sm font-medium text-zinc-900 dark:text-zinc-100">{dict.labels.devViewTitle}</div>
+                <span className="truncate rounded-lg bg-white/80 px-2 py-0.5 font-mono text-[11px] text-zinc-700 dark:bg-zinc-950/60 dark:text-zinc-300">
+                    {command}
+                  </span>
                 </div>
-                <div className="inline-flex rounded-md border border-zinc-200 bg-white p-0.5 text-xs dark:border-zinc-800 dark:bg-zinc-950">
-                  {[
-                    { key: 'example', label: dict.labels.tabExample },
-                    { key: 'callback', label: dict.labels.tabCallback },
-                    { key: 'result', label: dict.labels.tabResult }
-                  ].map((tab) => (
-                    <button
-                      key={tab.key}
-                      type="button"
-                      onClick={() => {
-                        setRightTab(tab.key)
-                        setEditorFocus((prev) => {
-                          if (tab.key === 'example') return { ...prev, tab: tab.key, activeLine: editorMarks.example.exampleCall ?? null }
-                          if (tab.key === 'callback') return { ...prev, tab: tab.key, activeLine: editorMarks.callback.callbackOn ?? null }
-                          if (tab.key === 'result') return { ...prev, tab: tab.key, activeLine: 1 }
-                          return { ...prev, tab: tab.key }
-                        })
-                      }}
-                      className={[
-                        'rounded px-2.5 py-1 font-medium transition-colors',
-                        rightTab === tab.key
-                          ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900'
-                          : 'text-zinc-700 hover:bg-zinc-50 dark:text-zinc-200 dark:hover:bg-zinc-900'
-                      ].join(' ')}
-                    >
-                      {tab.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
 
-              {rightTab === 'example' ? (
-                <>
-                  <div className="mt-3 flex items-center justify-between gap-2">
-                    <div className="text-xs text-zinc-500 dark:text-zinc-400">
-                      {dict.labels.currentExample}：<span className="font-mono text-zinc-700 dark:text-zinc-300">{command}</span>
-                    </div>
+                <div className="flex items-center gap-2">
+                  {rightTab === 'example' ? (
                     <button
                       type="button"
                       onClick={handleCopy}
-                      className="inline-flex items-center gap-2 rounded-md border border-zinc-200 bg-white px-2.5 py-1.5 text-xs font-medium text-zinc-900 transition-colors hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-100 dark:hover:bg-zinc-900"
+                      disabled={tourGuided}
+                      className="grid h-9 w-9 place-items-center rounded-lg bg-white/80 text-zinc-900 shadow-sm transition-colors hover:bg-white disabled:cursor-not-allowed disabled:opacity-60 dark:bg-zinc-950/60 dark:text-zinc-100 dark:hover:bg-zinc-950"
+                      aria-label={copied ? dict.labels.copied : dict.labels.copy}
+                      title={copied ? dict.labels.copied : dict.labels.copy}
                     >
-                      <Copy size={14} strokeWidth={1.8} />
-                      {copied ? dict.labels.copied : dict.labels.copy}
+                      {copied ? <Check size={16} strokeWidth={1.8} /> : <Copy size={16} strokeWidth={1.8} />}
                     </button>
+                  ) : null}
+
+                  <div className="inline-flex rounded-lg bg-white/80 p-0.5 text-xs shadow-sm dark:bg-zinc-950/60">
+                    {[
+                      { key: 'example', label: dict.labels.tabExample },
+                      { key: 'callback', label: dict.labels.tabCallback },
+                      { key: 'result', label: dict.labels.tabResult }
+                    ].map((tab) => (
+                      <button
+                        key={tab.key}
+                        type="button"
+                        disabled={tourGuided}
+                        onClick={() => {
+                          if (tourGuided) return
+                          setRightTab(tab.key)
+                          setEditorFocus((prev) => {
+                            if (tab.key === 'example') return { ...prev, tab: tab.key, activeLine: editorMarks.example.exampleCall ?? null }
+                            if (tab.key === 'callback') return { ...prev, tab: tab.key, activeLine: editorMarks.callback.callbackOn ?? null }
+                            if (tab.key === 'result') return { ...prev, tab: tab.key, activeLine: null }
+                            return { ...prev, tab: tab.key }
+                          })
+                        }}
+                        className={[
+                          'rounded px-2.5 py-1 font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-60',
+                          rightTab === tab.key
+                            ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900'
+                            : 'text-zinc-700 hover:bg-zinc-50 dark:text-zinc-200 dark:hover:bg-zinc-900'
+                        ].join(' ')}
+                      >
+                        {tab.label}
+                      </button>
+                    ))}
                   </div>
+                </div>
+              </div>
 
-                  <div className="mt-2">
-                    <EditorCodeBlock
-                      dataTour="example-code"
-                      code={code}
-                      language="typescript"
-                      filename={exampleFilename}
-                      activeLine={tourEnabled && tourStarted && editorFocus.tab === 'example' ? editorFocus.activeLine : null}
-                      breakpoints={
-                        tourEnabled && tourStarted && editorFocus.tab === 'example' && editorFocus.activeLine
-                          ? [editorFocus.activeLine]
-                          : []
-                      }
-                      showBreakpoints={tourEnabled && tourStarted}
-                      maxHeight={560}
-                    />
-                  </div>
-                </>
-              ) : null}
+              <div className="mt-3 flex min-h-0 flex-1 flex-col">
+                {rightTab === 'example' ? (
+                  <EditorCodeBlock
+                    dataTour="example-code"
+                    code={code}
+                    language="typescript"
+                    filename={exampleFilename}
+                    activeLine={tourEnabled && tourStarted && editorFocus.tab === 'example' ? editorFocus.activeLine : null}
+                    breakpoints={
+                      tourEnabled && tourStarted && editorFocus.tab === 'example' && editorFocus.activeLine ? [editorFocus.activeLine] : []
+                    }
+                    showBreakpoints={tourEnabled && tourStarted}
+                    className="min-h-0 flex-1"
+                  />
+                ) : null}
 
-              {rightTab === 'callback' ? (
-                <>
-                  <div className="mt-3 text-xs text-zinc-500 dark:text-zinc-400">{dict.labels.callbackHint}</div>
-                  <div className="mt-2">
-                    <EditorCodeBlock
-                      dataTour="callback-code"
-                      code={callbackCode}
-                      language="typescript"
-                      filename={callbackFilename}
-                      activeLine={tourEnabled && tourStarted && editorFocus.tab === 'callback' ? editorFocus.activeLine : null}
-                      breakpoints={
-                        tourEnabled && tourStarted && editorFocus.tab === 'callback' && editorFocus.activeLine
-                          ? [editorFocus.activeLine]
-                          : []
-                      }
-                      showBreakpoints={tourEnabled && tourStarted}
-                      maxHeight={560}
-                    />
-                  </div>
-                </>
-              ) : null}
+                {rightTab === 'callback' ? (
+                  <EditorCodeBlock
+                    dataTour="callback-code"
+                    code={callbackCode}
+                    language="typescript"
+                    filename={callbackFilename}
+                    activeLine={tourEnabled && tourStarted && editorFocus.tab === 'callback' ? editorFocus.activeLine : null}
+                    breakpoints={
+                      tourEnabled && tourStarted && editorFocus.tab === 'callback' && editorFocus.activeLine ? [editorFocus.activeLine] : []
+                    }
+                    showBreakpoints={tourEnabled && tourStarted}
+                    className="min-h-0 flex-1"
+                  />
+                ) : null}
 
-              {rightTab === 'result' ? (
-                (() => {
-                  const last = [...logs].reverse().find((item) => item.level === 'response' || item.level === 'error') ?? null
-                  return (
-                    <div className="mt-3">
-                      {!last ? (
-                        <div className="rounded-lg border border-zinc-200 bg-white p-3 text-xs text-zinc-500 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-500">
-                          {dict.labels.noResult}
-                        </div>
-                      ) : (
-                        <>
-                          <div className="font-mono text-xs">
-                            <span className="text-zinc-500 dark:text-zinc-500">[{formatTime(last.ts)}]</span>{' '}
-                            <span className={getLevelStyle(last.level)}>{last.title}</span>
-                          </div>
-
-                          <div
-                            ref={logsRef}
-                            data-tour="result-panel"
-                            className="mt-2 overflow-auto rounded-lg border border-zinc-200 bg-white p-3 dark:border-zinc-800 dark:bg-zinc-950"
-                          >
-                            {last.data !== undefined ? (
-                              <EditorCodeBlock
-                                code={formatJsonPretty(last.data)}
-                                language="json"
-                                filename={resultFilename}
-                                activeLine={editorFocus.tab === 'result' ? editorFocus.activeLine : null}
-                                breakpoints={[]}
-                                maxHeight={420}
-                              />
-                            ) : (
-                              <div className="text-xs text-zinc-500 dark:text-zinc-500">{dict.labels.noPayload}</div>
-                            )}
-                          </div>
-
-                          <details className="mt-2">
-                            <summary className="cursor-pointer select-none text-xs text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200">
-                              {dict.labels.showRawLogs}
-                            </summary>
-                            <div className="mt-2 space-y-1 font-mono text-[11px] text-zinc-700 dark:text-zinc-200">
-                              {logs.map((item) => (
-                                <div key={item.id}>
-                                  <span className="text-zinc-500 dark:text-zinc-500">[{formatTime(item.ts)}]</span>{' '}
-                                  <span className={getLevelStyle(item.level)}>{item.title}</span>
-                                  {item.data !== undefined ? (
-                                    <span className="text-zinc-500 dark:text-zinc-400"> {formatJson(item.data)}</span>
-                                  ) : null}
-                                </div>
-                              ))}
+                {rightTab === 'result'
+                  ? (() => {
+                      const last = [...logs].reverse().find((item) => item.level === 'response' || item.level === 'error') ?? null
+                      return (
+                        <div className="flex min-h-0 flex-1 flex-col gap-2" data-tour="result-panel">
+                          {last ? (
+                            <div className="font-mono text-xs">
+                              <span className="text-zinc-500 dark:text-zinc-500">[{formatTime(last.ts)}]</span>{' '}
+                              <span className={getLevelStyle(last.level)}>{last.title}</span>
                             </div>
-                          </details>
-                        </>
-                      )}
-                    </div>
-                  )
-                })()
-              ) : null}
+                          ) : null}
+
+                          {last && last.data !== undefined ? (
+                            <EditorCodeBlock
+                              code={formatJsonPretty(last.data)}
+                              language="json"
+                              filename={resultFilename}
+                              activeLine={null}
+                              breakpoints={[]}
+                              cursor="default"
+                              className="min-h-0 flex-1"
+                            />
+                          ) : (
+                            <div className="flex min-h-0 flex-1 items-center justify-center rounded-xl bg-white/70 p-3 text-xs text-zinc-500 dark:bg-zinc-950/40 dark:text-zinc-500">
+                              {!last ? dict.labels.noResult : dict.labels.noPayload}
+                            </div>
+                          )}
+
+                          {last ? (
+                            <details>
+                              <summary className="cursor-pointer select-none text-xs text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200">
+                                {dict.labels.showRawLogs}
+                              </summary>
+                              <div className="mt-2 space-y-1 font-mono text-[11px] text-zinc-700 dark:text-zinc-200">
+                                {logs.map((item) => (
+                                  <div key={item.id}>
+                                    <span className="text-zinc-500 dark:text-zinc-500">[{formatTime(item.ts)}]</span>{' '}
+                                    <span className={getLevelStyle(item.level)}>{item.title}</span>
+                                    {item.data !== undefined ? (
+                                      <span className="text-zinc-500 dark:text-zinc-400"> {formatJson(item.data)}</span>
+                                    ) : null}
+                                  </div>
+                                ))}
+                              </div>
+                            </details>
+                          ) : null}
+                        </div>
+                      )
+                    })()
+                  : null}
+              </div>
             </div>
           </div>
         </div>

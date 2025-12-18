@@ -1,5 +1,4 @@
 import { assign, createMachine, fromPromise } from 'xstate'
-import { ensureMswStarted } from './msw/ensureMswStarted'
 import { createMockHardwareClient } from './mockHardwareClient'
 
 function createId() {
@@ -237,7 +236,7 @@ export function createHardwareMockMachine({ basePath }) {
 
         markMockError: assign(({ event }) => ({
           mockReady: false,
-          mockError: event.error?.message ?? 'MSW 启动失败'
+          mockError: event.error?.message ?? 'Mock 启动失败'
         })),
 
         clearLastError: assign(() => ({ lastError: null })),
@@ -277,6 +276,7 @@ export function createHardwareMockMachine({ basePath }) {
           apply('deviceId', output.deviceId, (v) => typeof v === 'string' && v)
           apply('model', output.model, (v) => typeof v === 'string' && v)
           apply('deviceName', output.deviceName, (v) => typeof v === 'string' && v)
+          apply('deviceType', output.deviceType, (v) => typeof v === 'string' && v)
           apply('bleName', output.bleName, (v) => typeof v === 'string')
           apply('firmware', output.firmware, (v) => typeof v === 'string' && v)
           apply('transport', output.transport, (v) => typeof v === 'string' && v)
@@ -292,7 +292,7 @@ export function createHardwareMockMachine({ basePath }) {
         logMockReady: assign(({ context }) => ({
           logs: [
             ...context.logs,
-            createLog({ level: 'system', title: 'MSW Mock 已就绪' })
+            createLog({ level: 'system', title: 'Mock 已就绪' })
           ]
         })),
 
@@ -301,7 +301,7 @@ export function createHardwareMockMachine({ basePath }) {
             ...context.logs,
             createLog({
               level: 'error',
-              title: 'MSW Mock 启动失败',
+              title: 'Mock 启动失败',
               data: { message: event.error?.message ?? '未知错误' }
             })
           ]
@@ -369,9 +369,9 @@ export function createHardwareMockMachine({ basePath }) {
               level: 'response',
               title: resolveSuccessTitle(event.output),
               data: event.output?.ui
-                ? { ui: { ...event.output.ui, details: summarizeConfirmDetails(event.output.ui.details) }, unlocked: event.output?.unlocked ?? null }
-                : event.output?.payload
-                  ? event.output
+                ? { ui: { ...event.output.ui, details: summarizeConfirmDetails(event.output.ui.details) } }
+                : typeof event.output?.success === 'boolean' && event.output?.payload
+                  ? { success: event.output.success, payload: event.output.payload }
                   : event.output
             })
           ]
@@ -390,7 +390,6 @@ export function createHardwareMockMachine({ basePath }) {
       },
       actors: {
         boot: fromPromise(async ({ input }) => {
-          await ensureMswStarted({ basePath: input.basePath })
           const devices = await client.searchDevices()
           const first = Array.isArray(devices?.payload) ? devices.payload[0] : null
           const connectId = first?.connectId ?? first?.connect_id ?? 'mock-connect-001'
@@ -406,7 +405,8 @@ export function createHardwareMockMachine({ basePath }) {
             firmware: features?.payload?.firmware ?? '3.0.0-mock',
             transport: features?.payload?.transport ?? 'mock',
             unlocked: Boolean(features?.payload?.unlocked),
-            randomPinMap: Boolean(features?.payload?.randomPinMap)
+            randomPinMap: Boolean(features?.payload?.randomPinMap),
+            deviceType: features?.payload?.deviceType ?? first?.deviceType ?? 'pro'
           }
         }),
 

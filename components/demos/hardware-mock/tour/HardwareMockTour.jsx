@@ -3,7 +3,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Tour, TourContext, useTour } from '@reactour/tour'
+import { AlertTriangle, Info, ListChecks, Zap } from 'lucide-react'
 import { hardwareMockTourBus } from './hardwareMockTourBus'
+import { createClassic1sInteractiveSteps } from './steps/classic1sSteps'
+import { createProInteractiveSteps } from './steps/proSteps'
+import { eventStep, hintStep, normalizeDeviceType } from './steps/stepHelpers'
 
 function clamp(value, min, max) {
   return Math.max(min, Math.min(max, value))
@@ -50,33 +54,206 @@ function getDict(locale) {
     justTriggered: isEn ? 'Just triggered' : '刚刚触发',
     now: isEn ? 'What happened' : '现在发生了什么',
     next: isEn ? 'What you should do' : '你需要做什么',
-    reset: isEn ? 'Reset' : '重置导览',
-    close: isEn ? 'Close' : '关闭导览',
-    step: isEn ? 'Step' : '步骤'
+    close: isEn ? 'Close' : '关闭导览'
   }
 }
 
-function truncateText(text, maxLen = 120) {
+function compactText(text, { head = 10, tail = 8, maxLen = 26 } = {}) {
   const s = String(text ?? '')
   if (s.length <= maxLen) return s
-  return `${s.slice(0, Math.max(0, maxLen - 1))}…`
+  const safeHead = Math.min(head, s.length)
+  const safeTail = Math.min(tail, Math.max(0, s.length - safeHead))
+  return `${s.slice(0, safeHead)}…${s.slice(s.length - safeTail)}`
+}
+
+function InlineCode({ children }) {
+  return (
+    <code
+      className="rounded-md px-1 py-0.5 font-mono text-[11px] leading-[1.2]"
+      style={{
+        fontFamily: 'var(--font-mono)',
+        background: 'color-mix(in srgb, var(--ok-tour-bg) 88%, var(--ok-tour-text) 12%)',
+        border: '1px solid color-mix(in srgb, var(--ok-tour-border) 80%, var(--ok-tour-text) 20%)',
+        color: 'var(--ok-tour-text)',
+        whiteSpace: 'normal',
+        overflowWrap: 'anywhere',
+        wordBreak: 'break-word'
+      }}
+    >
+      {children}
+    </code>
+  )
+}
+
+function InlineQuote({ children }) {
+  return (
+    <span
+      className="rounded-md px-1.5 py-0.5 text-[11px] font-medium leading-[1.2]"
+      style={{
+        background: 'color-mix(in srgb, var(--ok-tour-bg) 92%, var(--ok-tour-accent) 8%)',
+        border: '1px solid color-mix(in srgb, var(--ok-tour-border) 70%, var(--ok-tour-accent) 30%)',
+        color: 'var(--ok-tour-text)',
+        whiteSpace: 'normal',
+        overflowWrap: 'anywhere',
+        wordBreak: 'break-word'
+      }}
+    >
+      {children}
+    </span>
+  )
+}
+
+function renderTourText(value) {
+  if (value == null) return null
+  if (typeof value !== 'string') return value
+
+  const text = value
+  // 轻量高亮：函数调用 / 常量 / key=value / 常见 UI 文案引用（“Send”、「下一步」等）
+  const tokenRe =
+    /(`[^`]+`|「[^」]+」|“[^”]+”|"[^"]+"|\b[A-Za-z_$][\w$]*\(\)|\b[A-Z][A-Z0-9_]{2,}\b|\b[A-Za-z_$][\w$]*=[^ \n，。；,.;)]+)/g
+
+  const parts = []
+  let lastIndex = 0
+  let match
+  while ((match = tokenRe.exec(text)) !== null) {
+    const start = match.index
+    const end = start + match[0].length
+    if (start > lastIndex) parts.push(text.slice(lastIndex, start))
+    const token = match[0]
+
+    if (token.startsWith('`') && token.endsWith('`')) {
+      parts.push(<InlineCode key={`code-${start}`}>{token.slice(1, -1)}</InlineCode>)
+    } else if (token.startsWith('「') && token.endsWith('」')) {
+      parts.push(<InlineQuote key={`quote-${start}`}>{token.slice(1, -1)}</InlineQuote>)
+    } else if (token.startsWith('“') && token.endsWith('”')) {
+      parts.push(<InlineQuote key={`quote-${start}`}>{token.slice(1, -1)}</InlineQuote>)
+    } else if (token.startsWith('"') && token.endsWith('"')) {
+      parts.push(<InlineQuote key={`quote-${start}`}>{token.slice(1, -1)}</InlineQuote>)
+    } else {
+      parts.push(<InlineCode key={`code-${start}`}>{token}</InlineCode>)
+    }
+    lastIndex = end
+  }
+  if (lastIndex < text.length) parts.push(text.slice(lastIndex))
+
+  const out = []
+  parts.forEach((p, idx) => {
+    if (typeof p === 'string' && p.includes('\n')) {
+      const lines = p.split('\n')
+      lines.forEach((line, lineIdx) => {
+        if (line) out.push(line)
+        if (lineIdx < lines.length - 1) out.push(<br key={`br-${idx}-${lineIdx}`} />)
+      })
+      return
+    }
+    out.push(p)
+  })
+  return out
+}
+
+function safeExpect(expect, evt) {
+  if (typeof expect !== 'function') return false
+  try {
+    return Boolean(expect(evt))
+  } catch {
+    return false
+  }
+}
+
+function isEventStep(step) {
+  return step?.mode === 'event'
+}
+
+function isStepSatisfied(step, events) {
+  if (!isEventStep(step)) return false
+  const list = Array.isArray(events) ? events : []
+  for (const evt of list) {
+    if (safeExpect(step?.expect, evt)) return true
+  }
+  return false
+}
+
+function findFirstIncompleteIndex(steps, startIndex, events) {
+  const maxIndex = steps.length - 1
+  let idx = clamp(startIndex, 0, maxIndex)
+  while (idx <= maxIndex) {
+    const step = steps[idx]
+    if (isEventStep(step) && isStepSatisfied(step, events)) {
+      idx += 1
+      continue
+    }
+    break
+  }
+  return clamp(idx, 0, maxIndex)
 }
 
 function createWaitingModelSteps(locale) {
   const isEn = locale === 'en'
   return [
-    {
+    eventStep({
       id: 'waiting-start',
       selector: '[data-tour="send-button"]',
       placement: 'bottom',
       now: isEn
-        ? 'Tour is enabled. It will only start after you click “Send”.'
-        : '导览已开启，但不会自动弹出；只有在你点击「发送命令」后才开始。',
-      next: isEn
-        ? 'Pick a command/params, then click “Send” to experience the full interaction flow.'
-        : '先选择命令与参数，然后点击「发送命令」来完整体验一次交互流程。',
+        ? ['Tour enabled (won’t auto open).', 'Starts after you click “Send”.']
+        : ['导览已开启（不会自动弹出）', '点击「发送命令」后开始'],
+      next: isEn ? ['Pick a command + params', 'Click “Send” to start the flow'] : ['选择命令与参数', '点击「发送命令」开始体验'],
       expect: (evt) => evt?.type === 'command.sent'
-    }
+    })
+  ]
+}
+
+function createSearchDevicesSteps(locale) {
+  const isEn = locale === 'en'
+  return [
+    hintStep({
+      id: 'example-code',
+      selector: '[data-tour="example-code"]',
+      placement: 'right',
+      now: isEn ? ['Triggered `searchDevices()`'] : ['已触发 `searchDevices()`'],
+      next: isEn ? ['Click “Next” to see the result'] : ['点击「下一步」查看返回结果']
+    }),
+    eventStep({
+      id: 'wait-result',
+      selector: '[data-tour="result-panel"]',
+      placement: 'top',
+      now: isEn ? 'Waiting for result…' : '等待返回结果…',
+      next: isEn ? ['Result will appear in the Result panel'] : ['结果会显示在右侧 Result 面板'],
+      expect: (evt) => evt?.type === 'command.result'
+    }),
+    hintStep({
+      id: 'result',
+      selector: '[data-tour="result-panel"]',
+      placement: 'top',
+      now: isEn ? ['Discovered device list is here'] : ['这里是发现到的设备列表'],
+      next: isEn
+        ? ['Send `btcGetAddress` or `btcSignMessage`', 'See the full UI_EVENT flow']
+        : ['发送 `btcGetAddress` 或 `btcSignMessage`', '体验完整 UI_EVENT 流程']
+    })
+  ]
+}
+
+function createCallbackAndResultSteps(locale) {
+  const isEn = locale === 'en'
+  return [
+    hintStep({
+      id: 'result',
+      selector: '[data-tour="result-panel"]',
+      placement: 'top',
+      now: isEn ? ['Final result payload'] : ['这里是最终返回结果（payload）'],
+      next: isEn ? ['Click “Next” to check the callbacks template'] : ['点击「下一步」查看 UI_EVENT 回调处理模板']
+    }),
+    hintStep({
+      id: 'callback-code',
+      selector: '[data-tour="callback-code"]',
+      placement: 'right',
+      now: isEn
+        ? ['UI_EVENT wiring template', 'Handle `REQUEST_*` (reply via `uiResponse` when needed)']
+        : ['这里是 UI_EVENT 回调处理模板', '收到 `REQUEST_*`：需要时用 `uiResponse` 回复'],
+      next: isEn
+        ? ['Focus on `REQUEST_PIN` / `REQUEST_BUTTON` / `CLOSE_UI_WINDOW`', 'Breakpoints mark the current request']
+        : ['重点看 `REQUEST_PIN` / `REQUEST_BUTTON` / `CLOSE_UI_WINDOW`', '断点会标记当前正在发生的请求']
+    })
   ]
 }
 
@@ -84,197 +261,226 @@ function createFlowSteps(locale, startEvent) {
   const isEn = locale === 'en'
   const command = startEvent?.command ?? null
   const params = startEvent?.params ?? null
+  const deviceType = normalizeDeviceType(startEvent?.deviceType)
   const showOnOneKey = Boolean(params?.showOnOneKey)
+  if (command === 'searchDevices') return createSearchDevicesSteps(locale)
 
-  const base = [
-    {
-      id: 'example-code',
-      selector: '[data-tour="example-code"]',
-      placement: 'right',
-      now: isEn
-        ? `You just triggered ${command ?? 'a command'}.`
-        : `你刚刚触发了 ${command ?? '命令'}。`,
-      next: isEn
-        ? 'Focus on this call: it decides whether an interactive flow (PIN / confirm on device) will happen.'
-        : '先看这次调用：它决定是否会进入「需要你处理 UI_EVENT / 设备确认」的交互流程。',
-      manual: true,
-      expect: () => false
-    }
-  ]
-
-  if (command === 'btcGetAddress' && showOnOneKey) {
-    return [
-      ...base,
-      {
-        id: 'unlock-or-pin',
-        selector: '[data-tour="device-screen"]',
-        placement: 'right',
-        now: isEn
-          ? 'The SDK may request input (PIN) to unlock the device.'
-          : 'SDK 可能会发起“需要输入”的请求（如 PIN 解锁）。',
-        next: isEn
-          ? 'In this demo: tap the device screen and enter PIN=1111. In real apps: show a PIN UI, then call uiResponse(RECEIVE_PIN).'
-          : '在本 Demo：点击设备屏幕并输入 PIN=1111；在真实业务：弹出 PIN 输入 UI，然后调用 uiResponse(RECEIVE_PIN)。',
-        manual: true,
-        expect: () => false
-      },
-      {
-        id: 'confirm-on-device',
-        selector: '[data-tour="device-screen"]',
-        placement: 'right',
-        now: isEn
-          ? 'Next, the device requires confirmation (on-device approve).'
-          : '接着会进入“需要在设备上确认”的阶段（设备同意/拒绝）。',
-        next: isEn
-          ? 'Approve on the device. Typically you only show a hint UI; no uiResponse is needed for hint-only events.'
-          : '在设备上点同意。一般只需要在应用里提示用户去设备确认；提示类事件通常不需要 uiResponse。',
-        expect: (evt) => evt?.type === 'ui.confirm' && evt?.action === 'btcGetAddress' && evt?.approved === true
-      },
-      {
-        id: 'callback-code',
-        selector: '[data-tour="callback-code"]',
-        placement: 'right',
-        now: isEn
-          ? 'Here is the real UI_EVENT wiring pattern (handle REQUEST_* and reply via uiResponse when needed).'
-          : '这里是“真实的 UI_EVENT 接线方式”：收到 REQUEST_* 后，输入类要 uiResponse，提示类只展示 UI。',
-        next: isEn
-          ? 'Notice the breakpoint: it marks the current request type (PIN vs confirm hint).'
-          : '注意左侧断点：它只标记当前正在发生的请求类型（PIN / 设备确认提示）。',
-        manual: true,
-        expect: () => false
-      },
-      {
-        id: 'result',
-        selector: '[data-tour="result-panel"]',
-        placement: 'top',
-        now: isEn
-          ? 'Finally, you get the result payload (address / error).'
-          : '最后你会拿到返回结果（地址 / 错误信息）。',
-        next: isEn
-          ? 'Try showOnOneKey=false: the result returns directly without interactive UI_EVENT.'
-          : '你可以切换 showOnOneKey=false：通常不会有交互 UI_EVENT，直接返回结果。',
-        manual: true,
-        expect: () => false
-      }
-    ]
-  }
-
-  if (command === 'btcGetAddress' && !showOnOneKey) {
-    return [
-      {
-        id: 'example-code',
-        selector: '[data-tour="example-code"]',
-        placement: 'right',
-        now: isEn
-          ? 'You triggered btcGetAddress(showOnOneKey=false).'
-          : '你触发了 btcGetAddress（showOnOneKey=false）。',
-        next: isEn
-          ? 'This usually skips on-device confirmation, so interactive UI_EVENT is typically not emitted (your app just waits for the result).'
-          : '这通常会跳过“设备上显示并确认”，所以一般不会触发需要你处理的 UI_EVENT（应用直接等待结果）。',
-        manual: true,
-        expect: () => false
-      },
-      {
-        id: 'result',
-        selector: '[data-tour="result-panel"]',
-        placement: 'top',
-        now: isEn ? 'Result returns directly.' : '结果会直接返回。',
-        next: isEn
-          ? 'Try showOnOneKey=true to experience the full interactive flow (PIN / confirm on device / UI_EVENT wiring).'
-          : '你可以切换 showOnOneKey=true，再体验完整交互链路（PIN / 设备确认 / UI_EVENT 接线）。',
-        manual: true,
-        expect: () => false
-      }
-    ]
-  }
-
-  if (command === 'btcSignMessage') {
-    return [
-      ...base,
-      {
-        id: 'unlock-or-pin',
-        selector: '[data-tour="device-screen"]',
-        placement: 'right',
-        now: isEn ? 'Signing may also require unlock/PIN input.' : '签名流程也可能先要求解锁 / PIN 输入。',
-        next: isEn
-          ? 'In this demo: enter PIN=1111 if prompted. In real apps: handle UI_REQUEST.REQUEST_PIN and reply via uiResponse.'
-          : '在本 Demo：如果出现 PIN 就输入 1111；在真实业务：处理 UI_REQUEST.REQUEST_PIN，并用 uiResponse 回复。',
-        manual: true,
-        expect: () => false
-      },
-      {
-        id: 'confirm-on-device',
-        selector: '[data-tour="device-screen"]',
-        placement: 'right',
-        now: isEn ? 'Then confirm the signing on device.' : '随后在设备上确认签名。',
-        next: isEn ? 'Approve on the device to finish signing.' : '在设备上点同意，完成签名。',
-        expect: (evt) => evt?.type === 'ui.confirm' && evt?.action === 'btcSignMessage' && evt?.approved === true
-      },
-      {
-        id: 'callback-code',
-        selector: '[data-tour="callback-code"]',
-        placement: 'right',
-        now: isEn ? 'UI_EVENT wiring is the same pattern as above.' : 'UI_EVENT 的处理模式与上面一致。',
-        next: isEn ? 'Breakpoints show the current UI request being processed.' : '断点会标记当前正在处理的 UI 请求。',
-        manual: true,
-        expect: () => false
-      },
-      {
-        id: 'result',
-        selector: '[data-tour="result-panel"]',
-        placement: 'top',
-        now: isEn ? 'Result contains signature payload.' : '结果会包含签名 payload。',
-        next: isEn ? 'Rerun to observe differences with other params.' : '你可以再跑一遍观察不同参数下的差异。',
-        manual: true,
-        expect: () => false
-      }
-    ]
+  if (command === 'btcGetAddress' || command === 'btcSignMessage') {
+    if (deviceType === 'classic1s') return createClassic1sInteractiveSteps(locale, { command, showOnOneKey })
+    return createProInteractiveSteps(locale, { command, showOnOneKey })
   }
 
   return [
-    ...base,
-    {
-      id: 'result',
-      selector: '[data-tour="result-panel"]',
-      placement: 'top',
-      now: isEn ? 'Result is ready.' : '结果已返回。',
-      next: isEn ? 'Tweak params and rerun to compare outputs.' : '你可以修改参数并再次发送，体验不同返回结果。',
-      manual: true,
-      expect: () => false
-    }
+    hintStep({
+      id: 'example-code',
+      selector: '[data-tour="example-code"]',
+      placement: 'right',
+      now: isEn ? [`Command: \`${command ?? '-'}\``] : [`命令：\`${command ?? '-'}\``],
+      next: isEn ? ['Send a supported command to start the flow'] : ['发送一个支持的命令以开始交互流程']
+    }),
+    ...createCallbackAndResultSteps(locale)
   ]
 }
 
-function formatEvent(evt) {
+function safeJsonStringify(value) {
+  try {
+    return JSON.stringify(value)
+  } catch {
+    return null
+  }
+}
+
+function formatEventValue(key, raw) {
+  if (raw == null) return null
+  if (typeof raw === 'string') {
+    if (key === 'messageHex') return `${compactText(raw, { head: 12, tail: 10, maxLen: 28 })} (${raw.length})`
+    if (raw.length > 48) return `${compactText(raw, { head: 16, tail: 12, maxLen: 34 })} (${raw.length})`
+    return raw
+  }
+  if (typeof raw === 'number' || typeof raw === 'boolean') return String(raw)
+  if (Array.isArray(raw)) {
+    const json = safeJsonStringify(raw)
+    return json ? compactText(json, { head: 18, tail: 10, maxLen: 40 }) : String(raw)
+  }
+  if (typeof raw === 'object') {
+    const json = safeJsonStringify(raw)
+    return json ? compactText(json, { head: 18, tail: 10, maxLen: 40 }) : String(raw)
+  }
+  return String(raw)
+}
+
+function formatEventBlock(evt) {
   if (!evt) return ''
+  const lines = []
+
   if (evt.type === 'command.sent') {
-    const params = evt?.params ? ` ${truncateText(JSON.stringify(evt.params))}` : ''
-    return `${evt.command}${params}`
+    const command = String(evt.command ?? 'unknown')
+    lines.push(command)
+
+    const params = evt?.params
+    if (params && typeof params === 'object') {
+      const selectedKeys =
+        command === 'btcGetAddress'
+          ? ['path', 'coin', 'showOnOneKey']
+          : command === 'btcSignMessage'
+            ? ['path', 'coin', 'messageHex']
+            : command === 'searchDevices'
+              ? []
+              : ['path', 'coin', 'showOnOneKey', 'messageHex']
+
+      for (const key of selectedKeys) {
+        if (!(key in params)) continue
+        const v = formatEventValue(key, params[key])
+        if (v == null || v === '') continue
+        lines.push(`${key}=${v}`)
+      }
+    }
+    return lines.join('\n')
   }
-  if (evt.type === 'command.changed') return `command=${evt.command}`
-  if (evt.type === 'param.changed') return `${evt.key}=${String(evt.value)}`
+
   if (evt.type === 'command.result') {
-    const title = evt?.log?.title ? ` ${evt.log.title}` : ''
-    return `${evt.command ?? 'unknown'}${title}`
+    lines.push(String(evt.command ?? 'unknown'))
+    if (evt?.log?.title) lines.push(`title=${compactText(evt.log.title, { head: 24, tail: 0, maxLen: 34 })}`)
+    return lines.join('\n')
   }
-  if (evt.type === 'code.updated') return `exampleCode updated (${evt.command ?? 'unknown'})`
-  if (evt.type === 'code.copied') return `exampleCode copied (${evt.command ?? 'unknown'})`
-  if (evt.type === 'ui.confirm') return `ui.confirm ${evt.action ?? ''} approved=${String(Boolean(evt.approved))}`
-  if (evt.type === 'ui.shown') return `ui.shown type=${evt.uiType ?? ''} action=${evt.action ?? ''}`
+
+  if (evt.type === 'param.changed') return `${evt.key}=${String(evt.value)}`
+  if (evt.type === 'command.changed') return `command=${evt.command ?? ''}`
+  if (evt.type === 'code.updated') return `exampleCode updated\ncommand=${evt.command ?? ''}`.trim()
+  if (evt.type === 'code.copied') return `exampleCode copied\ncommand=${evt.command ?? ''}`.trim()
+
+  if (evt.type === 'ui.confirm') {
+    lines.push('ui.confirm')
+    if (evt.action) lines.push(`action=${evt.action}`)
+    lines.push(`approved=${String(Boolean(evt.approved))}`)
+    return lines.join('\n')
+  }
+
+  if (evt.type === 'ui.shown') {
+    lines.push('ui.shown')
+    if (evt.uiType) lines.push(`type=${evt.uiType}`)
+    if (evt.action) lines.push(`action=${evt.action}`)
+    return lines.join('\n')
+  }
+
   if (evt.type === 'ui.unlock.tap') return 'ui.unlock.tap'
-  if (evt.type === 'ui.pin.submit') return `ui.pin.submit len=${String(evt.pinLength ?? '')}`
-  return evt.type
+  if (evt.type === 'ui.pin.submit') return `ui.pin.submit\nlen=${String(evt.pinLength ?? '')}`.trim()
+
+  return String(evt.type ?? '')
+}
+
+function CodeBlock({ children }) {
+  return (
+    <pre
+      className="mt-1 overflow-auto rounded-lg border px-2 py-2 text-[12px] leading-relaxed"
+      style={{
+        borderColor: 'var(--ok-tour-border)',
+        background: 'color-mix(in srgb, var(--ok-tour-bg) 92%, var(--ok-tour-text) 8%)',
+        color: 'var(--ok-tour-text)',
+        fontFamily: 'var(--font-mono)',
+        maxHeight: 140,
+        whiteSpace: 'pre',
+        overflowWrap: 'normal',
+        wordBreak: 'normal'
+      }}
+    >
+      <code>{children}</code>
+    </pre>
+  )
 }
 
 function focusTabForSelector(selector) {
   if (selector === '[data-tour="example-code"]') return 'example'
-  if (selector === '[data-tour="device-screen"]') return 'callback'
   if (selector === '[data-tour="callback-code"]') return 'callback'
   if (selector === '[data-tour="result-panel"]') return 'result'
   return null
 }
 
-function createReactourSteps({ locale, dict, modelStepsRef, lastEventRef, currentStepRef, onExit }) {
+function renderTourContent(value) {
+  if (Array.isArray(value)) {
+    if (value.length === 0) return null
+    if (value.length === 1) return renderTourText(value[0])
+    return (
+      <ul className="mt-0.5 space-y-1.5">
+        {value.map((item, idx) => (
+          <li key={`li-${idx}`} className="flex items-start gap-2">
+            <span
+              className="mt-[6px] inline-flex h-1.5 w-1.5 shrink-0 rounded-full"
+              style={{ background: 'color-mix(in srgb, var(--ok-tour-text) 55%, var(--ok-tour-muted) 45%)' }}
+            />
+            <span className="min-w-0">{renderTourText(item)}</span>
+          </li>
+        ))}
+      </ul>
+    )
+  }
+  return renderTourText(value)
+}
+
+function TourCard({ icon: Icon, title, accentColor, children }) {
+  return (
+    <div
+      className="mt-2 rounded-xl border px-3 py-2.5"
+      style={{
+        borderColor: `color-mix(in srgb, var(--ok-tour-border) 75%, ${accentColor} 25%)`,
+        background: `color-mix(in srgb, var(--ok-tour-bg) 94%, ${accentColor} 6%)`,
+        borderLeft: `3px solid ${accentColor}`
+      }}
+    >
+      <div className="flex items-center gap-2">
+        {Icon ? (
+          <span
+            className="inline-flex h-5 w-5 items-center justify-center rounded-md"
+            style={{
+              background: `color-mix(in srgb, var(--ok-tour-bg) 84%, ${accentColor} 16%)`,
+              color: accentColor
+            }}
+          >
+            <Icon size={14} />
+          </span>
+        ) : null}
+      <div className="text-xs font-semibold" style={{ color: accentColor }}>
+        {title}
+      </div>
+    </div>
+      <div
+        className="mt-1 text-sm leading-relaxed"
+        style={{ color: 'var(--ok-tour-text)', overflowWrap: 'anywhere', wordBreak: 'break-word' }}
+      >
+        {children}
+      </div>
+    </div>
+  )
+}
+
+function emitStepChanged(steps, index) {
+  const list = Array.isArray(steps) ? steps : []
+  const maxIndex = Math.max(0, list.length - 1)
+  const safeIndex = clamp(typeof index === 'number' ? index : 0, 0, maxIndex)
+  const step = list[safeIndex]
+  const tab = focusTabForSelector(step?.selector)
+  hardwareMockTourBus.emit('tour.step.changed', {
+    stepId: step?.id ?? null,
+    mode: step?.mode ?? null,
+    index: safeIndex,
+    total: list.length,
+    selector: step?.selector ?? null,
+    tab
+  })
+}
+
+function emitTourClosed() {
+  hardwareMockTourBus.emit('tour.step.changed', {
+    stepId: null,
+    mode: null,
+    index: 0,
+    total: 0,
+    selector: null,
+    tab: null
+  })
+}
+
+function createReactourSteps({ locale, dict, modelStepsRef, lastEventRef, currentStepRef, eventLogRef, onExit }) {
   const steps = modelStepsRef.current ?? []
   return steps.map((s) => ({
     selector: s.selector,
@@ -286,133 +492,139 @@ function createReactourSteps({ locale, dict, modelStepsRef, lastEventRef, curren
       currentStepRef.current = safeIndex
       const step = liveSteps[safeIndex]
       const lastEvent = lastEventRef.current
+      const canNext = Boolean(step?.mode === 'hint' && step?.allowNext !== false && safeIndex < maxIndex)
+      const isLast = safeIndex >= maxIndex
+      const isEvent = step?.mode === 'event'
+
+      const closeTour = () => {
+        setIsOpen(false)
+        emitTourClosed()
+        onExit?.()
+      }
 
       const mismatchHint = (() => {
         if (!lastEvent) return null
-        if (!step || step.id === 'done') return null
-        if (step.expect?.(lastEvent)) return null
-        if (lastEvent.type !== 'command.sent' && lastEvent.type !== 'command.changed' && lastEvent.type !== 'param.changed') return null
+        if (!step) return null
+        if (lastEvent.type === 'command.sent') return null
+        if (safeExpect(step.expect, lastEvent)) return null
+        if (lastEvent.type !== 'command.changed' && lastEvent.type !== 'param.changed') return null
         return locale === 'en'
-          ? `This tour expects: ${step.id}. You can reset if needed.`
-          : `你当前触发的操作与预期步骤不一致（预期：${step.id}）。如需从头体验可点「重置导览」。`
+          ? `This tour expects: ${step.id}. You can close and restart by sending the command again.`
+          : `你当前触发的操作与预期步骤不一致（预期：${step.id}）。你可以先关闭导览，然后重新发送命令再开始。`
       })()
-
-      const showNext = Boolean(step?.manual)
 
       return (
         <div
           className="text-sm"
           style={{
-            width: 'min(340px, calc(100vw - 48px))',
+            width: 'min(360px, calc(100vw - 48px))',
             color: 'var(--ok-tour-text)',
             fontFamily: 'var(--font-ui)'
           }}
         >
           <div className="flex items-center justify-between gap-2">
-            <div className="text-xs font-semibold" style={{ color: 'var(--ok-tour-muted)' }}>
-              {dict.tourTitle} · {dict.step} {safeIndex + 1}/{liveSteps.length}
-            </div>
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => {
-                  lastEventRef.current = null
-                  currentStepRef.current = 0
-                  setCurrentStep(0)
-                }}
-                className="rounded-md border px-2 py-1 text-xs transition-colors"
-                style={{
-                  borderColor: 'var(--ok-tour-border)',
-                  background: 'color-mix(in srgb, var(--ok-tour-bg) 96%, transparent)',
-                  color: 'var(--ok-tour-muted)'
-                }}
-              >
-                {dict.reset}
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setIsOpen(false)
-                  onExit?.()
-                }}
-                className="rounded-md px-2 py-1 text-xs font-medium transition-colors"
-                style={{
-                  background: 'var(--ok-tour-text)',
-                  color: 'var(--ok-tour-bg)'
-                }}
-              >
-                {dict.close}
-              </button>
+            <div className="flex min-w-0 items-center gap-2">
+              <div className="truncate text-[13px] font-semibold leading-tight" style={{ color: 'var(--ok-tour-text)' }}>
+                {dict.tourTitle}
+              </div>
+              <div className="shrink-0 text-[11px] font-medium" style={{ color: 'var(--ok-tour-muted)' }}>
+                {safeIndex + 1}/{liveSteps.length}
+              </div>
             </div>
           </div>
 
           {lastEvent ? (
-            <div
-              className="mt-2 rounded-lg border px-2 py-1.5 text-xs"
-              style={{
-                borderColor: 'var(--ok-tour-border)',
-                background: 'color-mix(in srgb, var(--ok-tour-bg) 92%, var(--ok-tour-text) 8%)',
-                color: 'var(--ok-tour-muted)'
-              }}
-            >
-              <span className="font-semibold" style={{ color: 'var(--ok-tour-text)' }}>
-                {dict.justTriggered}：
-              </span>
-              <span className="ml-1 font-mono" style={{ color: 'var(--ok-tour-text)' }}>
-                {formatEvent(lastEvent)}
-              </span>
-            </div>
+            <TourCard icon={Zap} title={dict.justTriggered} accentColor="var(--ok-tour-accent)">
+              <CodeBlock>{formatEventBlock(lastEvent)}</CodeBlock>
+            </TourCard>
           ) : null}
 
-          <div className="mt-2">
-            <div className="text-xs font-semibold" style={{ color: 'var(--ok-tour-muted)' }}>
-              {dict.now}
-            </div>
-            <div className="mt-1">{step?.now}</div>
-          </div>
+          <TourCard icon={Info} title={dict.now} accentColor="var(--info-500)">
+            {renderTourContent(step?.now)}
+          </TourCard>
 
-          <div className="mt-2">
-            <div className="text-xs font-semibold" style={{ color: 'var(--ok-tour-muted)' }}>
-              {dict.next}
-            </div>
-            <div className="mt-1" style={{ color: 'var(--ok-tour-text)' }}>
-              {step?.next}
-            </div>
-          </div>
+          <TourCard icon={ListChecks} title={dict.next} accentColor="var(--ok-tour-accent)">
+            {renderTourContent(step?.next)}
+          </TourCard>
 
-          {showNext ? (
-            <div className="mt-3 flex justify-end">
+          <div className="mt-3 flex items-center justify-between gap-2">
+            <button
+              type="button"
+              onClick={closeTour}
+              className="rounded-md px-3 py-1.5 text-xs font-medium transition-colors hover:opacity-90 active:opacity-80"
+              style={{
+                background: 'color-mix(in srgb, var(--ok-tour-bg) 92%, var(--ok-tour-text) 8%)',
+                color: 'var(--ok-tour-text)',
+                border: '1px solid var(--ok-tour-border)'
+              }}
+            >
+              {dict.close}
+            </button>
+
+            {canNext ? (
               <button
                 type="button"
                 onClick={() => {
                   const steps = modelStepsRef.current ?? []
                   const maxIndex = steps.length - 1
-                  const nextIndex = clamp(safeIndex + 1, 0, maxIndex)
+                  const rawNext = clamp(safeIndex + 1, 0, maxIndex)
+                  const nextIndex = rawNext
                   const nextStep = steps[nextIndex]
                   const tab = focusTabForSelector(nextStep?.selector)
                   if (tab) hardwareMockTourBus.emit('tour.focus', { tab, stepId: nextStep?.id ?? null })
+                  emitStepChanged(steps, nextIndex)
                   currentStepRef.current = nextIndex
                   setCurrentStep(nextIndex)
                 }}
-                className="rounded-md px-3 py-1.5 text-xs font-medium text-white"
-                style={{ background: 'var(--ok-tour-accent)' }}
+                className="rounded-md px-3 py-1.5 text-xs font-medium text-white transition-opacity hover:opacity-95 active:opacity-80"
+                style={{
+                  background: 'var(--ok-tour-accent)',
+                  boxShadow: '0 8px 18px rgba(0, 184, 18, 0.25)'
+                }}
               >
                 {locale === 'en' ? 'Next' : '下一步'}
               </button>
-            </div>
-          ) : null}
+            ) : isLast ? (
+              <button
+                type="button"
+                onClick={closeTour}
+                className="rounded-md px-3 py-1.5 text-xs font-medium text-white transition-opacity hover:opacity-95 active:opacity-80"
+                style={{
+                  background: 'var(--ok-tour-accent)',
+                  boxShadow: '0 8px 18px rgba(0, 184, 18, 0.25)'
+                }}
+              >
+                {locale === 'en' ? 'Done' : '完成'}
+              </button>
+            ) : isEvent ? (
+              <button
+                type="button"
+                disabled
+                className="inline-flex items-center gap-2 rounded-md px-3 py-1.5 text-xs font-medium"
+                style={{
+                  background: 'color-mix(in srgb, var(--ok-tour-bg) 92%, var(--ok-tour-text) 8%)',
+                  color: 'var(--ok-tour-muted)',
+                  border: '1px solid var(--ok-tour-border)',
+                  opacity: 0.9
+                }}
+              >
+                <span
+                  className="inline-flex h-1.5 w-1.5 rounded-full"
+                  style={{ background: 'color-mix(in srgb, var(--ok-tour-muted) 75%, var(--ok-tour-text) 25%)' }}
+                />
+                {locale === 'en' ? 'Waiting…' : '等待操作…'}
+              </button>
+            ) : null}
+          </div>
 
           {mismatchHint ? (
-            <div
-              className="mt-2 rounded-lg border px-2 py-1.5 text-xs"
-              style={{
-                borderColor: 'color-mix(in srgb, var(--ok-tour-border) 60%, #f59e0b 40%)',
-                background: 'color-mix(in srgb, var(--ok-tour-bg) 86%, #f59e0b 14%)',
-                color: 'var(--ok-tour-text)'
-              }}
+            <TourCard
+              icon={AlertTriangle}
+              title={locale === 'en' ? 'Mismatch' : '步骤不匹配'}
+              accentColor="var(--warning-500)"
             >
-              {mismatchHint}
-            </div>
+              {renderTourContent(mismatchHint)}
+            </TourCard>
           ) : null}
         </div>
       )
@@ -425,10 +637,11 @@ export function HardwareMockTour({ locale = 'zh', enabled, onExit }) {
   const modelStepsRef = useRef(createWaitingModelSteps(locale))
   const currentStepRef = useRef(0)
   const lastEventRef = useRef(null)
+  const eventLogRef = useRef([])
 
   return (
     <PortalTourProvider
-      steps={createReactourSteps({ locale, dict, modelStepsRef, lastEventRef, currentStepRef, onExit })}
+      steps={createReactourSteps({ locale, dict, modelStepsRef, lastEventRef, currentStepRef, eventLogRef, onExit })}
       defaultOpen={false}
       showBadge={false}
       showDots={false}
@@ -441,10 +654,15 @@ export function HardwareMockTour({ locale = 'zh', enabled, onExit }) {
           zIndex: 10000,
           width: 'min(380px, calc(100vw - 24px))',
           maxWidth: 'min(380px, calc(100vw - 24px))',
-          overflow: 'hidden',
+          maxHeight: 'min(520px, calc(100vh - 80px))',
+          overflowX: 'hidden',
+          overflowY: 'auto',
+          overscrollBehavior: 'contain',
           wordBreak: 'break-word',
-          borderRadius: 12,
-          padding: 12,
+          borderRadius: 14,
+          padding: 14,
+          background:
+            'linear-gradient(180deg, color-mix(in srgb, var(--ok-tour-bg) 96%, var(--ok-tour-text) 4%) 0%, var(--ok-tour-bg) 65%)',
           backgroundColor: 'var(--ok-tour-bg)',
           border: '1px solid var(--ok-tour-border)',
           boxShadow: 'var(--ok-tour-shadow)'
@@ -462,16 +680,24 @@ export function HardwareMockTour({ locale = 'zh', enabled, onExit }) {
         modelStepsRef={modelStepsRef}
         lastEventRef={lastEventRef}
         currentStepRef={currentStepRef}
+        eventLogRef={eventLogRef}
         onExit={onExit}
       />
     </PortalTourProvider>
   )
 }
 
-function HardwareMockTourEventBridge({ enabled, locale, dict, modelStepsRef, lastEventRef, currentStepRef, onExit }) {
-  const { setIsOpen, setCurrentStep, currentStep, isOpen, setSteps } = useTour()
-  const startedRef = useRef(false)
-  const sessionCommandRef = useRef(null)
+function HardwareMockTourEventBridge({
+  enabled,
+  locale,
+  dict,
+  modelStepsRef,
+  lastEventRef,
+  currentStepRef,
+  eventLogRef,
+  onExit
+}) {
+  const { setIsOpen, setCurrentStep, currentStep, setSteps } = useTour()
   const onExitRef = useRef(onExit)
 
   useEffect(() => {
@@ -487,11 +713,12 @@ function HardwareMockTourEventBridge({ enabled, locale, dict, modelStepsRef, las
   useEffect(() => {
     if (!enabled) {
       setIsOpen(false)
-      startedRef.current = false
-      sessionCommandRef.current = null
       lastEventRef.current = null
+      eventLogRef.current = []
       modelStepsRef.current = createWaitingModelSteps(locale)
-      setSteps(createReactourSteps({ locale, dict, modelStepsRef, lastEventRef, currentStepRef, onExit: onExitRef.current }))
+      setSteps(
+        createReactourSteps({ locale, dict, modelStepsRef, lastEventRef, currentStepRef, eventLogRef, onExit: onExitRef.current })
+      )
       currentStepRef.current = 0
       setCurrentStep(0)
     }
@@ -500,11 +727,12 @@ function HardwareMockTourEventBridge({ enabled, locale, dict, modelStepsRef, las
   useEffect(() => {
     if (!enabled) return
     // 开启导览时不弹出；仅初始化“等待开始”的步骤。真正开始由首次 command.sent 触发。
-    startedRef.current = false
-    sessionCommandRef.current = null
     lastEventRef.current = null
+    eventLogRef.current = []
     modelStepsRef.current = createWaitingModelSteps(locale)
-    setSteps(createReactourSteps({ locale, dict, modelStepsRef, lastEventRef, currentStepRef, onExit: onExitRef.current }))
+    setSteps(
+      createReactourSteps({ locale, dict, modelStepsRef, lastEventRef, currentStepRef, eventLogRef, onExit: onExitRef.current })
+    )
     currentStepRef.current = 0
     setCurrentStep(0)
     setIsOpen(false)
@@ -515,68 +743,60 @@ function HardwareMockTourEventBridge({ enabled, locale, dict, modelStepsRef, las
 
     function handleEvent(evt) {
       lastEventRef.current = evt
+      eventLogRef.current = [...(eventLogRef.current ?? []), evt].slice(-80)
       const steps = modelStepsRef.current ?? []
       const maxIndex = steps.length - 1
       const idx = clamp(currentStepRef.current, 0, maxIndex)
       const step = steps[idx]
-      // 当前步骤是“手动讲解步骤”（通过气泡里的“下一步”推进）时，不允许事件跳转以免直接跳过关键步骤。
-      if (step?.manual) return
-      if (step?.expect?.(evt)) {
-        const next = clamp(idx + 1, 0, maxIndex)
-        const nextStep = steps[next]
-        const tab = focusTabForSelector(nextStep?.selector)
-        if (tab) hardwareMockTourBus.emit('tour.focus', { tab, stepId: nextStep?.id ?? null })
-        currentStepRef.current = next
-        setCurrentStep(next)
-        return
-      }
+      if (!step) return
+      if (!isEventStep(step)) return
+      if (!safeExpect(step.expect, evt)) return
 
-      const matchedIndex = steps.findIndex((s) => s?.expect?.(evt))
-      if (matchedIndex >= 0) {
-        const next = clamp(matchedIndex + 1, 0, maxIndex)
-        const nextStep = steps[next]
-        const tab = focusTabForSelector(nextStep?.selector)
-        if (tab) hardwareMockTourBus.emit('tour.focus', { tab, stepId: nextStep?.id ?? null })
-        currentStepRef.current = next
-        setCurrentStep(next)
-      }
+      const rawNext = clamp(idx + 1, 0, maxIndex)
+      const next = rawNext
+      const nextStep = steps[next]
+      const tab = focusTabForSelector(nextStep?.selector)
+      if (tab) hardwareMockTourBus.emit('tour.focus', { tab, stepId: nextStep?.id ?? null })
+      emitStepChanged(steps, next)
+      currentStepRef.current = next
+      setCurrentStep(next)
     }
 
     const offCommandSent = hardwareMockTourBus.on('command.sent', (payload) => {
       const evt = { type: 'command.sent', ...payload }
-      const nextCommand = evt?.command ?? null
-
-      if (!startedRef.current || (sessionCommandRef.current && sessionCommandRef.current !== nextCommand)) {
-        startedRef.current = true
-        sessionCommandRef.current = nextCommand
-        modelStepsRef.current = createFlowSteps(locale, evt)
-        setSteps(createReactourSteps({ locale, dict, modelStepsRef, lastEventRef, currentStepRef, onExit: onExitRef.current }))
-        {
-          const first = modelStepsRef.current?.[0]
-          const tab = focusTabForSelector(first?.selector)
-          if (tab) hardwareMockTourBus.emit('tour.focus', { tab, stepId: first?.id ?? null })
-        }
-        lastEventRef.current = evt
-        currentStepRef.current = 0
-        setCurrentStep(0)
-        setIsOpen(true)
-        return
+      eventLogRef.current = [evt]
+      modelStepsRef.current = createFlowSteps(locale, evt)
+      setSteps(
+        createReactourSteps({ locale, dict, modelStepsRef, lastEventRef, currentStepRef, eventLogRef, onExit: onExitRef.current })
+      )
+      {
+        const first = modelStepsRef.current?.[0]
+        const tab = focusTabForSelector(first?.selector)
+        if (tab) hardwareMockTourBus.emit('tour.focus', { tab, stepId: first?.id ?? null })
+        emitStepChanged(modelStepsRef.current ?? [], 0)
       }
-
-      handleEvent(evt)
+      lastEventRef.current = evt
+      currentStepRef.current = 0
+      setCurrentStep(0)
+      setIsOpen(true)
     })
 
     const offResult = hardwareMockTourBus.on('command.result', (payload) => handleEvent({ type: 'command.result', ...payload }))
     const offConfirm = hardwareMockTourBus.on('ui.confirm', (payload) => handleEvent({ type: 'ui.confirm', ...payload }))
     const offUiShown = hardwareMockTourBus.on('ui.shown', (payload) => handleEvent({ type: 'ui.shown', ...payload }))
     const offPinSubmit = hardwareMockTourBus.on('ui.pin.submit', (payload) => handleEvent({ type: 'ui.pin.submit', ...payload }))
-
+    const offRefresh = hardwareMockTourBus.on('tour.refresh', () => {
+      setSteps(
+        createReactourSteps({ locale, dict, modelStepsRef, lastEventRef, currentStepRef, eventLogRef, onExit: onExitRef.current })
+      )
+    })
     return () => {
       offCommandSent()
       offResult()
       offConfirm()
       offUiShown()
       offPinSubmit()
+      offRefresh()
     }
   }, [currentStepRef, dict, enabled, lastEventRef, locale, modelStepsRef, setCurrentStep, setIsOpen, setSteps])
 

@@ -1,14 +1,5 @@
-import { delay, http, HttpResponse } from 'msw'
-
-function ok(data) {
-  return HttpResponse.json({ ok: true, data })
-}
-
-function badRequest(message, code = 'BAD_REQUEST') {
-  return HttpResponse.json(
-    { ok: false, error: { code, message } },
-    { status: 400 }
-  )
+function delay(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
 function createRequestId() {
@@ -81,12 +72,8 @@ function getAddrTypeFromPath(path, network) {
     if (parsed.purpose === 86) return 'Taproot'
     return 'Legacy'
   }
-  if (network === 'Ethereum') {
-    return 'BIP44 Standard'
-  }
-  if (network === 'Solana') {
-    return 'BIP44 Standard'
-  }
+  if (network === 'Ethereum') return 'BIP44 Standard'
+  if (network === 'Solana') return 'BIP44 Standard'
   return ''
 }
 
@@ -106,23 +93,6 @@ function fakeAddress({ network, path }) {
   return `bc1qmock${hash.toString(36).padStart(32, '0')}`.slice(0, 42)
 }
 
-function normalizeSignTxParams(params) {
-  const to =
-    typeof params?.to === 'string' && params.to.trim()
-      ? params.to.trim()
-      : 'bc1qmockreceiverxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'
-  const asset =
-    typeof params?.asset === 'string' && params.asset.trim() ? params.asset.trim() : 'BTC'
-  const amount =
-    typeof params?.amount === 'string' && params.amount.trim() ? params.amount.trim() : '0.001'
-
-  return {
-    asset,
-    to,
-    amount
-  }
-}
-
 function normalizeSignMessageParams(params) {
   const path = normalizePath(params?.path)
   const messageHex =
@@ -136,12 +106,10 @@ function normalizeSignMessageParams(params) {
   }
 }
 
-function buildPinUi({ requestId, triesLeft = null, error = null }) {
+function buildPinUi({ requestId }) {
   return {
     type: 'pin',
-    requestId,
-    triesLeft,
-    error
+    requestId
   }
 }
 
@@ -154,127 +122,148 @@ function buildConfirmUi({ requestId, action, details }) {
   }
 }
 
-const session = {
-  connected: false,
-  unlocked: false,
-  pinTriesLeft: 3,
-  randomPinMap: false,
-  pending: null
-}
+export function createMockHardwareServer() {
+  const session = {
+    connected: false,
+    unlocked: false,
+    randomPinMap: false,
+    pending: null,
+    deviceType: 'pro',
+    model: 'OneKey Pro',
+    deviceName: 'OneKey Pro'
+  }
 
-export const handlers = [
-  http.post(/\/__mock__\/device\/connect\/?$/, async () => {
+  async function connect() {
     await delay(450)
     session.connected = true
     session.unlocked = false
-    session.pinTriesLeft = 3
     session.pending = null
-    return ok({
+    return {
       deviceId: 'OK-EMULATOR-001',
-      model: 'OneKey Pro',
-      deviceName: 'OneKey Pro',
+      model: session.model,
+      deviceName: session.deviceName,
       bleName: 'ONEKEY-EMULATOR',
       firmware: '3.0.0-mock',
       transport: 'mock',
       unlocked: session.unlocked,
-      randomPinMap: session.randomPinMap
-    })
-  }),
+      randomPinMap: session.randomPinMap,
+      deviceType: session.deviceType
+    }
+  }
 
-  http.post(/\/__mock__\/device\/disconnect\/?$/, async () => {
+  async function disconnect() {
     await delay(200)
     session.connected = false
     session.unlocked = false
-    session.pinTriesLeft = 3
     session.pending = null
-    return ok({ disconnected: true })
-  }),
+    return { disconnected: true }
+  }
 
-  http.post(/\/__mock__\/device\/command\/?$/, async ({ request }) => {
-    const body = await request.json().catch(() => ({}))
-    const command = body?.command
-    const params = body?.params ?? {}
-
+  async function command(commandName, params) {
+    const command = commandName
     if (!command || typeof command !== 'string') {
-      return badRequest('command 不能为空')
+      throw new Error('command 不能为空')
     }
 
     if (!session.connected && command !== 'get_info' && command !== 'searchDevices') {
-      return badRequest('设备未连接，请先执行 connect。', 'NOT_CONNECTED')
+      throw new Error('设备未连接，请先执行 connect。')
     }
 
     const commandDelay =
-      command === 'btcSignMessage' || command === 'BTCsignMessage' || command === 'sign_tx' || command === 'confirm_action'
-        ? 900
-        : command === 'submit_pin'
-          ? 450
-          : 350
+      command === 'confirm_action'
+        ? 280
+        : command === 'btcSignMessage' || command === 'BTCsignMessage' || command === 'sign_tx'
+          ? 900
+          : command === 'submit_pin'
+            ? 450
+            : 350
     await delay(commandDelay)
 
     switch (command) {
+      case 'setDeviceModel': {
+        const deviceType = typeof params?.deviceType === 'string' ? params.deviceType : 'pro'
+        session.deviceType = deviceType === 'classic1s' ? 'classic1s' : 'pro'
+        session.model = session.deviceType === 'classic1s' ? 'OneKey Classic 1s' : 'OneKey Pro'
+        session.deviceName = session.model
+        session.connected = true
+        session.unlocked = false
+        session.pending = null
+        return {
+          deviceId: 'OK-EMULATOR-001',
+          model: session.model,
+          deviceName: session.deviceName,
+          firmware: '3.0.0-mock',
+          transport: 'mock',
+          unlocked: session.unlocked,
+          randomPinMap: session.randomPinMap,
+          deviceType: session.deviceType
+        }
+      }
+
       case 'searchDevices': {
         session.connected = true
-        return ok({
+        return {
           success: true,
           payload: [
             {
               connectId: 'mock-connect-001',
               uuid: 'mock-uuid-001',
-              deviceType: 'pro',
+              deviceType: session.deviceType,
               deviceId: 'OK-EMULATOR-001',
               path: 'mock-path',
               name: 'ONEKEY-EMULATOR'
             }
           ]
-        })
+        }
       }
 
       case 'getFeatures': {
         const connectId = typeof params?.connectId === 'string' ? params.connectId : null
-        if (!connectId) return badRequest('connectId 不能为空。', 'CONNECT_ID_EMPTY')
+        if (!connectId) throw new Error('connectId 不能为空。')
 
         session.connected = true
-        return ok({
+        return {
           success: true,
           payload: {
             device_id: 'OK-EMULATOR-001',
-            model: 'OneKey Pro',
-            deviceName: 'OneKey Pro',
+            model: session.model,
+            deviceName: session.deviceName,
             bleName: 'ONEKEY-EMULATOR',
             firmware: '3.0.0-mock',
             transport: 'mock',
             unlocked: session.unlocked,
-            randomPinMap: session.randomPinMap
+            randomPinMap: session.randomPinMap,
+            deviceType: session.deviceType
           }
-        })
+        }
       }
 
       case 'get_info':
-        return ok({
-          model: 'OneKey Pro',
-          deviceName: 'OneKey Pro',
+        return {
+          model: session.model,
+          deviceName: session.deviceName,
           bleName: 'ONEKEY-EMULATOR',
           firmware: '3.0.0-mock',
           features: ['mock', 'demo', 'deterministic'],
           unlocked: session.unlocked,
           randomPinMap: session.randomPinMap
-        })
+        }
 
       case 'deviceUnlock':
       case 'unlock_device': {
         if (session.unlocked) {
           session.pending = null
-          return ok({ success: true, payload: { unlocked: true }, unlocked: true })
+          return { success: true, payload: { unlocked: true }, unlocked: true }
         }
 
         if (session.pending?.type === 'deviceUnlock') {
           const { requestId, stage } = session.pending
-          if (stage === 'pin') return ok({ ui: buildPinUi({ requestId, triesLeft: session.pinTriesLeft }) })
+          if (stage === 'pin') return { unlocked: session.unlocked, ui: buildPinUi({ requestId }) }
         }
 
         const requestId = createRequestId()
         session.pending = { type: 'deviceUnlock', requestId, stage: 'pin' }
-        return ok({ ui: buildPinUi({ requestId, triesLeft: session.pinTriesLeft }) })
+        return { unlocked: session.unlocked, ui: buildPinUi({ requestId }) }
       }
 
       case 'btcGetAddress':
@@ -287,33 +276,23 @@ export const handlers = [
         const addrType = getAddrTypeFromPath(path, meta.network)
         const address = fakeAddress({ network: meta.network, path })
 
-        if (!showOnDevice) {
-          return ok({
-            success: true,
-            payload: {
-              path,
-              address
-            },
-            path,
-            address,
-            network: meta.network
-          })
-        }
-
         if (session.pending?.type === 'btcGetAddress') {
           const { requestId, stage } = session.pending
-          if (stage === 'pin') return ok({ ui: buildPinUi({ requestId, triesLeft: session.pinTriesLeft }) })
+          if (stage === 'pin') return { unlocked: session.unlocked, ui: buildPinUi({ requestId }) }
           if (stage === 'confirm') {
-            return ok({
+            return {
               unlocked: session.unlocked,
               ui: buildConfirmUi({
                 requestId,
                 action: 'btcGetAddress',
                 details: session.pending.details
               })
-            })
+            }
           }
         }
+
+        // Demo 规则：每次发送交互命令都从“未解锁（需要 PIN）”开始，避免受上一次解锁状态影响。
+        session.unlocked = false
 
         const requestId = createRequestId()
 
@@ -332,180 +311,194 @@ export const handlers = [
             type: 'btcGetAddress',
             requestId,
             stage: 'pin',
-            details
+            details,
+            showOnDevice
           }
-          return ok({ ui: buildPinUi({ requestId, triesLeft: session.pinTriesLeft }) })
+          return { unlocked: session.unlocked, ui: buildPinUi({ requestId }) }
+        }
+
+        if (!showOnDevice) {
+          session.pending = null
+          return {
+            success: true,
+            payload: {
+              path,
+              address
+            }
+          }
         }
 
         session.pending = {
           type: 'btcGetAddress',
           requestId,
           stage: 'confirm',
-          details
+          details,
+          showOnDevice
         }
-        return ok({
-          ui: buildConfirmUi({
-            requestId,
-            action: 'btcGetAddress',
-            details
-          })
-        })
+        return { ui: buildConfirmUi({ requestId, action: 'btcGetAddress', details }) }
       }
 
       case 'btcSignMessage':
       case 'BTCsignMessage':
       case 'sign_tx': {
-        const signPayload = command === 'sign_tx' ? normalizeSignTxParams(params) : normalizeSignMessageParams(params)
+        const signPayload = normalizeSignMessageParams(params)
 
         if (session.pending?.type === 'btcSignMessage') {
           const { requestId, stage } = session.pending
-          if (stage === 'pin') return ok({ ui: buildPinUi({ requestId, triesLeft: session.pinTriesLeft }) })
+          if (stage === 'pin') return { unlocked: session.unlocked, ui: buildPinUi({ requestId }) }
           if (stage === 'confirm') {
-            return ok({
+            return {
               ui: buildConfirmUi({ requestId, action: 'btcSignMessage', details: session.pending.payload })
-            })
+            }
           }
         }
+
+        // Demo 规则：每次发送交互命令都从“未解锁（需要 PIN）”开始，避免受上一次解锁状态影响。
+        session.unlocked = false
 
         const requestId = createRequestId()
 
         if (!session.unlocked) {
-          session.pending = { type: 'btcSignMessage', requestId, stage: 'pin', payload: signPayload }
-          return ok({ ui: buildPinUi({ requestId, triesLeft: session.pinTriesLeft }) })
+          session.pending = {
+            type: 'btcSignMessage',
+            requestId,
+            stage: 'pin',
+            payload: signPayload
+          }
+          return { unlocked: session.unlocked, ui: buildPinUi({ requestId }) }
         }
 
         session.pending = { type: 'btcSignMessage', requestId, stage: 'confirm', payload: signPayload }
-        return ok({ ui: buildConfirmUi({ requestId, action: 'btcSignMessage', details: signPayload }) })
+        return { ui: buildConfirmUi({ requestId, action: 'btcSignMessage', details: signPayload }) }
       }
 
       case 'submit_pin': {
         const requestId = typeof params?.requestId === 'string' ? params.requestId : null
         if (!session.pending || session.pending.stage !== 'pin') {
-          return badRequest('当前不需要输入 PIN。', 'NO_PIN_REQUEST')
+          throw new Error('当前不需要输入 PIN。')
         }
         if (requestId && requestId !== session.pending.requestId) {
-          return badRequest('PIN 请求已过期。', 'REQUEST_EXPIRED')
+          throw new Error('PIN 请求已过期。')
         }
 
-        const pin = typeof params?.pin === 'string' ? params.pin.trim() : ''
-        if (!pin) return badRequest('PIN 不能为空。', 'PIN_EMPTY')
+        const rawPin = typeof params?.pin === 'string' ? params.pin.trim() : ''
+        if (!rawPin) throw new Error('PIN 不能为空。')
 
-        if (pin !== '1111') {
-          session.pinTriesLeft = Math.max(0, session.pinTriesLeft - 1)
-          return ok({
-            unlocked: false,
-            ui: buildPinUi({
-              requestId: session.pending.requestId,
-              triesLeft: session.pinTriesLeft,
-              error: 'PIN_INVALID'
-            })
-          })
-        }
+        // Mock 规则：不校验 PIN 内容，只要“看起来像一次 PIN 提交”即可继续流程。
+        // - 设备输入模式会用特殊 token 代表“已在设备输入”
+        // - 软件输入模式直接传 4 位字符串
+        const isDevicePinToken = rawPin === '@@ONEKEY_INPUT_PIN_IN_DEVICE'
+        const isValidPin = isDevicePinToken || rawPin.length >= 4
+        if (!isValidPin) throw new Error('PIN 长度不足 4 位。')
 
         session.unlocked = true
 
         if (session.pending.type === 'deviceUnlock') {
           session.pending = null
-          return ok({ success: true, payload: { unlocked: session.unlocked }, unlocked: session.unlocked })
+          return { success: true, payload: { unlocked: session.unlocked }, unlocked: session.unlocked }
         }
 
         if (session.pending.type === 'btcGetAddress') {
-          session.pending = { ...session.pending, stage: 'confirm' }
-          return ok({
-            unlocked: session.unlocked,
-            ui: buildConfirmUi({
-              requestId: session.pending.requestId,
-              action: 'btcGetAddress',
-              details: session.pending.details
+          if (session.pending.showOnDevice === false) {
+            const details = session.pending.details
+            session.pending = null
+            return okResult({
+              success: true,
+              payload: { address: details.address, path: details.path }
             })
-          })
+          }
+          session.pending = { ...session.pending, stage: 'confirm' }
+          return {
+            unlocked: session.unlocked,
+            ui: buildConfirmUi({ requestId: session.pending.requestId, action: 'btcGetAddress', details: session.pending.details })
+          }
         }
 
         if (session.pending.type === 'btcSignMessage') {
           session.pending = { ...session.pending, stage: 'confirm' }
-          return ok({
+          return {
             unlocked: session.unlocked,
-            ui: buildConfirmUi({
-              requestId: session.pending.requestId,
-              action: 'btcSignMessage',
-              details: session.pending.payload
-            })
-          })
+            ui: buildConfirmUi({ requestId: session.pending.requestId, action: 'btcSignMessage', details: session.pending.payload })
+          }
         }
 
         session.pending = null
-        return ok({
+        return {
           unlocked: session.unlocked
-        })
+        }
       }
 
       case 'confirm_action': {
         const requestId = typeof params?.requestId === 'string' ? params.requestId : null
         if (!session.pending || session.pending.stage !== 'confirm') {
-          return badRequest('当前没有需要确认的操作。', 'NO_CONFIRM_REQUEST')
+          throw new Error('当前没有需要确认的操作。')
         }
         if (requestId && requestId !== session.pending.requestId) {
-          return badRequest('确认请求已过期。', 'REQUEST_EXPIRED')
+          throw new Error('确认请求已过期。')
         }
 
         const approved = Boolean(params?.approved)
         const pending = session.pending
-
         session.pending = null
 
         if (!approved) {
-          return badRequest('用户拒绝确认（Mock）。', 'USER_REJECTED')
+          throw new Error('用户拒绝确认（Mock）。')
         }
 
         if (pending.type === 'btcGetAddress') {
-          return ok({
+          return {
             success: true,
             payload: {
               address: pending.details.address,
               path: pending.details.path
             },
-            unlocked: session.unlocked,
-            ...pending.details,
-            path: pending.details.path,
-            address: pending.details.address,
-            network: pending.details.network
-          })
+            unlocked: session.unlocked
+          }
         }
 
         if (pending.type === 'btcSignMessage') {
-          return ok({
+          return {
             success: true,
             payload: {
               address: fakeAddress({ network: 'Bitcoin', path: pending.payload?.path }),
               signature: 'ZGVhZGJlZWY='
             },
-            signature: 'ZGVhZGJlZWY=',
-            messageHex: pending.payload?.messageHex ?? ''
-          })
+            unlocked: session.unlocked
+          }
         }
 
-        const tx = pending.tx ?? {}
-        return ok({
+        return {
           signature: '0xdeadbeefmock',
           txid: '0xmocktxid',
-          signed: { ...tx }
-        })
+          signed: {}
+        }
       }
 
       case 'cancel_action': {
         const requestId = typeof params?.requestId === 'string' ? params.requestId : null
         if (!session.pending) {
-          return ok({ cancelled: true })
+          return { cancelled: true }
         }
         if (requestId && requestId !== session.pending.requestId) {
-          return badRequest('操作已过期。', 'REQUEST_EXPIRED')
+          throw new Error('操作已过期。')
         }
         session.pending = null
-        return ok({ cancelled: true })
+        return { cancelled: true }
       }
 
       default:
-        return badRequest(`未知命令：${command}`, 'UNKNOWN_COMMAND')
+        throw new Error(`未知命令：${command}`)
     }
-  })
-]
+  }
+
+  // 用于保持与旧实现一致的返回结构（不强制，但更易读）
+  function okResult(data) {
+    return data
+  }
+
+  return {
+    connect,
+    disconnect,
+    command
+  }
+}

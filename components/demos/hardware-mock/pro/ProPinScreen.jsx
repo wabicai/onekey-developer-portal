@@ -27,14 +27,6 @@ function seededShuffle(items, seed) {
   return arr
 }
 
-function resolvePinSubtitle(i18n, ui) {
-  if (ui?.error !== 'PIN_INVALID') return ''
-  const triesLeft = typeof ui?.triesLeft === 'number' ? ui.triesLeft : null
-  if (triesLeft === 1) return i18n.pinIncorrectLastAttempt
-  if (triesLeft && triesLeft > 1) return i18n.pinIncorrectTriesLeft(triesLeft)
-  return ''
-}
-
 export function ProPinScreen({
   basePath,
   locale,
@@ -51,17 +43,12 @@ export function ProPinScreen({
     setValue('')
   }, [ui?.requestId])
 
-  useEffect(() => {
-    if (ui?.error === 'PIN_INVALID') setValue('')
-  }, [ui?.error, ui?.triesLeft])
-
   const numbers = useMemo(() => {
     const nums = Array.from({ length: 10 }, (_, i) => i)
     if (!randomPinMap) return nums
     return seededShuffle(nums, String(ui?.requestId ?? 'pin'))
   }, [randomPinMap, ui?.requestId])
 
-  const subtitle = useMemo(() => (value ? '' : resolvePinSubtitle(i18n, ui)), [i18n, ui, value])
   const canSubmit = value.length >= 4 && !disabled
 
   const keyLayout = useMemo(
@@ -101,7 +88,7 @@ export function ProPinScreen({
     }
     if (typeof key === 'number') {
       setValue((prev) => {
-        if (prev.length >= 50) return prev
+        if (prev.length >= 4) return prev
         return `${prev}${key}`
       })
     }
@@ -138,29 +125,10 @@ export function ProPinScreen({
           {i18n.enterPin}
         </div>
 
-        {subtitle ? (
-          <div
-            className="absolute left-1/2 -translate-x-1/2"
-            style={{
-              top: 150,
-              maxWidth: 368,
-              padding: '16px 8px',
-              borderRadius: 40,
-              background: PRO_COLORS.ONEKEY_RED_2,
-              color: PRO_COLORS.WHITE,
-              fontSize: 26,
-              lineHeight: '32px',
-              textAlign: 'center'
-            }}
-          >
-            {subtitle}
-          </div>
-        ) : null}
-
         <div
           className="absolute left-1/2 -translate-x-1/2"
           style={{
-            top: subtitle && value ? 230 : 188,
+            top: 188,
             maxWidth: 432,
             fontSize: 48,
             fontWeight: 600,

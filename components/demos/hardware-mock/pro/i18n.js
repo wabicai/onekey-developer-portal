@@ -4,8 +4,6 @@ const PRO_I18N_ZH = {
   lockTapToUnlock: '轻触屏幕以解锁',
 
   enterPin: '输入 PIN',
-  pinIncorrectTriesLeft: (triesLeft) => `PIN 错误，剩余 ${triesLeft} 次尝试机会`,
-  pinIncorrectLastAttempt: 'PIN 不正确，仅剩一次尝试机会',
 
   cancel: '取消',
   confirm: '确认',
@@ -24,8 +22,6 @@ const PRO_I18N_EN = {
   lockTapToUnlock: 'Tap to unlock',
 
   enterPin: 'Enter PIN',
-  pinIncorrectTriesLeft: (triesLeft) => `Incorrect PIN, ${triesLeft} attempts left`,
-  pinIncorrectLastAttempt: 'Incorrect PIN, this is your last attempt',
 
   cancel: 'Cancel',
   confirm: 'Confirm',

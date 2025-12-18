@@ -1,21 +1,21 @@
 'use client'
 
 import { useLayoutEffect, useMemo, useRef, useState } from 'react'
-import { PRO_SCREEN } from './constants'
+import { CLASSIC1S_DEVICE } from './classic1sConstants'
 
 function getScaleForWidth(width) {
   if (!Number.isFinite(width) || width <= 0) return 1
-  return Math.min(1, width / PRO_SCREEN.width)
+  return Math.min(1, width / CLASSIC1S_DEVICE.width)
 }
 
-export function ProDeviceViewport({ children, maxWidth = 280 }) {
+export function Classic1sDeviceViewport({ children, maxWidth = 340 }) {
   const wrapRef = useRef(null)
   const [scale, setScale] = useState(1)
   const [measured, setMeasured] = useState(false)
 
   const wrapStyle = useMemo(
     () => ({
-      aspectRatio: `${PRO_SCREEN.width} / ${PRO_SCREEN.height}`,
+      aspectRatio: `${CLASSIC1S_DEVICE.width} / ${CLASSIC1S_DEVICE.height}`,
       maxWidth
     }),
     [maxWidth]
@@ -49,10 +49,10 @@ export function ProDeviceViewport({ children, maxWidth = 280 }) {
   return (
     <div className="relative mx-auto w-full" style={wrapStyle} ref={wrapRef}>
       <div
-        className="absolute left-0 top-0 overflow-hidden bg-black ring-1 ring-black/10"
+        className="absolute left-0 top-0"
         style={{
-          width: PRO_SCREEN.width,
-          height: PRO_SCREEN.height,
+          width: CLASSIC1S_DEVICE.width,
+          height: CLASSIC1S_DEVICE.height,
           transform: `scale(${scale})`,
           transformOrigin: 'top left',
           opacity: measured ? 1 : 0,

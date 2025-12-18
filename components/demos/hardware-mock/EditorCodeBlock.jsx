@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
-import { oneDark, vs } from 'react-syntax-highlighter/dist/esm/styles/prism'
+import { oneDark, oneLight } from 'react-syntax-highlighter/dist/esm/styles/prism'
 
 function useIsDarkMode() {
   const [isDark, setIsDark] = useState(false)
@@ -35,20 +35,29 @@ export function EditorCodeBlock({
   activeLine,
   breakpoints,
   showBreakpoints = false,
-  maxHeight = 560,
+  maxHeight,
   dataTour,
-  filename
+  filename,
+  cursor = 'text',
+  className,
+  scrollClassName
 }) {
   const isDark = useIsDarkMode()
   const bp = useMemo(() => normalizeLineSet(breakpoints), [breakpoints])
   const active = Number.isFinite(Number(activeLine)) ? Number(activeLine) : null
+  const scrollStyle = maxHeight !== undefined && maxHeight !== null ? { maxHeight } : undefined
 
   return (
     <div
       data-tour={dataTour}
-      className="overflow-hidden rounded-lg border border-zinc-200 bg-white shadow-sm dark:border-[#3a3f4b] dark:bg-[#1e1e1e]"
+      className={[
+        'flex min-h-0 flex-col overflow-hidden rounded-xl',
+        className
+      ]
+        .filter(Boolean)
+        .join(' ')}
     >
-      <div className="flex items-center gap-2 border-b border-zinc-200 bg-zinc-50 px-3 py-2 text-xs text-zinc-700 dark:border-[#2c313c] dark:bg-[#21252b] dark:text-[#d7dae0]">
+      <div className="flex items-center gap-2 bg-zinc-50/70 px-3 py-2 text-xs text-zinc-700 backdrop-blur dark:bg-[#21252b]/80 dark:text-[#d7dae0]">
         <span className="inline-flex items-center rounded bg-zinc-200 px-1.5 py-0.5 font-mono text-[10px] text-zinc-700 dark:bg-[#2c313c] dark:text-[#9da5b4]">
           {language === 'json' ? 'JSON' : 'TS'}
         </span>
@@ -57,20 +66,31 @@ export function EditorCodeBlock({
         </span>
       </div>
 
-      <div className="overflow-auto" style={{ maxHeight }}>
+      <div
+        className={['min-h-0 flex-1 overflow-auto', scrollClassName].filter(Boolean).join(' ')}
+        style={scrollStyle}
+      >
         <SyntaxHighlighter
           language={language}
-          style={isDark ? oneDark : vs}
+          style={isDark ? oneDark : oneLight}
           showLineNumbers
           wrapLines
           customStyle={{
+            height: '100%',
             margin: 0,
             padding: '12px 0',
-            // One Dark Pro-ish background
-            background: isDark ? '#282c34' : '#ffffff',
-            fontSize: 13,
-            lineHeight: 1.6,
-            fontFamily: 'var(--font-mono)'
+            background: isDark ? '#282c34' : '#f8fafc',
+            fontSize: 13.5,
+            lineHeight: 1.65,
+            fontFamily: 'var(--font-mono)',
+            fontWeight: 500,
+            cursor
+          }}
+          codeTagProps={{
+            style: {
+              fontFamily: 'var(--font-mono)',
+              fontWeight: 500
+            }
           }}
           lineNumberStyle={(lineNumber) => {
             const isBp = bp.has(lineNumber)
@@ -82,7 +102,7 @@ export function EditorCodeBlock({
               textAlign: 'right',
               userSelect: 'none',
               opacity: 0.85,
-              color: isDark ? '#7f848e' : '#6b7280',
+              color: isDark ? '#7f848e' : '#475569',
               ...(showBreakpoints && isBp
                 ? {
                     backgroundImage: `radial-gradient(circle, ${isDark ? '#ff5f56' : '#dc2626'} 48%, transparent 49%)`,
@@ -104,11 +124,11 @@ export function EditorCodeBlock({
                 background: isActive
                   ? isDark
                     ? '#2c313c'
-                    : 'rgba(0, 184, 18, 0.08)'
+                    : 'rgba(0, 184, 18, 0.10)'
                   : showBreakpoints && isBp
                     ? isDark
                       ? 'rgba(239, 68, 68, 0.06)'
-                      : 'rgba(239, 68, 68, 0.05)'
+                      : 'rgba(239, 68, 68, 0.06)'
                     : 'transparent'
               }
             }
