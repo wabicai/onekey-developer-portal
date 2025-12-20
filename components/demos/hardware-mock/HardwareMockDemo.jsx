@@ -54,6 +54,25 @@ const I18N = {
       noResult: '暂无结果。发送命令后这里会展示返回值。',
       showRawLogs: '查看完整日志',
       noPayload: '无返回数据。'
+    },
+    tour: {
+      idleTitle: '导览提示',
+      idlePrimary: '点击「导览」并发送第一个命令，体验交互流程。',
+      idleSecondary: '也可以先预览右侧的示例与回调模板。',
+      actionTitle: '操作指引',
+      reviewTitle: '结果预览',
+      sendPrimary: '选择命令/参数后点击「发送命令」。',
+      sendSecondary: '结果会在右侧 Result 面板出现。',
+      pinPrimary: '在设备或弹窗输入任意 4 位 PIN。',
+      pinSecondary: '提交后导览会自动推进。',
+      confirmPrimary: '在设备上确认交互。',
+      confirmSecondary: '等待结果自动返回。',
+      waitResultPrimary: '等待结果自动呈现。',
+      waitResultSecondary: '可在 Result 面板中查看 payload。',
+      resultPrimary: '结果已准备好，从右侧阅读 payload。',
+      resultSecondary: '若需要，切换到 Callbacks 查阅 UI_EVENT。',
+      callbackPrimary: '回调模板在右侧，复盘 UI_EVENT。',
+      callbackSecondary: '参考 `REQUEST_*` 事件处理流程。'
     }
   },
   en: {
@@ -97,6 +116,25 @@ const I18N = {
       noResult: 'No result yet. Send a command to see output.',
       showRawLogs: 'Show raw logs',
       noPayload: 'No payload.'
+    },
+    tour: {
+      idleTitle: 'Tour hint',
+      idlePrimary: 'Enable the tour and send your first command to start the flow.',
+      idleSecondary: 'Or skim the example and callbacks on the right to preview the SDK.',
+      actionTitle: 'Action hint',
+      reviewTitle: 'Review hint',
+      sendPrimary: 'Select command/params and tap “Send”.',
+      sendSecondary: 'Result shows up in the Result panel on the right.',
+      pinPrimary: 'Enter any 4-digit PIN on the device (or dialog).',
+      pinSecondary: 'Submitting advances the tour automatically.',
+      confirmPrimary: 'Confirm the interaction on the device.',
+      confirmSecondary: 'Wait for the result to appear in the Result tab.',
+      waitResultPrimary: 'Waiting for the result to arrive.',
+      waitResultSecondary: 'Result output appears on the right.',
+      resultPrimary: 'Payload is ready—review it on the right.',
+      resultSecondary: 'Switch to Callbacks if you need UI_EVENT guidance.',
+      callbackPrimary: 'Callback template lives on the right.',
+      callbackSecondary: 'Handle the REQUEST_* events based on UI hints.'
     }
   }
 }
@@ -152,6 +190,132 @@ function getLevelStyle(level) {
     default:
       return 'text-zinc-600 dark:text-zinc-400'
   }
+}
+
+const TOUR_HINT_ACCENTS = {
+  action: '#00B812',
+  review: '#2563eb',
+  idle: '#64748b'
+}
+
+function buildTourHintPayload({ locale, dict, stepId, tourEnabled, tourStarted }) {
+  const isEn = locale === 'en'
+  const tourDict = dict?.tour ?? {}
+  const safeString = (key, fallback) => (tourDict[key] ?? fallback)
+
+  const defaultActionTitle = isEn ? 'Action hint' : '操作指引'
+  const defaultReviewTitle = isEn ? 'Review hint' : '结果预览'
+  const defaultSendPrimary = isEn ? 'Select command/params and tap “Send”.' : '选择命令/参数后点击「发送命令」。'
+  const defaultSendSecondary = isEn ? 'Result shows up in the Result panel on the right.' : '结果会在右侧 Result 面板出现。'
+  const defaultIdlePrimary = isEn ? 'Enable the tour and send your first command to start the flow.' : '点击「导览」并发送第一个命令，体验交互流程。'
+  const defaultIdleSecondary = isEn ? 'Or skim the example and callbacks on the right to preview the SDK.' : '也可以先预览右侧的示例与回调模板。'
+
+  if (!tourEnabled || !tourStarted) {
+    return {
+      type: 'idle',
+      accent: TOUR_HINT_ACCENTS.idle,
+      title: safeString('idleTitle', isEn ? 'Tour hint' : '导览提示'),
+      primary: safeString('idlePrimary', defaultIdlePrimary),
+      secondary: safeString('idleSecondary', defaultIdleSecondary)
+    }
+  }
+
+  const actionBase = {
+    type: 'action',
+    accent: TOUR_HINT_ACCENTS.action,
+    title: safeString('actionTitle', defaultActionTitle),
+    primary: safeString('sendPrimary', defaultSendPrimary),
+    secondary: safeString('sendSecondary', defaultSendSecondary)
+  }
+  const reviewBase = {
+    type: 'review',
+    accent: TOUR_HINT_ACCENTS.review,
+    title: safeString('reviewTitle', defaultReviewTitle)
+  }
+
+  switch (stepId) {
+    case 'waiting-start':
+    case 'example-code':
+      return actionBase
+    case 'pin-matrix-and-modal':
+    case 'pin':
+      return {
+        ...actionBase,
+        primary: safeString('pinPrimary', isEn ? 'Enter any 4-digit PIN on the device (or dialog).' : '在设备或弹窗输入任意 4 位 PIN。'),
+        secondary: safeString('pinSecondary', isEn ? 'Submitting advances the tour automatically.' : '提交后导览会自动推进。')
+      }
+    case 'callback-request-button':
+    case 'confirm':
+      return {
+        ...actionBase,
+        primary: safeString('confirmPrimary', isEn ? 'Confirm the interaction on the device.' : '在设备上确认交互。'),
+        secondary: safeString('confirmSecondary', isEn ? 'Wait for the result to appear in the Result tab.' : '等待结果自动返回。')
+      }
+    case 'wait-result':
+      return {
+        ...reviewBase,
+        primary: safeString('waitResultPrimary', isEn ? 'Waiting for the result to arrive.' : '等待结果自动呈现。'),
+        secondary: safeString('waitResultSecondary', isEn ? 'Result output appears on the right.' : '可在 Result 面板中查看 payload。')
+      }
+    case 'result':
+      return {
+        ...reviewBase,
+        primary: safeString('resultPrimary', isEn ? 'Payload is ready—review it on the right.' : '结果已准备好，从右侧阅读 payload。'),
+        secondary: safeString('resultSecondary', isEn ? 'Switch to Callbacks if you need UI_EVENT guidance.' : '若需要，切换到 Callbacks 查阅 UI_EVENT。')
+      }
+    case 'callback-code':
+      return {
+        ...reviewBase,
+        primary: safeString('callbackPrimary', isEn ? 'Callback template lives on the right.' : '回调模板在右侧，复盘 UI_EVENT。'),
+        secondary: safeString('callbackSecondary', isEn ? 'Handle the REQUEST_* events based on UI hints.' : '参考 `REQUEST_*` 事件处理流程。')
+      }
+    default:
+      return actionBase
+  }
+}
+
+function TourHintCard({ hint, locale }) {
+  const accent = hint?.accent ?? TOUR_HINT_ACCENTS.action
+  const title = hint?.title ?? (locale === 'en' ? 'Tour hint' : '导览提示')
+  const typeLabel =
+    locale === 'en'
+      ? hint?.type === 'review'
+        ? 'Review'
+        : 'Action'
+      : hint?.type === 'review'
+        ? '结果'
+        : '操作'
+
+  return (
+    <div
+      className="relative overflow-hidden rounded-2xl border border-zinc-200/80 bg-white/90 px-4 py-3 text-sm text-zinc-900 shadow-sm transition-transform duration-150 hover:-translate-y-[1px] dark:border-zinc-800/60 dark:bg-zinc-950/40 dark:text-zinc-100"
+      style={{ borderColor: accent }}
+    >
+      <span
+        aria-hidden="true"
+        className="pointer-events-none absolute -left-2 top-1/2 hidden h-4 w-4 -translate-y-1/2 rotate-45 border-l-2 border-t-2 lg:block animate-pulse"
+        style={{ borderColor: accent }}
+      />
+
+      <div className="flex items-center justify-between gap-2">
+        <div className="text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">{title}</div>
+        <span
+          className="rounded-full px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wider"
+          style={{
+            backgroundColor: `color-mix(in srgb, ${accent} 40%, #fff 60%)`,
+            color: accent
+          }}
+        >
+          {typeLabel}
+        </span>
+      </div>
+
+      <p className="mt-2 text-sm font-semibold text-zinc-900 dark:text-zinc-100">{hint?.primary ?? ''}</p>
+      {hint?.secondary ? (
+        <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-300">{hint.secondary}</p>
+      ) : null}
+    </div>
+  )
 }
 
 function buildExampleCode({ locale, command, btcPath, addressShowOnOneKey, messageHex }) {
@@ -280,6 +444,9 @@ export function HardwareMockDemo({ locale = 'zh' }) {
   const [editorFocus, setEditorFocus] = useState({ tab: 'example', activeLine: null })
   const currentTourStepIdRef = useRef(null)
   const preferredCallbackLineRef = useRef(null)
+  const [tourHint, setTourHint] = useState(() =>
+    buildTourHintPayload({ locale, dict, stepId: null, tourEnabled, tourStarted })
+  )
 
   const logs = state.context.logs
   const ui = state.context.ui
@@ -423,6 +590,18 @@ export function HardwareMockDemo({ locale = 'zh' }) {
       setCurrentTourStepId(null)
     }
   }, [tourStarted])
+
+  useEffect(() => {
+    setTourHint(
+      buildTourHintPayload({
+        locale,
+        dict,
+        stepId: currentTourStepId,
+        tourEnabled,
+        tourStarted
+      })
+    )
+  }, [locale, dict, currentTourStepId, tourEnabled, tourStarted])
 
   const callbackCode = useMemo(() => {
     const isEn = locale === 'en'
@@ -990,290 +1169,295 @@ ${extraHint}`
         )}
 
         <div className="mt-2 rounded-2xl bg-zinc-50/60 p-4 dark:bg-zinc-900/30">
-          <div className="grid min-h-0 gap-6 lg:grid-cols-[minmax(300px,380px)_minmax(0,1fr)] lg:items-stretch">
-            <div className="flex h-full min-h-0 flex-col">
-            <div className="pb-6">
-              <div className="flex flex-wrap items-center gap-2">
-                <div className="text-sm font-medium text-zinc-900 dark:text-zinc-100">{dict.labels.deviceScreen}</div>
-                <div
-                  className={[
-                    'inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ring-1',
-                    statusBadgeClass
-                  ].join(' ')}
-                >
-                  <span className={['h-2 w-2 rounded-full', statusDotClass].join(' ')} />
-                  <span className="whitespace-nowrap">{statusText}</span>
-                </div>
-                <div className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium text-zinc-600 ring-1 ring-zinc-200/80 dark:text-zinc-200 dark:ring-zinc-800/70">
-                  <Info size={14} strokeWidth={2} className="text-zinc-400 dark:text-zinc-500" />
-                  <span className="whitespace-nowrap">{dict.labels.pinNote}</span>
-                </div>
+          <div className="grid min-h-0 gap-6 lg:grid-cols-[minmax(320px,480px)_minmax(0,1fr)] lg:items-stretch">
+            <div className="flex min-h-0 flex-col gap-4 lg:flex-row lg:gap-5">
+              <div className="flex-1 min-w-0">
+                <div className="pb-6">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <div className="text-sm font-medium text-zinc-900 dark:text-zinc-100">{dict.labels.deviceScreen}</div>
+                    <div
+                      className={[
+                        'inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ring-1',
+                        statusBadgeClass
+                      ].join(' ')}
+                    >
+                      <span className={['h-2 w-2 rounded-full', statusDotClass].join(' ')} />
+                      <span className="whitespace-nowrap">{statusText}</span>
+                    </div>
+                    <div className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium text-zinc-600 ring-1 ring-zinc-200/80 dark:text-zinc-200 dark:ring-zinc-800/70">
+                      <Info size={14} strokeWidth={2} className="text-zinc-400 dark:text-zinc-500" />
+                      <span className="whitespace-nowrap">{dict.labels.pinNote}</span>
+                    </div>
 
-                <a
-                  href="https://hardware-example.onekey.so/#/emulator"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-zinc-200/70 bg-white/90 px-2.5 text-xs font-semibold text-zinc-800 shadow-sm transition-all hover:-translate-y-[1px] hover:border-zinc-300 hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00B812]/30 dark:border-zinc-800 dark:bg-zinc-900/60 dark:text-zinc-100 dark:hover:border-zinc-700"
-                >
-                  {dict.labels.openEmulator}
-                  <ExternalLink size={14} strokeWidth={1.8} />
-                </a>
+                    <a
+                      href="https://hardware-example.onekey.so/#/emulator"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-zinc-200/70 bg-white/90 px-2.5 text-xs font-semibold text-zinc-800 shadow-sm transition-all hover:-translate-y-[1px] hover:border-zinc-300 hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00B812]/30 dark:border-zinc-800 dark:bg-zinc-900/60 dark:text-zinc-100 dark:hover:border-zinc-700"
+                    >
+                      {dict.labels.openEmulator}
+                      <ExternalLink size={14} strokeWidth={1.8} />
+                    </a>
 
-                <div className="relative">
-                  <select
-                    value={deviceTypeControl}
-                    onChange={(e) => {
-                      const next = e.target.value === 'classic1s' ? 'classic1s' : 'pro'
-                      setDeviceTypeControl(next)
-                      send({ type: 'SEND', command: 'setDeviceModel', params: { deviceType: next } })
-                    }}
-                    disabled={!mockReady || isBusy || isAwaitingUi || tourStarted}
-                    className="h-9 appearance-none rounded-lg border border-zinc-200/70 bg-white/80 pl-3 pr-9 text-sm font-medium text-zinc-900 shadow-sm transition-all hover:border-zinc-300 hover:bg-white focus:border-[#00B812]/50 focus:ring-2 focus:ring-[#00B812]/25 disabled:cursor-not-allowed disabled:opacity-60 dark:border-zinc-800 dark:bg-zinc-900/50 dark:text-zinc-100 dark:hover:border-zinc-700"
-                    aria-label={locale === 'en' ? 'Device model' : '设备型号'}
-                  >
-                    <option value="pro">OneKey Pro</option>
-                    <option value="classic1s">OneKey Classic 1s</option>
-                  </select>
-                  <ChevronDown
-                    className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400 dark:text-zinc-500"
-                    aria-hidden="true"
-                  />
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    const next = !tourEnabledRef.current
-                    tourEnabledRef.current = next
-                    setTourEnabled(next)
-                  }}
-                  className={[
-                    'inline-flex h-9 items-center gap-2 rounded-lg border px-2.5 text-sm font-semibold transition-all shadow-sm',
-                    tourEnabled
-                      ? 'border-[#00B812]/60 bg-[#00B812]/10 text-[#0a7024] hover:bg-[#00B812]/15 dark:border-[#00B812]/50 dark:bg-[#00B812]/20 dark:text-[#a4ffba]'
-                      : 'border-zinc-200/70 bg-white/80 text-zinc-900 hover:border-zinc-300 hover:bg-white dark:border-zinc-800 dark:bg-zinc-900/50 dark:text-zinc-100 dark:hover:border-zinc-700'
-                  ].join(' ')}
-                  aria-pressed={tourEnabled}
-                >
-                  <span
-                    className={[
-                      'h-2.5 w-2.5 rounded-full',
-                      tourEnabled ? 'bg-[#00B812] shadow-[0_0_0_4px_rgba(0,184,18,0.16)]' : 'bg-zinc-400'
-                    ].join(' ')}
-                  />
-                  <span>{locale === 'en' ? 'Tour' : '导览'}</span>
-                </button>
-              </div>
-
-              <div ref={deviceRef} className="mt-3 flex justify-center" data-tour="device-screen">
-                {deviceType === 'classic1s' ? (
-	                  <Classic1sDeviceScreen
-	                    locale={locale}
-	                    busy={isBusy}
-	                    device={state.context.device}
-	                    ui={ui}
-	                    pinEntryOnDevice={classicPinEntryOnDevice}
-	                    pinMatrix={classicPinMatrix}
-	                    allowPinInput={allowPinInteraction}
-	                    allowConfirmInput={allowConfirmInteraction}
-	                    onSubmitPin={(pinValue) => {
-	                      if (!allowPinInteraction) return
-	                      if (tourEnabled && tourStarted) {
-	                        hardwareMockTourBus.emit('ui.pin.submit', { pinLength: String(pinValue ?? '').length })
-	                      } else {
-	                        setRightTab('callback')
-	                        setEditorFocus((prev) => ({
-                          ...prev,
-                          tab: 'callback',
-                          activeLine: editorMarks.callback.callbackReceivePin ?? null
-                        }))
-                      }
-	                      send({ type: 'SUBMIT_PIN', pin: pinValue })
-	                    }}
-	                    onConfirm={() => {
-	                      if (!allowConfirmInteraction) return
-	                      if (tourEnabled && tourStarted) {
-	                        hardwareMockTourBus.emit('ui.confirm', { action: ui?.action ?? null, approved: true })
-	                      } else if (ui?.action === 'btcGetAddress') {
-	                        setRightTab('callback')
-	                        setEditorFocus((prev) => ({ ...prev, tab: 'callback', activeLine: editorMarks.callback.callbackOn ?? null }))
-                      }
-	                      send({ type: 'CONFIRM', approved: true })
-	                    }}
-	                    onReject={() => {
-	                      if (!allowConfirmInteraction) return
-	                      if (tourEnabled) {
-	                        hardwareMockTourBus.emit('ui.confirm', { action: ui?.action ?? null, approved: false })
-	                      }
-	                      send({ type: 'CONFIRM', approved: false })
-	                    }}
-	                    onTapToUnlock={() => {
-	                      if (tourGuided) return
-	                      if (!mockReady || isBusy || isAwaitingUi) return
-	                      pinOriginRef.current = 'manual'
-	                      setClassicPinModalOpen(false)
-	                      setClassicPinEntryOnDevice(true)
-	                      setClassicPinValue('')
-                      if (tourEnabled) {
-                        hardwareMockTourBus.emit('ui.unlock.tap', {})
-                      }
-                      send({ type: 'SEND', command: 'deviceUnlock', params: { connectId: state.context.device?.connectId ?? null } })
-                    }}
-                  />
-                ) : (
-	                  <ProDeviceScreen
-	                    basePath={basePath}
-	                    locale={locale}
-	                    busy={isBusy}
-	                    device={state.context.device}
-	                    ui={ui}
-	                    allowPinInput={allowPinInteraction}
-	                    allowConfirmInput={allowConfirmInteraction}
-	                    onSubmitPin={(pinValue) => {
-	                      if (!allowPinInteraction) return
-	                      if (tourEnabled && tourStarted) {
-	                        hardwareMockTourBus.emit('ui.pin.submit', { pinLength: String(pinValue ?? '').length })
-	                      } else {
-	                        setRightTab('callback')
-	                        setEditorFocus((prev) => ({
-                          ...prev,
-                          tab: 'callback',
-                          activeLine: editorMarks.callback.callbackReceivePin ?? null
-                        }))
-	                      }
-	                      send({ type: 'SUBMIT_PIN', pin: pinValue })
-	                    }}
-	                    onConfirm={() => {
-	                      if (!allowConfirmInteraction) return
-	                      if (tourEnabled && tourStarted) {
-	                        hardwareMockTourBus.emit('ui.confirm', { action: ui?.action ?? null, approved: true })
-	                      } else if (ui?.action === 'btcGetAddress') {
-	                        setRightTab('callback')
-	                        setEditorFocus((prev) => ({ ...prev, tab: 'callback', activeLine: editorMarks.callback.callbackOn ?? null }))
-	                      }
-	                      send({ type: 'CONFIRM', approved: true })
-	                    }}
-	                    onReject={() => {
-	                      if (!allowConfirmInteraction) return
-	                      if (tourEnabled) {
-	                        hardwareMockTourBus.emit('ui.confirm', { action: ui?.action ?? null, approved: false })
-	                      }
-	                      send({ type: 'CONFIRM', approved: false })
-	                    }}
-	                    onCancel={() => send({ type: 'CANCEL' })}
-	                    onTapToUnlock={() => {
-	                      if (tourGuided) return
-	                      if (!mockReady || isBusy || isAwaitingUi) return
-	                      if (tourEnabled) {
-	                        hardwareMockTourBus.emit('ui.unlock.tap', {})
-	                      }
-                      send({ type: 'SEND', command: 'deviceUnlock', params: { connectId: state.context.device?.connectId ?? null } })
-                    }}
-                  />
-                )}
-              </div>
-            </div>
-
-            <div className="mt-6">
-              <div className="flex items-center justify-between gap-2">
-                <div className="text-sm font-medium text-zinc-900 dark:text-zinc-100">{dict.labels.commandPanel}</div>
-              </div>
-
-              <div className="mt-3 space-y-3">
-                <div className="grid gap-2 lg:grid-cols-2">
-                  <div>
-                    <label className="mb-1 block text-xs font-medium text-zinc-700 dark:text-zinc-300">
-                      {dict.labels.command}
-                    </label>
                     <div className="relative">
                       <select
-                        data-tour="command-select"
-                        value={command}
+                        value={deviceTypeControl}
                         onChange={(e) => {
-                          const nextCommand = e.target.value
-                          setCommand(nextCommand)
-                          if (tourEnabled) {
-                            hardwareMockTourBus.emit('command.changed', { command: nextCommand })
-                          }
+                          const next = e.target.value === 'classic1s' ? 'classic1s' : 'pro'
+                          setDeviceTypeControl(next)
+                          send({ type: 'SEND', command: 'setDeviceModel', params: { deviceType: next } })
                         }}
-                        disabled={!mockReady || isBusy || isAwaitingUi || tourGuided}
-                        className="h-9 w-full appearance-none rounded-lg bg-zinc-100/80 pl-3 pr-9 text-sm font-medium text-zinc-900 outline-none transition-colors hover:bg-zinc-100 focus:ring-2 focus:ring-[#00B812]/25 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-zinc-900/40 dark:text-zinc-100 dark:hover:bg-zinc-900/55"
+                        disabled={!mockReady || isBusy || isAwaitingUi || tourStarted}
+                        className="h-9 appearance-none rounded-lg border border-zinc-200/70 bg-white/80 pl-3 pr-9 text-sm font-medium text-zinc-900 shadow-sm transition-all hover:border-zinc-300 hover:bg-white focus:border-[#00B812]/50 focus:ring-2 focus:ring-[#00B812]/25 disabled:cursor-not-allowed disabled:opacity-60 dark:border-zinc-800 dark:bg-zinc-900/50 dark:text-zinc-100 dark:hover:border-zinc-700"
+                        aria-label={locale === 'en' ? 'Device model' : '设备型号'}
                       >
-                        <option value="searchDevices">searchDevices</option>
-                        <option value="btcGetAddress">btcGetAddress</option>
-                        <option value="btcSignMessage">btcSignMessage</option>
+                        <option value="pro">OneKey Pro</option>
+                        <option value="classic1s">OneKey Classic 1s</option>
                       </select>
                       <ChevronDown
                         className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400 dark:text-zinc-500"
                         aria-hidden="true"
                       />
                     </div>
-                  </div>
 
-                  <div>
-                    <label className="mb-1 block text-xs font-medium text-zinc-700 dark:text-zinc-300">Path</label>
-                    <input
-                      value={btcPath}
-                      onChange={(e) => setBtcPath(e.target.value)}
-                      disabled={command === 'searchDevices' || !mockReady || isBusy || isAwaitingUi || tourGuided}
-                      className="h-9 w-full rounded-lg bg-zinc-100/80 px-3 text-sm font-medium text-zinc-900 outline-none transition-colors placeholder:text-zinc-400 hover:bg-zinc-100 focus:ring-2 focus:ring-[#00B812]/25 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-zinc-900/40 dark:text-zinc-100 dark:placeholder:text-zinc-600 dark:hover:bg-zinc-900/55"
-                    />
-                  </div>
-                </div>
-
-                <div className="flex flex-wrap items-center gap-4">
-                  <label
-                    data-tour="show-on-onekey"
-                    className="inline-flex items-center gap-3 rounded-lg bg-zinc-100/80 px-3 py-2 text-xs font-medium text-zinc-700 dark:bg-zinc-900/40 dark:text-zinc-200"
-                  >
-                    <span className="text-zinc-700 dark:text-zinc-200">{dict.labels.showOnDevice}</span>
-                    <input
-                      type="checkbox"
-                      checked={addressShowOnOneKey}
-                      onChange={(e) => {
-                        const next = e.target.checked
-                        setAddressShowOnOneKey(next)
-                        if (tourEnabled) {
-                          hardwareMockTourBus.emit('param.changed', { key: 'showOnOneKey', value: next })
-                        }
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const next = !tourEnabledRef.current
+                        tourEnabledRef.current = next
+                        setTourEnabled(next)
                       }}
-                      disabled={command !== 'btcGetAddress' || !mockReady || isBusy || isAwaitingUi || tourGuided}
-                      className="peer sr-only"
-                    />
-                    <span className="relative h-5 w-9 rounded-full bg-zinc-200 transition-colors peer-checked:bg-[#00B812] peer-disabled:opacity-60 dark:bg-zinc-800">
-                      <span className="absolute left-0.5 top-0.5 h-4 w-4 rounded-full bg-white shadow-sm transition-transform peer-checked:translate-x-4 dark:bg-zinc-50" />
-                    </span>
-                  </label>
-                </div>
-
-                {command === 'btcSignMessage' && (
-                  <div>
-                    <label className="mb-1 block text-xs font-medium text-zinc-700 dark:text-zinc-300">messageHex</label>
-                    <textarea
-                      value={messageHex}
-                      onChange={(e) => setMessageHex(e.target.value)}
-                      disabled={!mockReady || isBusy || isAwaitingUi || tourGuided}
-                      rows={3}
-                      className="w-full resize-none rounded-lg bg-zinc-100/80 px-3 py-2 text-sm font-medium text-zinc-900 outline-none transition-colors hover:bg-zinc-100 focus:ring-2 focus:ring-[#00B812]/25 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-zinc-900/40 dark:text-zinc-100 dark:hover:bg-zinc-900/55"
-                    />
+                      className={[
+                        'inline-flex h-9 items-center gap-2 rounded-lg border px-2.5 text-sm font-semibold transition-all shadow-sm',
+                        tourEnabled
+                          ? 'border-[#00B812]/60 bg-[#00B812]/10 text-[#0a7024] hover:bg-[#00B812]/15 dark:border-[#00B812]/50 dark:bg-[#00B812]/20 dark:text-[#a4ffba]'
+                          : 'border-zinc-200/70 bg-white/80 text-zinc-900 hover:border-zinc-300 hover:bg-white dark:border-zinc-800 dark:bg-zinc-900/50 dark:text-zinc-100 dark:hover:border-zinc-700'
+                      ].join(' ')}
+                      aria-pressed={tourEnabled}
+                    >
+                      <span
+                        className={[
+                          'h-2.5 w-2.5 rounded-full',
+                          tourEnabled ? 'bg-[#00B812] shadow-[0_0_0_4px_rgba(0,184,18,0.16)]' : 'bg-zinc-400'
+                        ].join(' ')}
+                      />
+                      <span>{locale === 'en' ? 'Tour' : '导览'}</span>
+                    </button>
                   </div>
-                )}
 
-                <button
-                  type="button"
-                  onClick={handleSendCommand}
-                  disabled={!mockReady || isBusy || isAwaitingUi || tourGuided}
-                  data-tour="send-button"
-                  className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-lg bg-[#00B812] px-4 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-[#00A311] focus:outline-none focus:ring-2 focus:ring-[#00B812]/25 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  <Send size={16} strokeWidth={1.8} />
-                  {dict.labels.sendCommand}
-                </button>
+                  <div ref={deviceRef} className="mt-3 flex justify-center" data-tour="device-screen">
+                    {deviceType === 'classic1s' ? (
+                      <Classic1sDeviceScreen
+                        locale={locale}
+                        busy={isBusy}
+                        device={state.context.device}
+                        ui={ui}
+                        pinEntryOnDevice={classicPinEntryOnDevice}
+                        pinMatrix={classicPinMatrix}
+                        allowPinInput={allowPinInteraction}
+                        allowConfirmInput={allowConfirmInteraction}
+                        onSubmitPin={(pinValue) => {
+                          if (!allowPinInteraction) return
+                          if (tourEnabled && tourStarted) {
+                            hardwareMockTourBus.emit('ui.pin.submit', { pinLength: String(pinValue ?? '').length })
+                          } else {
+                            setRightTab('callback')
+                            setEditorFocus((prev) => ({
+                              ...prev,
+                              tab: 'callback',
+                              activeLine: editorMarks.callback.callbackReceivePin ?? null
+                            }))
+                          }
+                          send({ type: 'SUBMIT_PIN', pin: pinValue })
+                        }}
+                        onConfirm={() => {
+                          if (!allowConfirmInteraction) return
+                          if (tourEnabled && tourStarted) {
+                            hardwareMockTourBus.emit('ui.confirm', { action: ui?.action ?? null, approved: true })
+                          } else if (ui?.action === 'btcGetAddress') {
+                            setRightTab('callback')
+                            setEditorFocus((prev) => ({ ...prev, tab: 'callback', activeLine: editorMarks.callback.callbackOn ?? null }))
+                          }
+                          send({ type: 'CONFIRM', approved: true })
+                        }}
+                        onReject={() => {
+                          if (!allowConfirmInteraction) return
+                          if (tourEnabled) {
+                            hardwareMockTourBus.emit('ui.confirm', { action: ui?.action ?? null, approved: false })
+                          }
+                          send({ type: 'CONFIRM', approved: false })
+                        }}
+                        onTapToUnlock={() => {
+                          if (tourGuided) return
+                          if (!mockReady || isBusy || isAwaitingUi) return
+                          pinOriginRef.current = 'manual'
+                          setClassicPinModalOpen(false)
+                          setClassicPinEntryOnDevice(true)
+                          setClassicPinValue('')
+                          if (tourEnabled) {
+                            hardwareMockTourBus.emit('ui.unlock.tap', {})
+                          }
+                          send({ type: 'SEND', command: 'deviceUnlock', params: { connectId: state.context.device?.connectId ?? null } })
+                        }}
+                      />
+                    ) : (
+                      <ProDeviceScreen
+                        basePath={basePath}
+                        locale={locale}
+                        busy={isBusy}
+                        device={state.context.device}
+                        ui={ui}
+                        allowPinInput={allowPinInteraction}
+                        allowConfirmInput={allowConfirmInteraction}
+                        onSubmitPin={(pinValue) => {
+                          if (!allowPinInteraction) return
+                          if (tourEnabled && tourStarted) {
+                            hardwareMockTourBus.emit('ui.pin.submit', { pinLength: String(pinValue ?? '').length })
+                          } else {
+                            setRightTab('callback')
+                            setEditorFocus((prev) => ({
+                              ...prev,
+                              tab: 'callback',
+                              activeLine: editorMarks.callback.callbackReceivePin ?? null
+                            }))
+                          }
+                          send({ type: 'SUBMIT_PIN', pin: pinValue })
+                        }}
+                        onConfirm={() => {
+                          if (!allowConfirmInteraction) return
+                          if (tourEnabled && tourStarted) {
+                            hardwareMockTourBus.emit('ui.confirm', { action: ui?.action ?? null, approved: true })
+                          } else if (ui?.action === 'btcGetAddress') {
+                            setRightTab('callback')
+                            setEditorFocus((prev) => ({ ...prev, tab: 'callback', activeLine: editorMarks.callback.callbackOn ?? null }))
+                          }
+                          send({ type: 'CONFIRM', approved: true })
+                        }}
+                        onReject={() => {
+                          if (!allowConfirmInteraction) return
+                          if (tourEnabled) {
+                            hardwareMockTourBus.emit('ui.confirm', { action: ui?.action ?? null, approved: false })
+                          }
+                          send({ type: 'CONFIRM', approved: false })
+                        }}
+                        onCancel={() => send({ type: 'CANCEL' })}
+                        onTapToUnlock={() => {
+                          if (tourGuided) return
+                          if (!mockReady || isBusy || isAwaitingUi) return
+                          if (tourEnabled) {
+                            hardwareMockTourBus.emit('ui.unlock.tap', {})
+                          }
+                          send({ type: 'SEND', command: 'deviceUnlock', params: { connectId: state.context.device?.connectId ?? null } })
+                        }}
+                      />
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex min-w-0 flex-col gap-4 lg:w-[360px]">
+                <TourHintCard hint={tourHint} locale={locale} />
+                <div className="rounded-2xl border border-zinc-200/80 bg-white/90 p-4 shadow-sm dark:border-zinc-800/60 dark:bg-zinc-950/40">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="text-sm font-medium text-zinc-900 dark:text-zinc-100">{dict.labels.commandPanel}</div>
+                  </div>
+
+                  <div className="mt-4 space-y-3">
+                    <div className="grid gap-2 lg:grid-cols-2">
+                      <div>
+                        <label className="mb-1 block text-xs font-medium text-zinc-700 dark:text-zinc-300">
+                          {dict.labels.command}
+                        </label>
+                        <div className="relative">
+                          <select
+                            data-tour="command-select"
+                            value={command}
+                            onChange={(e) => {
+                              const nextCommand = e.target.value
+                              setCommand(nextCommand)
+                              if (tourEnabled) {
+                                hardwareMockTourBus.emit('command.changed', { command: nextCommand })
+                              }
+                            }}
+                            disabled={!mockReady || isBusy || isAwaitingUi || tourGuided}
+                            className="h-9 w-full appearance-none rounded-lg bg-zinc-100/80 pl-3 pr-9 text-sm font-medium text-zinc-900 outline-none transition-colors hover:bg-zinc-100 focus:ring-2 focus:ring-[#00B812]/25 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-zinc-900/40 dark:text-zinc-100 dark:hover:bg-zinc-900/55"
+                          >
+                            <option value="searchDevices">searchDevices</option>
+                            <option value="btcGetAddress">btcGetAddress</option>
+                            <option value="btcSignMessage">btcSignMessage</option>
+                          </select>
+                          <ChevronDown
+                            className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400 dark:text-zinc-500"
+                            aria-hidden="true"
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="mb-1 block text-xs font-medium text-zinc-700 dark:text-zinc-300">Path</label>
+                        <input
+                          value={btcPath}
+                          onChange={(e) => setBtcPath(e.target.value)}
+                          disabled={command === 'searchDevices' || !mockReady || isBusy || isAwaitingUi || tourGuided}
+                          className="h-9 w-full rounded-lg bg-zinc-100/80 px-3 text-sm font-medium text-zinc-900 outline-none transition-colors placeholder:text-zinc-400 hover:bg-zinc-100 focus:ring-2 focus:ring-[#00B812]/25 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-zinc-900/40 dark:text-zinc-100 dark:placeholder:text-zinc-600 dark:hover:bg-zinc-900/55"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-4">
+                      <label
+                        data-tour="show-on-onekey"
+                        className="inline-flex items-center gap-3 rounded-lg bg-zinc-100/80 px-3 py-2 text-xs font-medium text-zinc-700 dark:bg-zinc-900/40 dark:text-zinc-200"
+                      >
+                        <span className="text-zinc-700 dark:text-zinc-200">{dict.labels.showOnDevice}</span>
+                        <input
+                          type="checkbox"
+                          checked={addressShowOnOneKey}
+                          onChange={(e) => {
+                            const next = e.target.checked
+                            setAddressShowOnOneKey(next)
+                            if (tourEnabled) {
+                              hardwareMockTourBus.emit('param.changed', { key: 'showOnOneKey', value: next })
+                            }
+                          }}
+                          disabled={command !== 'btcGetAddress' || !mockReady || isBusy || isAwaitingUi || tourGuided}
+                          className="peer sr-only"
+                        />
+                        <span className="relative h-5 w-9 rounded-full bg-zinc-200 transition-colors peer-checked:bg-[#00B812] peer-disabled:opacity-60 dark:bg-zinc-800">
+                          <span className="absolute left-0.5 top-0.5 h-4 w-4 rounded-full bg-white shadow-sm transition-transform peer-checked:translate-x-4 dark:bg-zinc-50" />
+                        </span>
+                      </label>
+                    </div>
+
+                    {command === 'btcSignMessage' && (
+                      <div>
+                        <label className="mb-1 block text-xs font-medium text-zinc-700 dark:text-zinc-300">messageHex</label>
+                        <textarea
+                          value={messageHex}
+                          onChange={(e) => setMessageHex(e.target.value)}
+                          disabled={!mockReady || isBusy || isAwaitingUi || tourGuided}
+                          rows={3}
+                          className="w-full resize-none rounded-lg bg-zinc-100/80 px-3 py-2 text-sm font-medium text-zinc-900 outline-none transition-colors hover:bg-zinc-100 focus:ring-2 focus:ring-[#00B812]/25 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-zinc-900/40 dark:text-zinc-100 dark:hover:bg-zinc-900/55"
+                        />
+                      </div>
+                    )}
+
+                    <button
+                      type="button"
+                      onClick={handleSendCommand}
+                      disabled={!mockReady || isBusy || isAwaitingUi || tourGuided}
+                      data-tour="send-button"
+                      className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-lg bg-[#00B812] px-4 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-[#00A311] focus:outline-none focus:ring-2 focus:ring-[#00B812]/25 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      <Send size={16} strokeWidth={1.8} />
+                      {dict.labels.sendCommand}
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
 
-          <div className="flex h-full min-h-0 flex-col">
+            <div className="flex h-full min-h-0 flex-col">
             <div className="flex items-center justify-between gap-3">
               <div className="flex min-w-0 items-center gap-2">
                 <div className="text-sm font-medium text-zinc-900 dark:text-zinc-100">{dict.labels.devViewTitle}</div>

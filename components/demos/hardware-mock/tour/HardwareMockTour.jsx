@@ -195,9 +195,9 @@ function createWaitingModelSteps(locale) {
       selector: '[data-tour="send-button"]',
       placement: 'bottom',
       now: isEn
-        ? ['Tour enabled (won’t auto open).', 'Starts after you click “Send”.']
-        : ['导览已开启（不会自动弹出）', '点击「发送命令」后开始'],
-      next: isEn ? ['Pick a command + params', 'Click “Send” to start the flow'] : ['选择命令与参数', '点击「发送命令」开始体验'],
+        ? 'Tour waits for you to send a command.'
+        : '导览等待你发送命令。',
+      next: isEn ? 'Select command/params and tap “Send”.' : '选择命令与参数，点击「发送命令」。',
       expect: (evt) => evt?.type === 'command.sent'
     })
   ]
@@ -210,25 +210,23 @@ function createSearchDevicesSteps(locale) {
       id: 'example-code',
       selector: '[data-tour="example-code"]',
       placement: 'right',
-      now: isEn ? ['Triggered `searchDevices()`'] : ['已触发 `searchDevices()`'],
-      next: isEn ? ['Click “Next” to see the result'] : ['点击「下一步」查看返回结果']
+      now: isEn ? 'Triggered `searchDevices()`.' : '已触发 `searchDevices()`。',
+      next: isEn ? 'Next: watch the Result panel.' : '下一步：查看 Result 面板。'
     }),
     eventStep({
       id: 'wait-result',
       selector: '[data-tour="result-panel"]',
       placement: 'top',
       now: isEn ? 'Waiting for result…' : '等待返回结果…',
-      next: isEn ? ['Result will appear in the Result panel'] : ['结果会显示在右侧 Result 面板'],
+      next: isEn ? 'Result appears in the Result panel.' : '结果将出现在右侧 Result 面板。',
       expect: (evt) => evt?.type === 'command.result'
     }),
     hintStep({
       id: 'result',
       selector: '[data-tour="result-panel"]',
       placement: 'top',
-      now: isEn ? ['Discovered device list is here'] : ['这里是发现到的设备列表'],
-      next: isEn
-        ? ['Send `btcGetAddress` or `btcSignMessage`', 'See the full UI_EVENT flow']
-        : ['发送 `btcGetAddress` 或 `btcSignMessage`', '体验完整 UI_EVENT 流程']
+      now: isEn ? 'Discovered device list is here.' : '这里是发现到的设备列表。',
+      next: isEn ? 'Send `btcGetAddress` or `btcSignMessage` to explore UI_EVENT.' : '发送 `btcGetAddress` 或 `btcSignMessage`，体验 UI_EVENT 流程。'
     })
   ]
 }
@@ -241,18 +239,18 @@ function createCallbackAndResultSteps(locale) {
       selector: '[data-tour="result-panel"]',
       placement: 'top',
       now: isEn ? ['Final result payload'] : ['这里是最终返回结果（payload）'],
-      next: isEn ? ['Click “Next” to check the callbacks template'] : ['点击「下一步」查看 UI_EVENT 回调处理模板']
+      next: isEn ? 'Click “Next” to check the callbacks template.' : '点击「下一步」查看 UI_EVENT 回调模板。'
     }),
     hintStep({
       id: 'callback-code',
       selector: '[data-tour="callback-code"]',
       placement: 'right',
       now: isEn
-        ? ['UI_EVENT wiring template', 'Handle `REQUEST_*` (reply via `uiResponse` when needed)']
-        : ['这里是 UI_EVENT 回调处理模板', '收到 `REQUEST_*`：需要时用 `uiResponse` 回复'],
+        ? 'UI_EVENT wiring template. Handle `REQUEST_*` where needed.'
+        : '这里是 UI_EVENT 回调模板，归纳 `REQUEST_*`。',
       next: isEn
-        ? ['Focus on `REQUEST_PIN` / `REQUEST_BUTTON` / `CLOSE_UI_WINDOW`', 'Breakpoints mark the current request']
-        : ['重点看 `REQUEST_PIN` / `REQUEST_BUTTON` / `CLOSE_UI_WINDOW`', '断点会标记当前正在发生的请求']
+        ? 'Focus on `REQUEST_PIN`, `REQUEST_BUTTON`, `CLOSE_UI_WINDOW`.'
+        : '重点关注 `REQUEST_PIN` / `REQUEST_BUTTON` / `CLOSE_UI_WINDOW`。'
     })
   ]
 }
