@@ -169,7 +169,7 @@ if (!features.success) throw new Error(features.payload.error);
 const deviceId = features.payload.device_id;
 ```
 
-> **Important:** Persist both `connectId` and `device_id` for subsequent API calls.
+> **Important:** `connectId` is stable for the same device (reset does not change it); `device_id` changes after reset/recovery and must be refreshed via `getFeatures`.
 
 ## Handle PIN Entry
 

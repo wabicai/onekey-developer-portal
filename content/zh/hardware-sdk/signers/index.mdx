@@ -17,7 +17,7 @@ title: 交易签名向导
 
 - 环境与版本：使用最新固件，SDK/Bridge 版本对齐；按平台选择对应传输指南。
 - 路径：按链使用正确 HD Path，注意硬化/非硬化（详见各链签名页）。
-- 会话与钱包：BLE 必带 `deviceId`；使用隐藏钱包时携带 `passphraseState`。
+- 会话与钱包：多数链方法需 `connectId + deviceId`（BLE 必带 `deviceId`）；设备重置后 `deviceId` 会变化；使用隐藏钱包时携带 `passphraseState`。
 - UI：订阅 `UI_EVENT`，在 PIN/Passphrase 请求时调用 `uiResponse`。
 - 结果校验：先判 `success`，再用链工具库校验返回的地址/签名。
 - 安全：遇到异常提示可选择拒签；设备在 Bootloader 时应直接失败。

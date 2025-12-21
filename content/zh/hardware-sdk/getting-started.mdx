@@ -168,7 +168,7 @@ if (!features.success) throw new Error(features.payload.error);
 const deviceId = features.payload.device_id;
 ```
 
-> **重要：** 保存 `connectId` 和 `device_id` 用于后续 API 调用。
+> **重要：** `connectId` 可长期缓存（设备重置不影响）；`device_id` 在设备重置/恢复后会变化，需要重新 `getFeatures` 刷新。
 
 ## 处理 PIN 输入
 

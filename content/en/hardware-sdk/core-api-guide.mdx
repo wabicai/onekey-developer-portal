@@ -10,7 +10,7 @@ Single-page guide for integrators: happy path + params/events/safety/error handl
 <div id="request-basics" />
 
 - Call shape: `HardwareSDK.method(connectId, deviceId?, params)` → `Promise<{ success, payload }>`; always guard on `success` before touching `payload`.
-- Identifiers: `connectId` from `searchDevices`; `deviceId` from `getFeatures` (required for BLE, recommended for WebUSB). Refresh after reset/recovery.
+- Identifiers: `connectId` from `searchDevices` (stable for the same device; reset does not change it); `deviceId` from `getFeatures` (required for BLE, recommended for WebUSB). Refresh `deviceId` after reset/recovery.
 - UI contract: subscribe `UI_EVENT` once; only call `uiResponse` on input-type `UI_REQUEST` (PIN/Passphrase/Bootloader select). Route per device when multiple devices are connected.
 - Param hygiene: validate HD Path per chain; reuse hidden wallet with `initSession + passphraseState`; serialize calls per device to avoid deadlocks.
 
@@ -36,13 +36,19 @@ console.log(res.payload.address);
 
 | Item | Purpose | How to get/refresh | Notes |
 | --- | --- | --- | --- |
-| `connectId` | Connection identifier; routes calls to a specific device/connection | `searchDevices()` | WebUSB/Bridge ≈ device serial; BLE = OS-level identifier (Android MAC / iOS UUID). |
-| `deviceId` | Current seed/wallet-state identifier | `getFeatures(connectId)` | Changes after wipe/recovery/seed switch; used to prevent signing on the wrong seed. |
+| `connectId` | Connection identifier; routes calls to a specific device/connection | `searchDevices()` | Stable for the same device (reset does not change it); WebUSB/Bridge ≈ device serial; BLE = OS-level identifier (Android MAC / iOS UUID). |
+| `deviceId` | Current seed/wallet-state identifier | `getFeatures(connectId)` | Changes after reset/wipe/recovery/seed switch; used to prevent signing on the wrong seed. |
 
-- Cache `connectId + deviceId` as a pair; on `DeviceCheckDeviceIdError` or device switch, re-run `getFeatures`.
+- Cache `connectId + deviceId` as a pair; on `DeviceCheckDeviceIdError`, device reset, or device switch, re-run `getFeatures`.
 - SDK set: `@onekeyfe/hd-common-connect-sdk` + `@onekeyfe/hd-core` + `@onekeyfe/hd-shared`; align versions with firmware/Bridge.
 - Runtime: `webusb` needs HTTPS + user gesture; `react-native` needs BLE + often location permission; `lowlevel` needs 64-byte frame adapter.
 - Device/firmware: stay on latest stable; some APIs fail in Bootloader; Bridge must run and keep port free.
+
+### Which identifiers are required?
+
+- No identifiers: `init` / event handlers (`on`/`off`) / `searchDevices` / `getLogs` / `checkBridgeStatus` / `checkFirmwareTypeAvailable` / `updateSettings` / `switchTransport` / `dispose` / `uiResponse` (payload only).
+- `connectId` only: `getFeatures` / `getPassphraseState` / `cancel` / device management & firmware APIs (e.g., `deviceSettings`, `deviceReset`, `deviceWipe`, `checkFirmwareRelease`).
+- `connectId + deviceId`: chain signing/address/public key/encryption/proof APIs (e.g., EVM/BTC/Solana/Nostr/TON/`allNetworkGetAddress`/`cipherKeyValue`).
 
 ## Standard lifecycle (recommended)
 

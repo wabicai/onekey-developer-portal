@@ -172,7 +172,7 @@ export function LandingPage({ locale = 'en' }) {
             icon: Usb,
             title: 'Hardware SDK',
             desc: 'Access OneKey devices via USB bridge or direct connection. Supports account retrieval, transaction signing, and core key management.',
-            href: `/${locale}/hardware-sdk/quick-start`,
+            href: `/${locale}/hardware-sdk/getting-started`,
             tags: ['TypeScript', 'Core'],
             linkText: 'View SDK Docs',
           },
@@ -611,7 +611,7 @@ export function LandingPage({ locale = 'en' }) {
                 </h3>
                 <ul className="flex flex-col gap-3 md:gap-4">
                   <li>
-                    <Link href={`/${locale}/hardware-sdk/quick-start`} className="text-zinc-300 hover:text-white text-sm transition-colors">
+                    <Link href={`/${locale}/hardware-sdk/getting-started`} className="text-zinc-300 hover:text-white text-sm transition-colors">
                       {isZh ? '快速开始' : 'Getting Started'}
                     </Link>
                   </li>

@@ -10,7 +10,7 @@ title: 核心接口指南
 <div id="request-basics" />
 
 - 方法签名：`HardwareSDK.method(connectId, deviceId?, params)` → `Promise<{ success, payload }>`，先判 `success` 再读 `payload`。
-- 标识获取：`connectId` 来自 `searchDevices`；`deviceId` 来自 `getFeatures`（BLE 必填，WebUSB 建议带）。设备重置/恢复后刷新。
+- 标识获取：`connectId` 来自 `searchDevices`（同一设备稳定不变，设备重置不影响）；`deviceId` 来自 `getFeatures`（BLE 必填，WebUSB 建议带）。设备重置/恢复后需刷新 `deviceId`。
 - UI 事件订阅：入口订阅一次 `UI_EVENT`，只在输入类 `UI_REQUEST` 时调用 `uiResponse`（PIN/Passphrase/Bootloader 选择），多设备按设备路由事件。
 - 参数检查：按链校验 HD Path；复用隐藏钱包用 `initSession + passphraseState`；同一设备串行调用避免死锁。
 
@@ -37,13 +37,19 @@ console.log(res.payload.address);
 
 | 项 | 作用 | 获取/刷新 | 注意点 |
 | --- | --- | --- | --- |
-| `connectId` | 连接标识，决定路由到哪台设备/连接 | `searchDevices()` | WebUSB/Bridge 通常等于序列号；BLE 为系统层标识（Android MAC / iOS UUID）。 |
-| `deviceId` | 当前种子/钱包状态标识 | `getFeatures(connectId)` | 擦除/恢复/换种子后会变；敏感操作会校验避免错设备。 |
+| `connectId` | 连接标识，决定路由到哪台设备/连接 | `searchDevices()` | 同一设备稳定不变（设备重置不影响）；WebUSB/Bridge 通常等于序列号；BLE 为系统层标识（Android MAC / iOS UUID）。 |
+| `deviceId` | 当前种子/钱包状态标识 | `getFeatures(connectId)` | 设备重置/擦除/恢复/换种子后会变；敏感操作会校验避免错设备。 |
 
-- `connectId + deviceId` 成对缓存；遇到 `DeviceCheckDeviceIdError` 或切换设备时重新 `getFeatures`。
+- `connectId + deviceId` 成对缓存；遇到 `DeviceCheckDeviceIdError`、设备重置或切换设备时重新 `getFeatures`。
 - SDK 组合：`@onekeyfe/hd-common-connect-sdk` + `@onekeyfe/hd-core` + `@onekeyfe/hd-shared`，与固件/Bridge 版本对齐。
 - 运行环境：`webusb` 需 HTTPS + 用户手势；`react-native` 需 BLE + 常见定位权限；`lowlevel` 需 64 字节帧自定义适配。
 - 设备/固件：尽量用最新稳定版，Bootloader 模式部分 API 不可用；Bridge 需保持运行且端口空闲。
+
+### 需要传哪些标识？
+
+- 不需要标识：`init` / 事件订阅 (`on`/`off`) / `searchDevices` / `getLogs` / `checkBridgeStatus` / `checkFirmwareTypeAvailable` / `updateSettings` / `switchTransport` / `dispose` / `uiResponse`（仅需 payload）。
+- 仅需 `connectId`：`getFeatures` / `getPassphraseState` / `cancel` / 设备管理与固件类接口（如 `deviceSettings`、`deviceReset`、`deviceWipe`、`checkFirmwareRelease` 等）。
+- 需要 `connectId + deviceId`：链相关签名/地址/公钥/加解密/证明类接口（如 EVM/BTC/Solana/Nostr/TON/`allNetworkGetAddress`/`cipherKeyValue` 等）。
 
 ## 推荐生命周期
 

@@ -17,7 +17,7 @@ Step-by-step guides that take you from initialization to a signed transaction fo
 
 - Environment & versions: latest firmware + aligned SDK/Bridge; pick the transport guide for your platform.
 - Paths: use chain-specific HD paths; double-check hardened vs non-hardened (see each signer page).
-- Session & wallet: include `deviceId` (BLE) and `passphraseState` if using hidden wallet.
+- Session & wallet: most chain methods need `connectId + deviceId` (BLE requires `deviceId`); `deviceId` changes after reset; include `passphraseState` for hidden wallets.
 - UI: subscribe to `UI_EVENT`; handle PIN/passphrase prompts with `uiResponse`.
 - Verify result: always check `success` then validate the returned address/signature with chain libs.
 - Safety: reject on unexpected prompts, and fail fast if device is in Bootloader.
