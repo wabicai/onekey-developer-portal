@@ -4,7 +4,7 @@ export default {
   index: 'Overview',
   'getting-started': 'Getting Started',
   'mock-demo': {
-    title: 'Mock Demo',
+    title: 'Interaction mock',
     theme: {
       layout: 'full',
       toc: false,

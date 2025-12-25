@@ -4,7 +4,7 @@ export default {
   index: '概览',
   'getting-started': '快速开始',
   'mock-demo': {
-    title: '交互 Mock Demo',
+    title: '交互指引',
     theme: {
       layout: 'full',
       toc: false,

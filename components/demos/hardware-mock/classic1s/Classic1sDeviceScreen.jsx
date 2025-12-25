@@ -84,18 +84,18 @@ function IconEnter({ className }) {
   )
 }
 
-function Classic1sFrame({ children, disabled = false, onPressButton }) {
+function Classic1sFrame({ children, overlay, disabled = false, onPressButton }) {
   const { buttons } = CLASSIC1S_DEVICE
   return (
     <div
-      className="relative overflow-hidden rounded-xl ring-1 ring-black/10"
+      className="relative overflow-hidden rounded-[18px]"
       style={{
         width: CLASSIC1S_DEVICE.width,
         height: CLASSIC1S_DEVICE.height,
-        background:
-          'linear-gradient(180deg, rgba(48,52,60,1) 0%, rgba(36,40,46,1) 55%, rgba(28,31,36,1) 100%)',
+        background: 'linear-gradient(180deg, #1e1f21 0%, #141516 55%, #101112 100%)',
         boxShadow:
-          'inset 0 1px 0 rgba(255,255,255,0.10), inset 0 -1px 0 rgba(0,0,0,0.45), 0 18px 40px rgba(0,0,0,0.22)'
+          'inset 0 1px 0 rgba(255,255,255,0.06), inset 0 -2px 6px rgba(0,0,0,0.6), 0 18px 36px rgba(0,0,0,0.28)',
+        border: '1px solid rgba(255,255,255,0.05)'
       }}
     >
       <div
@@ -105,13 +105,16 @@ function Classic1sFrame({ children, disabled = false, onPressButton }) {
           top: CLASSIC1S_DEVICE.screen.y,
           width: CLASSIC1S_DEVICE.screen.width,
           height: CLASSIC1S_DEVICE.screen.height,
-          borderRadius: 10,
-          background: 'linear-gradient(180deg, rgba(9,14,20,1) 0%, rgba(5,9,13,1) 100%)',
+          borderRadius: 8,
+          background: 'linear-gradient(180deg, #0c0d10 0%, #090b0e 100%)',
           boxShadow:
-            'inset 0 0 0 1px rgba(255,255,255,0.10), inset 0 10px 22px rgba(0,0,0,0.40), 0 10px 26px rgba(0,0,0,0.30)'
+            'inset 0 0 0 1px rgba(255,255,255,0.08), inset 0 8px 16px rgba(0,0,0,0.45), 0 8px 18px rgba(0,0,0,0.32)'
         }}
       >
-        {children}
+        <div className="relative h-full w-full">
+          {children}
+          {overlay}
+        </div>
       </div>
 
       <div
@@ -142,12 +145,12 @@ function Classic1sFrame({ children, disabled = false, onPressButton }) {
               style={{
                 width: buttons.size,
                 height: buttons.size,
-                background: 'rgba(0,0,0,0.16)',
+                background: 'linear-gradient(180deg, #202226 0%, #17181b 100%)',
                 boxShadow:
-                  'inset 0 1px 0 rgba(255,255,255,0.10), inset 0 -1px 0 rgba(0,0,0,0.40), 0 2px 8px rgba(0,0,0,0.22)'
+                  'inset 0 1px 0 rgba(255,255,255,0.08), inset 0 -1px 2px rgba(0,0,0,0.6), 0 2px 8px rgba(0,0,0,0.3)'
               }}
             >
-              <Ico className="h-5 w-5 text-white/70" />
+              <Ico className="h-4 w-4 text-white/70" />
             </button>
           )
         })}
@@ -380,6 +383,7 @@ export function Classic1sDeviceScreen({
   busy,
   device,
   ui,
+  overlay,
   allowPinInput = true,
   allowConfirmInput = true,
   allowUnlock = true,
@@ -454,7 +458,7 @@ export function Classic1sDeviceScreen({
 
   return (
     <Classic1sDeviceViewport>
-      <Classic1sFrame disabled={frameDisabled} onPressButton={handlePressButton}>
+      <Classic1sFrame disabled={frameDisabled} onPressButton={handlePressButton} overlay={overlay}>
         {ui?.type === 'pin' ? (
           busy ? (
             <SubmittingPinScreen locale={locale} />

@@ -166,7 +166,7 @@ export function createMockHardwareServer() {
     }
 
     if (!session.connected && command !== 'get_info' && command !== 'searchDevices') {
-      throw new Error('设备未连接，请先执行 connect。')
+      session.connected = true
     }
 
     const commandDelay =

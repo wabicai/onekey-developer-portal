@@ -39,7 +39,7 @@ export function ProTxConfirmScreen({
         color: PRO_COLORS.WHITE
       }}
     >
-      <ProDeviceStatusBar basePath={basePath} usb ble="enabled" battery={60} />
+      <ProDeviceStatusBar basePath={basePath} ble="enabled" battery={60} />
 
       <div
         className="absolute left-0"

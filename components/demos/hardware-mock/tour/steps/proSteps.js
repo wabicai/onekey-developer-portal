@@ -8,7 +8,7 @@ function createProExampleSteps(locale, { command }) {
       selector: '[data-tour="example-code"]',
       placement: 'right',
       now: [deviceLabel('pro', locale), `\`${command ?? '-'}\``],
-      next: isEn ? 'Click “Next” after Send.' : '发送后点击「下一步」。'
+      next: isEn ? 'Tap Send to start.' : '点击发送开始。'
     })
   ]
 }
@@ -20,8 +20,8 @@ function createProPinSteps(locale) {
       id: 'pin',
       selector: '[data-tour="device-screen"]',
       placement: 'right',
-      now: isEn ? 'Enter PIN on Pro.' : '请在 Pro 上输入 PIN。',
-      next: isEn ? 'PIN submission auto-advances the tour.' : 'PIN 提交后自动推进。',
+      now: isEn ? 'PIN requested on device.' : '设备请求输入 PIN。',
+      next: isEn ? 'Enter PIN on device.' : '在设备上输入 PIN。',
       expect: (evt) => evt?.type === 'ui.pin.submit'
     })
   ]
@@ -39,7 +39,7 @@ function createProRequestButtonHintSteps(locale, { command, showOnOneKey }) {
       now: isEn
         ? `UI_EVENT: REQUEST_BUTTON${condition ? ` (${condition})` : ''}`
         : `UI_EVENT：REQUEST_BUTTON${condition ? `（${condition}）` : ''}`,
-      next: isEn ? 'Confirm on your device; no `uiResponse` is needed.' : '在设备上确认，一般不需要 `uiResponse`。',
+      next: isEn ? 'Confirm on device.' : '在设备上确认。',
     })
   ]
 }
@@ -51,8 +51,8 @@ function createProConfirmAndWaitSteps(locale) {
       id: 'confirm',
       selector: '[data-tour="device-screen"]',
       placement: 'right',
-      now: isEn ? 'Confirm on device.' : '请在设备上确认。',
-      next: isEn ? 'Wait for the result; the tour auto-advances.' : '等待结果返回，导览会自动推进。',
+      now: isEn ? 'Confirmation required.' : '需要设备确认。',
+      next: isEn ? 'Confirm on device.' : '在设备上确认。',
       expect: (evt) => evt?.type === 'command.result'
     })
   ]
@@ -66,7 +66,7 @@ function createProWaitResultSteps(locale) {
       selector: '[data-tour="result-panel"]',
       placement: 'top',
       now: isEn ? 'Waiting for result…' : '等待返回结果…',
-      next: isEn ? 'Result appears here automatically.' : '结果会自动显示在此。',
+      next: isEn ? 'Result shows here.' : '结果显示在这里。',
       expect: (evt) => evt?.type === 'command.result'
     })
   ]
@@ -79,14 +79,14 @@ function createProResultSteps(locale, { hasNext = false } = {}) {
       id: 'result',
       selector: '[data-tour="result-panel"]',
       placement: 'top',
-      now: isEn ? 'Here is the final result payload.' : '这里是最终返回结果（payload）。',
+      now: isEn ? 'Result payload ready.' : '结果 payload 已就绪。',
       next: isEn
         ? hasNext
-          ? 'Next: review the callbacks template.'
-          : 'Tour complete—close when ready.'
+          ? 'Open callbacks template.'
+          : 'Close the tour.'
         : hasNext
-          ? '下一步：查看 UI_EVENT 回调模板。'
-          : '导览完成，可关闭。'
+          ? '查看回调模板。'
+          : '关闭导览。'
     })
   ]
 }
@@ -99,9 +99,9 @@ function createProCallbackTemplateSteps(locale) {
       selector: '[data-tour="callback-code"]',
       placement: 'right',
       now: isEn
-        ? 'Callbacks template (Pro). Handle `REQUEST_BUTTON` / `CLOSE_UI_WINDOW`.'
-        : '回调模板（Pro）：关注 `REQUEST_BUTTON` 与 `CLOSE_UI_WINDOW`。',
-      next: isEn ? 'Close the tour when ready.' : '此处浏览完即可关闭导览。'
+        ? 'Callbacks template (Pro).'
+        : '回调模板（Pro）。',
+      next: isEn ? 'Close when ready.' : '浏览后关闭即可。'
     })
   ]
 }

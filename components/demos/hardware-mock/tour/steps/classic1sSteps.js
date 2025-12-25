@@ -8,7 +8,7 @@ function createClassic1sExampleSteps(locale, { command }) {
       selector: '[data-tour="example-code"]',
       placement: 'right',
       now: [deviceLabel('classic1s', locale), `\`${command ?? '-'}\``],
-      next: isEn ? 'Click “Next” to continue.' : '点击「下一步」继续。'
+      next: isEn ? 'Tap Send to start.' : '点击发送开始。'
     })
   ]
 }
@@ -20,8 +20,8 @@ function createClassic1sMatrixAndModalHintSteps(locale) {
       id: 'pin-matrix-and-modal',
       selector: '[data-tour="device-screen"]',
       placement: 'right',
-      now: isEn ? 'Classic 1s PIN matrix & modal overview.' : 'Classic 1s PIN 矩阵与输入弹窗。',
-      next: isEn ? 'Click “Next” to open the PIN dialog.' : '点击「下一步」打开 PIN 弹窗。'
+      now: isEn ? 'PIN matrix shown.' : 'PIN 矩阵已显示。',
+      next: isEn ? 'Open the PIN dialog.' : '打开 PIN 弹窗。'
     })
   ]
 }
@@ -33,10 +33,10 @@ function createClassic1sPinSteps(locale) {
       id: 'pin',
       selector: '[data-tour="classic-pin-modal"], [data-tour="device-screen"]',
       placement: 'right',
-      now: isEn ? 'Enter PIN (Classic 1s).' : '请输入 PIN（Classic 1s）。',
+      now: isEn ? 'PIN requested on device.' : '设备请求输入 PIN。',
       next: isEn
-        ? 'Enter any 4 digits (mock) and submit; switch to device input if needed.'
-        : '输入任意 4 位（Mock），也可切换到设备输入，提交后自动推进。',
+        ? 'Enter PIN and submit.'
+        : '输入 PIN 并提交。',
       expect: (evt) => evt?.type === 'ui.pin.submit'
     })
   ]
@@ -54,7 +54,7 @@ function createClassic1sRequestButtonHintSteps(locale, { command, showOnOneKey }
       now: isEn
         ? `UI_EVENT: REQUEST_BUTTON${condition ? ` (${condition})` : ''}`
         : `UI_EVENT：REQUEST_BUTTON${condition ? `（${condition}）` : ''}`,
-      next: isEn ? 'Confirm on the device; `uiResponse` is usually not required.' : '在设备上确认，一般不会调用 `uiResponse`。',
+      next: isEn ? 'Confirm on device.' : '在设备上确认。',
     })
   ]
 }
@@ -66,8 +66,8 @@ function createClassic1sConfirmAndWaitSteps(locale) {
       id: 'confirm',
       selector: '[data-tour="device-screen"]',
       placement: 'right',
-      now: isEn ? 'Confirm on device.' : '请在设备上确认。',
-      next: isEn ? 'Confirm with buttons; the tour waits for the result.' : '用按键完成确认；结果返回后自动推进。',
+      now: isEn ? 'Confirmation required.' : '需要设备确认。',
+      next: isEn ? 'Confirm on device.' : '在设备上确认。',
       expect: (evt) => evt?.type === 'command.result'
     })
   ]
@@ -81,7 +81,7 @@ function createClassic1sWaitResultSteps(locale) {
       selector: '[data-tour="result-panel"]',
       placement: 'top',
       now: isEn ? 'Waiting for result…' : '等待返回结果…',
-      next: isEn ? 'Result appears automatically.' : '结果会自动显示在此。',
+      next: isEn ? 'Result shows here.' : '结果显示在这里。',
       expect: (evt) => evt?.type === 'command.result'
     })
   ]
@@ -94,14 +94,14 @@ function createClassic1sResultSteps(locale, { hasNext = false } = {}) {
       id: 'result',
       selector: '[data-tour="result-panel"]',
       placement: 'top',
-      now: isEn ? 'Here is the final result payload.' : '这里是最终返回结果（payload）。',
+      now: isEn ? 'Result payload ready.' : '结果 payload 已就绪。',
       next: isEn
         ? hasNext
-          ? 'Next: review the callbacks template.'
-          : 'Tour complete—close when ready.'
+          ? 'Open callbacks template.'
+          : 'Close the tour.'
         : hasNext
-          ? '下一步：查看 UI_EVENT 回调模板。'
-          : '导览完成，可关闭。',
+          ? '查看回调模板。'
+          : '关闭导览。',
     })
   ]
 }
@@ -114,9 +114,9 @@ function createClassic1sCallbackTemplateSteps(locale) {
       selector: '[data-tour="callback-code"]',
       placement: 'right',
       now: isEn
-        ? 'Callbacks template (Classic 1s / Pure). Expect `REQUEST_PIN` and `REQUEST_BUTTON`.'
-        : '回调模板（Classic 1s / Pure）：可能触发 `REQUEST_PIN` 与 `REQUEST_BUTTON`。',
-      next: isEn ? 'Close the tour when ready.' : '浏览完即可关闭导览。'
+        ? 'Callbacks template (Classic 1s / Pure).'
+        : '回调模板（Classic 1s / Pure）。',
+      next: isEn ? 'Close when ready.' : '浏览后关闭即可。'
     })
   ]
 }

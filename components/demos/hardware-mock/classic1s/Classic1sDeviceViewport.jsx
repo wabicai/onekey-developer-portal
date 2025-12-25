@@ -8,7 +8,7 @@ function getScaleForWidth(width) {
   return Math.min(1, width / CLASSIC1S_DEVICE.width)
 }
 
-export function Classic1sDeviceViewport({ children, maxWidth = 340 }) {
+export function Classic1sDeviceViewport({ children, maxWidth = 250 }) {
   const wrapRef = useRef(null)
   const [scale, setScale] = useState(1)
   const [measured, setMeasured] = useState(false)

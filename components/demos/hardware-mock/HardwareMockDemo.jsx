@@ -2,7 +2,7 @@
 
 import { useMachine } from '@xstate/react'
 import gsap from 'gsap'
-import { Check, ChevronDown, Copy, Delete, ExternalLink, Info, Send, X } from 'lucide-react'
+import { Check, ChevronDown, Copy, Delete, ExternalLink, Info, Send, Sparkles, X } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { flushSync } from 'react-dom'
 import { createHardwareMockMachine } from './createHardwareMockMachine'
@@ -32,6 +32,14 @@ const I18N = {
       failed: '失败',
       device: '设备',
       unlocked: '已解锁',
+      locked: '已锁定',
+      deviceModel: '设备型号',
+      deviceStage: '设备台',
+      interactionBuilder: '交互编排',
+      stepCommand: '选择命令',
+      stepParams: '参数设置',
+      stepSend: '发送交互',
+      commandNoParams: '该命令无需参数。',
       clearLogs: '清空日志',
       exampleCode: '示例代码',
       currentExample: '当前示例',
@@ -94,6 +102,14 @@ const I18N = {
       failed: 'Failed',
       device: 'Device',
       unlocked: 'Unlocked',
+      locked: 'Locked',
+      deviceModel: 'Model',
+      deviceStage: 'Device stage',
+      interactionBuilder: 'Interaction builder',
+      stepCommand: 'Choose command',
+      stepParams: 'Parameters',
+      stepSend: 'Send',
+      commandNoParams: 'No parameters needed for this command.',
       clearLogs: 'Clear logs',
       exampleCode: 'Example code',
       currentExample: 'Current example',
@@ -141,6 +157,23 @@ const I18N = {
 
 function getDict(locale) {
   return I18N[locale] ?? I18N.zh
+}
+
+const COMMAND_OPTIONS = {
+  zh: [
+    { value: 'searchDevices', title: 'searchDevices', description: 'searchDevices' },
+    { value: 'btcGetAddress', title: 'btcGetAddress', description: 'btcGetAddress' },
+    { value: 'btcSignMessage', title: 'btcSignMessage', description: 'btcSignMessage' }
+  ],
+  en: [
+    { value: 'searchDevices', title: 'searchDevices', description: 'searchDevices' },
+    { value: 'btcGetAddress', title: 'btcGetAddress', description: 'btcGetAddress' },
+    { value: 'btcSignMessage', title: 'btcSignMessage', description: 'btcSignMessage' }
+  ]
+}
+
+function getCommandOptions(locale) {
+  return COMMAND_OPTIONS[locale] ?? COMMAND_OPTIONS.zh
 }
 
 function formatTime(isoString) {
@@ -274,7 +307,7 @@ function buildTourHintPayload({ locale, dict, stepId, tourEnabled, tourStarted }
   }
 }
 
-function TourHintCard({ hint, locale }) {
+function TourHintCard({ hint, locale, compact = false }) {
   const accent = hint?.accent ?? TOUR_HINT_ACCENTS.action
   const title = hint?.title ?? (locale === 'en' ? 'Tour hint' : '导览提示')
   const typeLabel =
@@ -288,8 +321,14 @@ function TourHintCard({ hint, locale }) {
 
   return (
     <div
-      className="relative overflow-hidden rounded-2xl border border-zinc-200/80 bg-white/90 px-4 py-3 text-sm text-zinc-900 shadow-sm transition-transform duration-150 hover:-translate-y-[1px] dark:border-zinc-800/60 dark:bg-zinc-950/40 dark:text-zinc-100"
-      style={{ borderColor: accent }}
+      className={[
+        'relative overflow-hidden border border-zinc-200/80 text-zinc-900 shadow-sm transition-transform duration-150 hover:-translate-y-[1px] dark:border-zinc-800/60 dark:text-zinc-100 [--tour-base:#ffffff] dark:[--tour-base:#0b0f14]',
+        compact ? 'rounded-xl px-3 py-2 text-xs' : 'rounded-2xl px-4 py-3 text-sm'
+      ].join(' ')}
+      style={{
+        borderColor: accent,
+        backgroundColor: `color-mix(in srgb, ${accent} 12%, var(--tour-base) 88%)`
+      }}
     >
       <span
         aria-hidden="true"
@@ -298,11 +337,21 @@ function TourHintCard({ hint, locale }) {
       />
 
       <div className="flex items-center justify-between gap-2">
-        <div className="text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">{title}</div>
+        <div
+          className={[
+            'font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400',
+            compact ? 'text-[10px]' : 'text-xs'
+          ].join(' ')}
+        >
+          {title}
+        </div>
         <span
-          className="rounded-full px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wider"
+          className={[
+            'rounded-full font-semibold uppercase tracking-wider',
+            compact ? 'px-1.5 py-0.5 text-[10px]' : 'px-2 py-0.5 text-[11px]'
+          ].join(' ')}
           style={{
-            backgroundColor: `color-mix(in srgb, ${accent} 40%, #fff 60%)`,
+            backgroundColor: `color-mix(in srgb, ${accent} 35%, var(--tour-base) 65%)`,
             color: accent
           }}
         >
@@ -310,9 +359,13 @@ function TourHintCard({ hint, locale }) {
         </span>
       </div>
 
-      <p className="mt-2 text-sm font-semibold text-zinc-900 dark:text-zinc-100">{hint?.primary ?? ''}</p>
+      <p className={compact ? 'mt-1 text-xs font-semibold text-zinc-900 dark:text-zinc-100' : 'mt-2 text-sm font-semibold text-zinc-900 dark:text-zinc-100'}>
+        {hint?.primary ?? ''}
+      </p>
       {hint?.secondary ? (
-        <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-300">{hint.secondary}</p>
+        <p className={compact ? 'mt-0.5 text-[11px] text-zinc-600 dark:text-zinc-300' : 'mt-1 text-xs text-zinc-600 dark:text-zinc-300'}>
+          {hint.secondary}
+        </p>
       ) : null}
     </div>
   )
@@ -409,6 +462,7 @@ function buildClassicPinLayout(seed) {
 
 export function HardwareMockDemo({ locale = 'zh' }) {
   const dict = useMemo(() => getDict(locale), [locale])
+  const commandOptions = useMemo(() => getCommandOptions(locale), [locale])
 
   const basePath = useMemo(() => {
     return (process.env.NEXT_PUBLIC_BASE_PATH?.replace(/\/$/, '') || '').trim()
@@ -454,6 +508,41 @@ export function HardwareMockDemo({ locale = 'zh' }) {
   const tourGuided = Boolean(tourEnabled && tourStarted)
   const allowPinInteraction = !tourGuided || currentTourStepId === 'pin'
   const allowConfirmInteraction = !tourGuided || currentTourStepId === 'confirm'
+  const tourInlineHint = useMemo(() => {
+    if (!tourGuided || !currentTourStepId) return null
+    const isEn = locale === 'en'
+    switch (currentTourStepId) {
+      case 'waiting-start':
+        return isEn ? 'Pick a command and send' : '选择命令并发送'
+      case 'example-code':
+        return isEn ? 'Example ready' : '示例已准备'
+      case 'pin-matrix-and-modal':
+        return isEn ? 'Open PIN dialog' : '打开 PIN 弹窗'
+      case 'pin':
+        return isEn ? 'Enter PIN on device' : '在设备上输入 PIN'
+      case 'callback-request-button':
+        return isEn ? 'REQUEST_BUTTON triggered' : 'REQUEST_BUTTON 已触发'
+      case 'confirm':
+        return isEn ? 'Confirm on device' : '在设备上确认'
+      case 'wait-result':
+        return isEn ? 'Waiting for result' : '等待结果'
+      case 'result':
+        return isEn ? 'Result ready' : '结果已就绪'
+      case 'callback-code':
+        return isEn ? 'Review callbacks' : '查看回调模板'
+      default:
+        return null
+    }
+  }, [currentTourStepId, locale, tourGuided])
+  const deviceTourOverlay = tourInlineHint ? (
+    <div className="pointer-events-none absolute left-1/2 top-6 z-30 -translate-x-1/2">
+      <div className="ok-tour-inline-hint">
+        <span className="ok-tour-inline-dot" />
+        <span className="text-[11px] font-medium text-zinc-700 dark:text-zinc-200">{tourInlineHint}</span>
+        <span className="ok-tour-inline-arrow" />
+      </div>
+    </div>
+  ) : null
 
   const isBusy =
     state.matches('booting') ||
@@ -472,34 +561,17 @@ export function HardwareMockDemo({ locale = 'zh' }) {
   const mockReady = state.context.mockReady
   const mockError = state.context.mockError
   const lastError = state.context.lastError
-  const deviceUnlocked = Boolean(state.context.device?.unlocked)
   const deviceType = state.context.device?.deviceType ?? 'pro'
-  const statusDotClass = mockError || lastError ? 'bg-red-500' : mockReady ? 'bg-[#00B812]' : 'bg-zinc-400'
-  const statusBadgeClass =
-    mockError || lastError
-      ? 'bg-red-50 text-red-700 ring-red-100 dark:bg-red-500/10 dark:text-red-100 dark:ring-red-500/30'
-      : mockReady
-        ? 'bg-emerald-50 text-emerald-700 ring-emerald-100 dark:bg-emerald-500/15 dark:text-emerald-100 dark:ring-emerald-500/30'
-        : 'bg-zinc-100 text-zinc-700 ring-zinc-200 dark:bg-zinc-800/70 dark:text-zinc-200 dark:ring-zinc-700'
-  const statusText = useMemo(() => {
-    if (state.matches('booting')) return dict.status.booting
-    if (state.matches('notReady')) return dict.status.notReady
-    if (state.matches('unavailable')) return dict.status.unavailable
-    if (state.matches('canceling')) return dict.status.canceling
-    if (state.matches('sending')) return dict.status.sending
-    if (state.matches('awaitingPin')) return dict.status.awaitingPin
-    if (state.matches('submittingPin')) return dict.status.submittingPin
-    if (state.matches('awaitingConfirm')) return dict.status.awaitingConfirm
-    if (state.matches('submittingConfirm')) return dict.status.submittingConfirm
-    if (state.matches('ready')) return dict.status.ready
-    return mockReady ? dict.status.ready : dict.status.notReady
-  }, [dict.status, mockReady, state])
+  const controlsDisabled = !mockReady || isBusy || isAwaitingUi || tourGuided
+  const modelControlDisabled = !mockReady || isBusy || isAwaitingUi || tourStarted
   const pinRequestId = ui?.type === 'pin' ? ui?.requestId ?? null : null
   const classicPinMatrix = useMemo(() => {
     if (deviceType !== 'classic1s') return null
     if (ui?.type !== 'pin') return null
     return buildClassicPinLayout(String(ui?.requestId ?? 'pin'))
   }, [deviceType, ui?.requestId, ui?.type])
+
+  const compactShowOnDeviceLabel = 'showOnOneKey'
 
   deviceTypeRef.current = deviceType
   uiTypeRef.current = ui?.type ?? null
@@ -981,8 +1053,8 @@ ${extraHint}`
   }
 
   return (
-    <div className="not-prose my-4 overflow-x-hidden" style={{ fontFamily: 'var(--font-ui)' }}>
-      <div className="p-4">
+    <div className="not-prose my-0 w-full overflow-x-hidden ok-hardware-mock" style={{ fontFamily: 'var(--font-ui)' }}>
+      <div className="p-0.5 sm:p-1">
         <HardwareMockTour locale={locale} enabled={tourEnabled} onExit={handleTourExit} />
 
 	        {deviceType === 'classic1s' && classicPinModalOpen && ui?.type === 'pin' ? (
@@ -1168,207 +1240,104 @@ ${extraHint}`
           </div>
         )}
 
-        <div className="mt-2 rounded-2xl bg-zinc-50/60 p-4 dark:bg-zinc-900/30">
-          <div className="grid min-h-0 gap-6 lg:grid-cols-[minmax(320px,480px)_minmax(0,1fr)] lg:items-stretch">
-            <div className="flex min-h-0 flex-col gap-4 lg:flex-row lg:gap-5">
-              <div className="flex-1 min-w-0">
-                <div className="pb-6">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <div className="text-sm font-medium text-zinc-900 dark:text-zinc-100">{dict.labels.deviceScreen}</div>
-                    <div
-                      className={[
-                        'inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ring-1',
-                        statusBadgeClass
-                      ].join(' ')}
-                    >
-                      <span className={['h-2 w-2 rounded-full', statusDotClass].join(' ')} />
-                      <span className="whitespace-nowrap">{statusText}</span>
+        <div className="mt-2 overflow-hidden rounded-[32px] border border-zinc-200/80 bg-[linear-gradient(135deg,_#f7f8fb_0%,_#eef2f7_55%,_#e9edf3_100%)] p-5 shadow-[0_24px_60px_rgba(15,23,42,0.08)] dark:border-zinc-800 dark:bg-[linear-gradient(120deg,_#0b0f14_0%,_#111826_55%,_#0a0f15_100%)]">
+          <div className="relative">
+            <div className="pointer-events-none absolute inset-0 rounded-[28px] bg-[radial-gradient(circle_at_top,_rgba(255,255,255,0.55),_transparent_55%)] opacity-60 dark:opacity-20" />
+            <div className="relative grid gap-4 lg:grid-cols-[minmax(240px,_0.3fr)_minmax(0,_0.7fr)] lg:gap-5">
+              <div className="flex min-w-0 flex-col gap-4 lg:gap-5">
+                <div className="relative min-h-[470px] overflow-hidden rounded-[26px] border border-white/80 bg-white/80 px-2 py-3 shadow-[0_14px_30px_rgba(30,20,10,0.08)] backdrop-blur lg:min-h-[600px] dark:border-white/10 dark:bg-white/5">
+                  <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(255,255,255,0.55),_transparent_55%)] opacity-50 dark:opacity-10" />
+                  <div className="relative">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-1 text-[9px] font-semibold uppercase tracking-[0.2em] text-zinc-400 dark:text-zinc-500">
+                        <span>{dict.labels.device}</span>
+                        <span className="rounded-full bg-zinc-100/80 px-1.5 py-0.5 text-[8px] font-semibold text-zinc-500 dark:bg-zinc-900/40 dark:text-zinc-400">
+                          {dict.labels.mock}
+                        </span>
+                      </div>
+                      <div className="flex min-w-0 items-center gap-1.5">
+                        <div className="inline-flex items-center rounded-full bg-white/80 p-0.5 ring-1 ring-zinc-200/70 shadow-sm dark:bg-zinc-900/60 dark:ring-zinc-700/70">
+                          {[
+                            { value: 'pro', label: 'Pro' },
+                            { value: 'classic1s', label: 'Classic 1s' }
+                          ].map((item) => {
+                            const active = deviceTypeControl === item.value
+                            return (
+                              <button
+                                key={item.value}
+                                type="button"
+                                disabled={modelControlDisabled}
+                                onClick={() => {
+                                  if (modelControlDisabled) return
+                                  const next = item.value
+                                  setDeviceTypeControl(next)
+                                  send({ type: 'SEND', command: 'setDeviceModel', params: { deviceType: next } })
+                                }}
+                                className={[
+                                  'h-5 rounded-full px-2 text-[9px] font-semibold transition-colors',
+                                  active
+                                    ? 'bg-zinc-900 text-white shadow-sm dark:bg-zinc-100 dark:text-zinc-900'
+                                    : 'text-zinc-600 hover:text-zinc-900 dark:text-zinc-300 dark:hover:text-white',
+                                  modelControlDisabled ? 'cursor-not-allowed opacity-60' : ''
+                                ].join(' ')}
+                              >
+                                {item.label}
+                              </button>
+                            )
+                          })}
+                        </div>
+
+                        <div className="inline-flex items-center gap-1 rounded-full border border-white/70 bg-white/80 p-0.5 text-[9px] shadow-sm dark:border-white/10 dark:bg-white/5">
+                          <div className="relative group">
+                            <a
+                              href="https://hardware-example.onekey.so/#/emulator"
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="grid h-5 w-5 place-items-center rounded-full text-zinc-700 transition-all hover:-translate-y-[1px] hover:bg-white hover:text-zinc-900 dark:text-zinc-200 dark:hover:bg-white/10 dark:hover:text-white"
+                              aria-label={dict.labels.openEmulator}
+                              title={dict.labels.openEmulator}
+                            >
+                              <ExternalLink size={11} strokeWidth={1.8} />
+                            </a>
+                            <div className="pointer-events-none absolute right-0 top-full z-20 mt-2 origin-top-right scale-95 opacity-0 transition duration-150 group-hover:scale-100 group-hover:opacity-100">
+                              <div className="whitespace-nowrap rounded-lg border border-white/70 bg-white/90 px-2.5 py-1 text-[10px] font-medium text-zinc-700 shadow-sm dark:border-white/10 dark:bg-zinc-950/70 dark:text-zinc-200">
+                                {dict.labels.openEmulator}
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="relative group">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const next = !tourEnabledRef.current
+                                tourEnabledRef.current = next
+                                setTourEnabled(next)
+                              }}
+                              className={[
+                                'grid h-5 w-5 place-items-center rounded-full border transition-all hover:-translate-y-[1px]',
+                                tourEnabled
+                                  ? 'border-[#00B812]/50 bg-[#00B812]/15 text-[#0a7024] hover:bg-[#00B812]/20 dark:border-[#00B812]/40 dark:bg-[#00B812]/20 dark:text-[#b6ffc6]'
+                                  : 'border-transparent text-zinc-700 hover:bg-white hover:text-zinc-900 dark:text-zinc-200 dark:hover:bg-white/10 dark:hover:text-white'
+                              ].join(' ')}
+                              aria-pressed={tourEnabled}
+                              aria-label={locale === 'en' ? 'Tour' : '导览'}
+                              title={locale === 'en' ? 'Tour' : '导览'}
+                            >
+                              <Sparkles size={11} strokeWidth={1.8} />
+                            </button>
+                            <div className="pointer-events-none absolute right-0 top-full z-20 mt-2 w-[240px] origin-top-right scale-95 opacity-0 transition duration-150 group-hover:pointer-events-auto group-hover:scale-100 group-hover:opacity-100">
+                              <TourHintCard hint={tourHint} locale={locale} compact />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
                     </div>
-                    <div className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium text-zinc-600 ring-1 ring-zinc-200/80 dark:text-zinc-200 dark:ring-zinc-800/70">
-                      <Info size={14} strokeWidth={2} className="text-zinc-400 dark:text-zinc-500" />
-                      <span className="whitespace-nowrap">{dict.labels.pinNote}</span>
-                    </div>
 
-                    <a
-                      href="https://hardware-example.onekey.so/#/emulator"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-zinc-200/70 bg-white/90 px-2.5 text-xs font-semibold text-zinc-800 shadow-sm transition-all hover:-translate-y-[1px] hover:border-zinc-300 hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00B812]/30 dark:border-zinc-800 dark:bg-zinc-900/60 dark:text-zinc-100 dark:hover:border-zinc-700"
-                    >
-                      {dict.labels.openEmulator}
-                      <ExternalLink size={14} strokeWidth={1.8} />
-                    </a>
-
-                    <div className="relative">
-                      <select
-                        value={deviceTypeControl}
-                        onChange={(e) => {
-                          const next = e.target.value === 'classic1s' ? 'classic1s' : 'pro'
-                          setDeviceTypeControl(next)
-                          send({ type: 'SEND', command: 'setDeviceModel', params: { deviceType: next } })
-                        }}
-                        disabled={!mockReady || isBusy || isAwaitingUi || tourStarted}
-                        className="h-9 appearance-none rounded-lg border border-zinc-200/70 bg-white/80 pl-3 pr-9 text-sm font-medium text-zinc-900 shadow-sm transition-all hover:border-zinc-300 hover:bg-white focus:border-[#00B812]/50 focus:ring-2 focus:ring-[#00B812]/25 disabled:cursor-not-allowed disabled:opacity-60 dark:border-zinc-800 dark:bg-zinc-900/50 dark:text-zinc-100 dark:hover:border-zinc-700"
-                        aria-label={locale === 'en' ? 'Device model' : '设备型号'}
-                      >
-                        <option value="pro">OneKey Pro</option>
-                        <option value="classic1s">OneKey Classic 1s</option>
-                      </select>
-                      <ChevronDown
-                        className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400 dark:text-zinc-500"
-                        aria-hidden="true"
-                      />
-                    </div>
-
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const next = !tourEnabledRef.current
-                        tourEnabledRef.current = next
-                        setTourEnabled(next)
-                      }}
-                      className={[
-                        'inline-flex h-9 items-center gap-2 rounded-lg border px-2.5 text-sm font-semibold transition-all shadow-sm',
-                        tourEnabled
-                          ? 'border-[#00B812]/60 bg-[#00B812]/10 text-[#0a7024] hover:bg-[#00B812]/15 dark:border-[#00B812]/50 dark:bg-[#00B812]/20 dark:text-[#a4ffba]'
-                          : 'border-zinc-200/70 bg-white/80 text-zinc-900 hover:border-zinc-300 hover:bg-white dark:border-zinc-800 dark:bg-zinc-900/50 dark:text-zinc-100 dark:hover:border-zinc-700'
-                      ].join(' ')}
-                      aria-pressed={tourEnabled}
-                    >
-                      <span
-                        className={[
-                          'h-2.5 w-2.5 rounded-full',
-                          tourEnabled ? 'bg-[#00B812] shadow-[0_0_0_4px_rgba(0,184,18,0.16)]' : 'bg-zinc-400'
-                        ].join(' ')}
-                      />
-                      <span>{locale === 'en' ? 'Tour' : '导览'}</span>
-                    </button>
-                  </div>
-
-                  <div ref={deviceRef} className="mt-3 flex justify-center" data-tour="device-screen">
-                    {deviceType === 'classic1s' ? (
-                      <Classic1sDeviceScreen
-                        locale={locale}
-                        busy={isBusy}
-                        device={state.context.device}
-                        ui={ui}
-                        pinEntryOnDevice={classicPinEntryOnDevice}
-                        pinMatrix={classicPinMatrix}
-                        allowPinInput={allowPinInteraction}
-                        allowConfirmInput={allowConfirmInteraction}
-                        onSubmitPin={(pinValue) => {
-                          if (!allowPinInteraction) return
-                          if (tourEnabled && tourStarted) {
-                            hardwareMockTourBus.emit('ui.pin.submit', { pinLength: String(pinValue ?? '').length })
-                          } else {
-                            setRightTab('callback')
-                            setEditorFocus((prev) => ({
-                              ...prev,
-                              tab: 'callback',
-                              activeLine: editorMarks.callback.callbackReceivePin ?? null
-                            }))
-                          }
-                          send({ type: 'SUBMIT_PIN', pin: pinValue })
-                        }}
-                        onConfirm={() => {
-                          if (!allowConfirmInteraction) return
-                          if (tourEnabled && tourStarted) {
-                            hardwareMockTourBus.emit('ui.confirm', { action: ui?.action ?? null, approved: true })
-                          } else if (ui?.action === 'btcGetAddress') {
-                            setRightTab('callback')
-                            setEditorFocus((prev) => ({ ...prev, tab: 'callback', activeLine: editorMarks.callback.callbackOn ?? null }))
-                          }
-                          send({ type: 'CONFIRM', approved: true })
-                        }}
-                        onReject={() => {
-                          if (!allowConfirmInteraction) return
-                          if (tourEnabled) {
-                            hardwareMockTourBus.emit('ui.confirm', { action: ui?.action ?? null, approved: false })
-                          }
-                          send({ type: 'CONFIRM', approved: false })
-                        }}
-                        onTapToUnlock={() => {
-                          if (tourGuided) return
-                          if (!mockReady || isBusy || isAwaitingUi) return
-                          pinOriginRef.current = 'manual'
-                          setClassicPinModalOpen(false)
-                          setClassicPinEntryOnDevice(true)
-                          setClassicPinValue('')
-                          if (tourEnabled) {
-                            hardwareMockTourBus.emit('ui.unlock.tap', {})
-                          }
-                          send({ type: 'SEND', command: 'deviceUnlock', params: { connectId: state.context.device?.connectId ?? null } })
-                        }}
-                      />
-                    ) : (
-                      <ProDeviceScreen
-                        basePath={basePath}
-                        locale={locale}
-                        busy={isBusy}
-                        device={state.context.device}
-                        ui={ui}
-                        allowPinInput={allowPinInteraction}
-                        allowConfirmInput={allowConfirmInteraction}
-                        onSubmitPin={(pinValue) => {
-                          if (!allowPinInteraction) return
-                          if (tourEnabled && tourStarted) {
-                            hardwareMockTourBus.emit('ui.pin.submit', { pinLength: String(pinValue ?? '').length })
-                          } else {
-                            setRightTab('callback')
-                            setEditorFocus((prev) => ({
-                              ...prev,
-                              tab: 'callback',
-                              activeLine: editorMarks.callback.callbackReceivePin ?? null
-                            }))
-                          }
-                          send({ type: 'SUBMIT_PIN', pin: pinValue })
-                        }}
-                        onConfirm={() => {
-                          if (!allowConfirmInteraction) return
-                          if (tourEnabled && tourStarted) {
-                            hardwareMockTourBus.emit('ui.confirm', { action: ui?.action ?? null, approved: true })
-                          } else if (ui?.action === 'btcGetAddress') {
-                            setRightTab('callback')
-                            setEditorFocus((prev) => ({ ...prev, tab: 'callback', activeLine: editorMarks.callback.callbackOn ?? null }))
-                          }
-                          send({ type: 'CONFIRM', approved: true })
-                        }}
-                        onReject={() => {
-                          if (!allowConfirmInteraction) return
-                          if (tourEnabled) {
-                            hardwareMockTourBus.emit('ui.confirm', { action: ui?.action ?? null, approved: false })
-                          }
-                          send({ type: 'CONFIRM', approved: false })
-                        }}
-                        onCancel={() => send({ type: 'CANCEL' })}
-                        onTapToUnlock={() => {
-                          if (tourGuided) return
-                          if (!mockReady || isBusy || isAwaitingUi) return
-                          if (tourEnabled) {
-                            hardwareMockTourBus.emit('ui.unlock.tap', {})
-                          }
-                          send({ type: 'SEND', command: 'deviceUnlock', params: { connectId: state.context.device?.connectId ?? null } })
-                        }}
-                      />
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex min-w-0 flex-col gap-4 lg:w-[360px]">
-                <TourHintCard hint={tourHint} locale={locale} />
-                <div className="rounded-2xl border border-zinc-200/80 bg-white/90 p-4 shadow-sm dark:border-zinc-800/60 dark:bg-zinc-950/40">
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="text-sm font-medium text-zinc-900 dark:text-zinc-100">{dict.labels.commandPanel}</div>
-                  </div>
-
-                  <div className="mt-4 space-y-3">
-                    <div className="grid gap-2 lg:grid-cols-2">
-                      <div>
-                        <label className="mb-1 block text-xs font-medium text-zinc-700 dark:text-zinc-300">
-                          {dict.labels.command}
-                        </label>
-                        <div className="relative">
+                    <div className="mt-2 rounded-2xl border border-zinc-200/60 bg-white/70 p-2.5 shadow-sm dark:border-zinc-800/60 dark:bg-white/5 ok-command-panel">
+                      <div className="flex items-center gap-2">
+                        <span className="text-[11px] font-medium text-zinc-500 dark:text-zinc-400">{dict.labels.command}</span>
+                        <div className="relative min-w-0 flex-1">
                           <select
                             data-tour="command-select"
                             value={command}
@@ -1379,227 +1348,360 @@ ${extraHint}`
                                 hardwareMockTourBus.emit('command.changed', { command: nextCommand })
                               }
                             }}
-                            disabled={!mockReady || isBusy || isAwaitingUi || tourGuided}
-                            className="h-9 w-full appearance-none rounded-lg bg-zinc-100/80 pl-3 pr-9 text-sm font-medium text-zinc-900 outline-none transition-colors hover:bg-zinc-100 focus:ring-2 focus:ring-[#00B812]/25 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-zinc-900/40 dark:text-zinc-100 dark:hover:bg-zinc-900/55"
+                            disabled={controlsDisabled}
+                            className="w-full appearance-none pr-8 text-xs text-zinc-900 outline-none dark:text-zinc-100"
                           >
-                            <option value="searchDevices">searchDevices</option>
-                            <option value="btcGetAddress">btcGetAddress</option>
-                            <option value="btcSignMessage">btcSignMessage</option>
+                            {commandOptions.map((option) => (
+                              <option key={option.value} value={option.value}>
+                                {option.title}
+                              </option>
+                            ))}
                           </select>
-                          <ChevronDown
-                            className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400 dark:text-zinc-500"
-                            aria-hidden="true"
-                          />
+                          <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-zinc-400 dark:text-zinc-500" />
                         </div>
+
+                        <button
+                          type="button"
+                          onClick={handleSendCommand}
+                          disabled={controlsDisabled}
+                          data-tour="send-button"
+                          className="inline-flex h-7 shrink-0 items-center justify-center gap-1.5 rounded-lg border border-[#00B812]/25 bg-[#00B812]/10 px-2.5 text-xs font-medium text-[#0a7024] transition-colors hover:bg-[#00B812]/15 focus:outline-none focus:ring-2 focus:ring-[#00B812]/20 disabled:cursor-not-allowed disabled:opacity-50 dark:border-[#00B812]/30 dark:bg-[#00B812]/15 dark:text-[#b6ffc6]"
+                        >
+                          <Send size={14} strokeWidth={1.8} />
+                          {dict.labels.sendCommand}
+                        </button>
                       </div>
 
-                      <div>
-                        <label className="mb-1 block text-xs font-medium text-zinc-700 dark:text-zinc-300">Path</label>
-                        <input
-                          value={btcPath}
-                          onChange={(e) => setBtcPath(e.target.value)}
-                          disabled={command === 'searchDevices' || !mockReady || isBusy || isAwaitingUi || tourGuided}
-                          className="h-9 w-full rounded-lg bg-zinc-100/80 px-3 text-sm font-medium text-zinc-900 outline-none transition-colors placeholder:text-zinc-400 hover:bg-zinc-100 focus:ring-2 focus:ring-[#00B812]/25 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-zinc-900/40 dark:text-zinc-100 dark:placeholder:text-zinc-600 dark:hover:bg-zinc-900/55"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="flex flex-wrap items-center gap-4">
-                      <label
-                        data-tour="show-on-onekey"
-                        className="inline-flex items-center gap-3 rounded-lg bg-zinc-100/80 px-3 py-2 text-xs font-medium text-zinc-700 dark:bg-zinc-900/40 dark:text-zinc-200"
-                      >
-                        <span className="text-zinc-700 dark:text-zinc-200">{dict.labels.showOnDevice}</span>
-                        <input
-                          type="checkbox"
-                          checked={addressShowOnOneKey}
-                          onChange={(e) => {
-                            const next = e.target.checked
-                            setAddressShowOnOneKey(next)
-                            if (tourEnabled) {
-                              hardwareMockTourBus.emit('param.changed', { key: 'showOnOneKey', value: next })
-                            }
-                          }}
-                          disabled={command !== 'btcGetAddress' || !mockReady || isBusy || isAwaitingUi || tourGuided}
-                          className="peer sr-only"
-                        />
-                        <span className="relative h-5 w-9 rounded-full bg-zinc-200 transition-colors peer-checked:bg-[#00B812] peer-disabled:opacity-60 dark:bg-zinc-800">
-                          <span className="absolute left-0.5 top-0.5 h-4 w-4 rounded-full bg-white shadow-sm transition-transform peer-checked:translate-x-4 dark:bg-zinc-50" />
-                        </span>
-                      </label>
-                    </div>
-
-                    {command === 'btcSignMessage' && (
-                      <div>
-                        <label className="mb-1 block text-xs font-medium text-zinc-700 dark:text-zinc-300">messageHex</label>
-                        <textarea
-                          value={messageHex}
-                          onChange={(e) => setMessageHex(e.target.value)}
-                          disabled={!mockReady || isBusy || isAwaitingUi || tourGuided}
-                          rows={3}
-                          className="w-full resize-none rounded-lg bg-zinc-100/80 px-3 py-2 text-sm font-medium text-zinc-900 outline-none transition-colors hover:bg-zinc-100 focus:ring-2 focus:ring-[#00B812]/25 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-zinc-900/40 dark:text-zinc-100 dark:hover:bg-zinc-900/55"
-                        />
-                      </div>
-                    )}
-
-                    <button
-                      type="button"
-                      onClick={handleSendCommand}
-                      disabled={!mockReady || isBusy || isAwaitingUi || tourGuided}
-                      data-tour="send-button"
-                      className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-lg bg-[#00B812] px-4 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-[#00A311] focus:outline-none focus:ring-2 focus:ring-[#00B812]/25 disabled:cursor-not-allowed disabled:opacity-50"
-                    >
-                      <Send size={16} strokeWidth={1.8} />
-                      {dict.labels.sendCommand}
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex h-full min-h-0 flex-col">
-            <div className="flex items-center justify-between gap-3">
-              <div className="flex min-w-0 items-center gap-2">
-                <div className="text-sm font-medium text-zinc-900 dark:text-zinc-100">{dict.labels.devViewTitle}</div>
-                <span className="truncate rounded-lg bg-white/80 px-2 py-0.5 font-mono text-[11px] text-zinc-700 dark:bg-zinc-950/60 dark:text-zinc-300">
-                    {command}
-                  </span>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  {rightTab === 'example' ? (
-                    <button
-                      type="button"
-                      onClick={handleCopy}
-                      disabled={tourGuided}
-                      className="grid h-9 w-9 place-items-center rounded-lg bg-white/80 text-zinc-900 shadow-sm transition-colors hover:bg-white disabled:cursor-not-allowed disabled:opacity-60 dark:bg-zinc-950/60 dark:text-zinc-100 dark:hover:bg-zinc-950"
-                      aria-label={copied ? dict.labels.copied : dict.labels.copy}
-                      title={copied ? dict.labels.copied : dict.labels.copy}
-                    >
-                      {copied ? <Check size={16} strokeWidth={1.8} /> : <Copy size={16} strokeWidth={1.8} />}
-                    </button>
-                  ) : null}
-
-                  <div className="inline-flex rounded-lg bg-white/80 p-0.5 text-xs shadow-sm dark:bg-zinc-950/60">
-                    {[
-                      { key: 'example', label: dict.labels.tabExample },
-                      { key: 'callback', label: dict.labels.tabCallback },
-                      { key: 'result', label: dict.labels.tabResult }
-                    ].map((tab) => (
-                      <button
-                        key={tab.key}
-                        type="button"
-                        disabled={tourGuided}
-                        onClick={() => {
-                          if (tourGuided) return
-                          setRightTab(tab.key)
-                          setEditorFocus((prev) => {
-                            if (tab.key === 'example') return { ...prev, tab: tab.key, activeLine: editorMarks.example.exampleCall ?? null }
-                            if (tab.key === 'callback') return { ...prev, tab: tab.key, activeLine: editorMarks.callback.callbackOn ?? null }
-                            if (tab.key === 'result') return { ...prev, tab: tab.key, activeLine: null }
-                            return { ...prev, tab: tab.key }
-                          })
-                        }}
-                        className={[
-                          'rounded px-2.5 py-1 font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-60',
-                          rightTab === tab.key
-                            ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900'
-                            : 'text-zinc-700 hover:bg-zinc-50 dark:text-zinc-200 dark:hover:bg-zinc-900'
-                        ].join(' ')}
-                      >
-                        {tab.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              <div className="mt-3 flex min-h-0 flex-1 flex-col">
-                {rightTab === 'example' ? (
-                  <EditorCodeBlock
-                    dataTour="example-code"
-                    code={code}
-                    language="typescript"
-                    filename={exampleFilename}
-                    activeLine={tourEnabled && tourStarted && editorFocus.tab === 'example' ? editorFocus.activeLine : null}
-                    breakpoints={
-                      tourEnabled && tourStarted && editorFocus.tab === 'example' && editorFocus.activeLine ? [editorFocus.activeLine] : []
-                    }
-                    showBreakpoints={tourEnabled && tourStarted}
-                    className="min-h-0 flex-1"
-                  />
-                ) : null}
-
-                {rightTab === 'callback' ? (
-                  <EditorCodeBlock
-                    dataTour="callback-code"
-                    code={callbackCode}
-                    language="typescript"
-                    filename={callbackFilename}
-                    activeLine={tourEnabled && tourStarted && editorFocus.tab === 'callback' ? editorFocus.activeLine : null}
-                    breakpoints={
-                      tourEnabled && tourStarted && editorFocus.tab === 'callback' && editorFocus.activeLine ? [editorFocus.activeLine] : []
-                    }
-                    showBreakpoints={tourEnabled && tourStarted}
-                    className="min-h-0 flex-1"
-                  />
-                ) : null}
-
-                {rightTab === 'result'
-                  ? (() => {
-                      const last = [...logs].reverse().find((item) => item.level === 'response' || item.level === 'error') ?? null
-                      return (
-                        <div className="flex min-h-0 flex-1 flex-col gap-2" data-tour="result-panel">
-                          {last ? (
-                            <div className="font-mono text-xs">
-                              <span className="text-zinc-500 dark:text-zinc-500">[{formatTime(last.ts)}]</span>{' '}
-                              <span className={getLevelStyle(last.level)}>{last.title}</span>
-                            </div>
-                          ) : null}
-
-                          {last && last.data !== undefined ? (
-                            <EditorCodeBlock
-                              code={formatJsonPretty(last.data)}
-                              language="json"
-                              filename={resultFilename}
-                              activeLine={null}
-                              breakpoints={[]}
-                              cursor="default"
-                              className="min-h-0 flex-1"
+                      <div className="mt-2.5 grid gap-2">
+                        {command !== 'searchDevices' ? (
+                          <label className="grid gap-1 text-xs text-zinc-600 dark:text-zinc-300">
+                            <span className="text-[11px] font-medium text-zinc-400 dark:text-zinc-500">Path</span>
+                            <input
+                              value={btcPath}
+                              onChange={(e) => setBtcPath(e.target.value)}
+                              disabled={controlsDisabled}
+                              className="w-full"
                             />
-                          ) : (
-                            <div className="flex min-h-0 flex-1 items-center justify-center rounded-xl bg-white/70 p-3 text-xs text-zinc-500 dark:bg-zinc-950/40 dark:text-zinc-500">
-                              {!last ? dict.labels.noResult : dict.labels.noPayload}
-                            </div>
-                          )}
+                          </label>
+                        ) : null}
 
-                          {last ? (
-                            <details>
-                              <summary className="cursor-pointer select-none text-xs text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200">
-                                {dict.labels.showRawLogs}
-                              </summary>
-                              <div className="mt-2 space-y-1 font-mono text-[11px] text-zinc-700 dark:text-zinc-200">
-                                {logs.map((item) => (
-                                  <div key={item.id}>
-                                    <span className="text-zinc-500 dark:text-zinc-500">[{formatTime(item.ts)}]</span>{' '}
-                                    <span className={getLevelStyle(item.level)}>{item.title}</span>
-                                    {item.data !== undefined ? (
-                                      <span className="text-zinc-500 dark:text-zinc-400"> {formatJson(item.data)}</span>
-                                    ) : null}
+                        {command === 'btcSignMessage' ? (
+                          <label className="grid gap-1 text-xs text-zinc-600 dark:text-zinc-300">
+                            <span className="text-[11px] font-medium text-zinc-400 dark:text-zinc-500">Message</span>
+                            <textarea
+                              value={messageHex}
+                              onChange={(e) => setMessageHex(e.target.value)}
+                              disabled={controlsDisabled}
+                              rows={2}
+                              className="w-full resize-none"
+                            />
+                          </label>
+                        ) : null}
+
+                        {command === 'btcGetAddress' ? (
+                          <div data-tour="show-on-onekey" className="flex items-center justify-between gap-3 text-xs text-zinc-600 dark:text-zinc-300">
+                            <span className="font-mono text-[11px] text-zinc-500 dark:text-zinc-400">{compactShowOnDeviceLabel}</span>
+                            <button
+                              type="button"
+                              aria-pressed={addressShowOnOneKey}
+                              onClick={() => {
+                                if (controlsDisabled) return
+                                const next = !addressShowOnOneKey
+                                setAddressShowOnOneKey(next)
+                                if (tourEnabled) {
+                                  hardwareMockTourBus.emit('param.changed', { key: 'showOnOneKey', value: next })
+                                }
+                              }}
+                              disabled={controlsDisabled}
+                              className={[
+                                'inline-flex h-6 min-w-[48px] items-center justify-center rounded-full px-2 text-[11px] font-semibold transition-colors',
+                                addressShowOnOneKey
+                                  ? 'bg-[#00B812] text-white shadow-sm'
+                                  : 'bg-zinc-200 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300',
+                                controlsDisabled ? 'opacity-60' : 'hover:brightness-95'
+                              ].join(' ')}
+                            >
+                              {addressShowOnOneKey ? 'ON' : 'OFF'}
+                            </button>
+                          </div>
+                        ) : null}
+
+                        {command === 'searchDevices' ? (
+                          <div className="text-[11px] font-medium text-zinc-500 dark:text-zinc-400">
+                            {dict.labels.commandNoParams}
+                          </div>
+                        ) : null}
+                      </div>
+                    </div>
+
+                    <div ref={deviceRef} className="mt-3 flex justify-center" data-tour="device-screen">
+                      {deviceType === 'classic1s' ? (
+                        <Classic1sDeviceScreen
+                          locale={locale}
+                          busy={isBusy}
+                          device={state.context.device}
+                          ui={ui}
+                          overlay={deviceTourOverlay}
+                          pinEntryOnDevice={classicPinEntryOnDevice}
+                          pinMatrix={classicPinMatrix}
+                          allowPinInput={allowPinInteraction}
+                          allowConfirmInput={allowConfirmInteraction}
+                          onSubmitPin={(pinValue) => {
+                            if (!allowPinInteraction) return
+                            if (tourEnabled && tourStarted) {
+                              hardwareMockTourBus.emit('ui.pin.submit', { pinLength: String(pinValue ?? '').length })
+                            } else {
+                              setRightTab('callback')
+                              setEditorFocus((prev) => ({
+                                ...prev,
+                                tab: 'callback',
+                                activeLine: editorMarks.callback.callbackReceivePin ?? null
+                              }))
+                            }
+                            send({ type: 'SUBMIT_PIN', pin: pinValue })
+                          }}
+                          onConfirm={() => {
+                            if (!allowConfirmInteraction) return
+                            if (tourEnabled && tourStarted) {
+                              hardwareMockTourBus.emit('ui.confirm', { action: ui?.action ?? null, approved: true })
+                            } else if (ui?.action === 'btcGetAddress') {
+                              setRightTab('callback')
+                              setEditorFocus((prev) => ({ ...prev, tab: 'callback', activeLine: editorMarks.callback.callbackOn ?? null }))
+                            }
+                            send({ type: 'CONFIRM', approved: true })
+                          }}
+                          onReject={() => {
+                            if (!allowConfirmInteraction) return
+                            if (tourEnabled) {
+                              hardwareMockTourBus.emit('ui.confirm', { action: ui?.action ?? null, approved: false })
+                            }
+                            send({ type: 'CONFIRM', approved: false })
+                          }}
+                          onTapToUnlock={() => {
+                            if (tourGuided) return
+                            if (!mockReady || isBusy || isAwaitingUi) return
+                            pinOriginRef.current = 'manual'
+                            setClassicPinModalOpen(false)
+                            setClassicPinEntryOnDevice(true)
+                            setClassicPinValue('')
+                            if (tourEnabled) {
+                              hardwareMockTourBus.emit('ui.unlock.tap', {})
+                            }
+                            send({ type: 'SEND', command: 'deviceUnlock', params: { connectId: state.context.device?.connectId ?? null } })
+                          }}
+                        />
+                      ) : (
+                        <ProDeviceScreen
+                          basePath={basePath}
+                          locale={locale}
+                          busy={isBusy}
+                          device={state.context.device}
+                          ui={ui}
+                          overlay={deviceTourOverlay}
+                          allowPinInput={allowPinInteraction}
+                          allowConfirmInput={allowConfirmInteraction}
+                          onSubmitPin={(pinValue) => {
+                            if (!allowPinInteraction) return
+                            if (tourEnabled && tourStarted) {
+                              hardwareMockTourBus.emit('ui.pin.submit', { pinLength: String(pinValue ?? '').length })
+                            } else {
+                              setRightTab('callback')
+                              setEditorFocus((prev) => ({
+                                ...prev,
+                                tab: 'callback',
+                                activeLine: editorMarks.callback.callbackReceivePin ?? null
+                              }))
+                            }
+                            send({ type: 'SUBMIT_PIN', pin: pinValue })
+                          }}
+                          onConfirm={() => {
+                            if (!allowConfirmInteraction) return
+                            if (tourEnabled && tourStarted) {
+                              hardwareMockTourBus.emit('ui.confirm', { action: ui?.action ?? null, approved: true })
+                            } else if (ui?.action === 'btcGetAddress') {
+                              setRightTab('callback')
+                              setEditorFocus((prev) => ({ ...prev, tab: 'callback', activeLine: editorMarks.callback.callbackOn ?? null }))
+                            }
+                            send({ type: 'CONFIRM', approved: true })
+                          }}
+                          onReject={() => {
+                            if (!allowConfirmInteraction) return
+                            if (tourEnabled) {
+                              hardwareMockTourBus.emit('ui.confirm', { action: ui?.action ?? null, approved: false })
+                            }
+                            send({ type: 'CONFIRM', approved: false })
+                          }}
+                          onCancel={() => send({ type: 'CANCEL' })}
+                          onTapToUnlock={() => {
+                            if (tourGuided) return
+                            if (!mockReady || isBusy || isAwaitingUi) return
+                            if (tourEnabled) {
+                              hardwareMockTourBus.emit('ui.unlock.tap', {})
+                            }
+                            send({ type: 'SEND', command: 'deviceUnlock', params: { connectId: state.context.device?.connectId ?? null } })
+                          }}
+                        />
+                      )}
+                    </div>
+
+                  <div className="mt-2 flex flex-wrap items-center gap-2">
+                    <div className="inline-flex items-center gap-1 rounded-full border border-white/70 bg-white/80 px-2 py-0.5 text-[10px] font-medium text-zinc-600 shadow-sm dark:border-white/10 dark:bg-white/5 dark:text-zinc-300">
+                      <Info size={14} strokeWidth={2} className="text-zinc-400 dark:text-zinc-500" />
+                      <span className="whitespace-nowrap">{dict.labels.pinNote}</span>
+                    </div>
+                  </div>
+                  </div>
+                </div>
+
+              </div>
+
+              <div className="relative min-w-0 h-[560px] overflow-hidden rounded-[26px] border border-white/80 bg-white/90 p-4 shadow-[0_14px_30px_rgba(30,20,10,0.08)] backdrop-blur lg:h-[640px] dark:border-white/10 dark:bg-white/5">
+                <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(255,255,255,0.5),_transparent_60%)] opacity-40 dark:opacity-10" />
+                <div className="relative flex h-full flex-col">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex min-w-0 items-center gap-2">
+                        <div className="text-sm font-medium text-zinc-900 dark:text-zinc-100">{dict.labels.devViewTitle}</div>
+                      <span className="truncate font-mono text-[10px] text-zinc-500/80 dark:text-zinc-500">
+                        {command}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      {rightTab === 'example' ? (
+                        <button
+                          type="button"
+                          onClick={handleCopy}
+                          disabled={tourGuided}
+                          className="grid h-7 w-7 place-items-center rounded-md bg-white/80 text-zinc-900 shadow-sm transition-colors hover:bg-white disabled:cursor-not-allowed disabled:opacity-60 dark:bg-zinc-950/60 dark:text-zinc-100 dark:hover:bg-zinc-950"
+                          aria-label={copied ? dict.labels.copied : dict.labels.copy}
+                          title={copied ? dict.labels.copied : dict.labels.copy}
+                        >
+                          {copied ? <Check size={14} strokeWidth={1.8} /> : <Copy size={14} strokeWidth={1.8} />}
+                        </button>
+                      ) : null}
+
+                      <div className="inline-flex rounded-lg bg-white/80 p-0.5 text-xs shadow-sm dark:bg-zinc-950/60">
+                        {[
+                          { key: 'example', label: dict.labels.tabExample },
+                          { key: 'callback', label: dict.labels.tabCallback },
+                          { key: 'result', label: dict.labels.tabResult }
+                        ].map((tab) => (
+                          <button
+                            key={tab.key}
+                            type="button"
+                            disabled={tourGuided}
+                            onClick={() => {
+                              if (tourGuided) return
+                              setRightTab(tab.key)
+                              setEditorFocus((prev) => {
+                                if (tab.key === 'example') return { ...prev, tab: tab.key, activeLine: editorMarks.example.exampleCall ?? null }
+                                if (tab.key === 'callback') return { ...prev, tab: tab.key, activeLine: editorMarks.callback.callbackOn ?? null }
+                                if (tab.key === 'result') return { ...prev, tab: tab.key, activeLine: null }
+                                return { ...prev, tab: tab.key }
+                              })
+                            }}
+                            className={[
+                              'rounded px-2.5 py-1 font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-60',
+                              rightTab === tab.key
+                                ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900'
+                                : 'text-zinc-700 hover:bg-zinc-50 dark:text-zinc-200 dark:hover:bg-zinc-900'
+                            ].join(' ')}
+                          >
+                            {tab.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mt-3 flex min-h-0 flex-1 flex-col">
+                    {rightTab === 'example' ? (
+                      <EditorCodeBlock
+                        dataTour="example-code"
+                        code={code}
+                        language="typescript"
+                        filename={exampleFilename}
+                        activeLine={tourEnabled && tourStarted && editorFocus.tab === 'example' ? editorFocus.activeLine : null}
+                        breakpoints={
+                          tourEnabled && tourStarted && editorFocus.tab === 'example' && editorFocus.activeLine ? [editorFocus.activeLine] : []
+                        }
+                        showBreakpoints={tourEnabled && tourStarted}
+                        className="min-h-0 flex-1"
+                      />
+                    ) : null}
+
+                    {rightTab === 'callback' ? (
+                      <EditorCodeBlock
+                        dataTour="callback-code"
+                        code={callbackCode}
+                        language="typescript"
+                        filename={callbackFilename}
+                        activeLine={tourEnabled && tourStarted && editorFocus.tab === 'callback' ? editorFocus.activeLine : null}
+                        breakpoints={
+                          tourEnabled && tourStarted && editorFocus.tab === 'callback' && editorFocus.activeLine ? [editorFocus.activeLine] : []
+                        }
+                        showBreakpoints={tourEnabled && tourStarted}
+                        className="min-h-0 flex-1"
+                      />
+                    ) : null}
+
+                    {rightTab === 'result'
+                      ? (() => {
+                          const last = [...logs].reverse().find((item) => item.level === 'response' || item.level === 'error') ?? null
+                          return (
+                            <div className="flex min-h-0 flex-1 flex-col gap-2" data-tour="result-panel">
+                              {last ? (
+                                <div className="font-mono text-xs">
+                                  <span className="text-zinc-500 dark:text-zinc-500">[{formatTime(last.ts)}]</span>{' '}
+                                  <span className={getLevelStyle(last.level)}>{last.title}</span>
+                                </div>
+                              ) : null}
+
+                              {last && last.data !== undefined ? (
+                                <EditorCodeBlock
+                                  code={formatJsonPretty(last.data)}
+                                  language="json"
+                                  filename={resultFilename}
+                                  activeLine={null}
+                                  breakpoints={[]}
+                                  cursor="default"
+                                  className="min-h-0 flex-1"
+                                />
+                              ) : (
+                                <div className="flex min-h-0 flex-1 items-center justify-center rounded-xl bg-white/70 p-3 text-xs text-zinc-500 dark:bg-zinc-950/40 dark:text-zinc-500">
+                                  {!last ? dict.labels.noResult : dict.labels.noPayload}
+                                </div>
+                              )}
+
+                              {last ? (
+                                <details>
+                                  <summary className="cursor-pointer select-none text-xs text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200">
+                                    {dict.labels.showRawLogs}
+                                  </summary>
+                                  <div className="mt-2 space-y-1 font-mono text-[11px] text-zinc-700 dark:text-zinc-200">
+                                    {logs.map((item) => (
+                                      <div key={item.id}>
+                                        <span className="text-zinc-500 dark:text-zinc-500">[{formatTime(item.ts)}]</span>{' '}
+                                        <span className={getLevelStyle(item.level)}>{item.title}</span>
+                                        {item.data !== undefined ? (
+                                          <span className="text-zinc-500 dark:text-zinc-400"> {formatJson(item.data)}</span>
+                                        ) : null}
+                                      </div>
+                                    ))}
                                   </div>
-                                ))}
-                              </div>
-                            </details>
-                          ) : null}
-                        </div>
-                      )
-                    })()
-                  : null}
+                                </details>
+                              ) : null}
+                            </div>
+                          )
+                        })()
+                      : null}
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
         </div>
       </div>
+    </div>
     </div>
   )
 }

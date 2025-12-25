@@ -80,16 +80,15 @@ export function EditorCodeBlock({
             margin: 0,
             padding: '12px 0',
             background: isDark ? '#282c34' : '#f8fafc',
-            fontSize: 13.5,
-            lineHeight: 1.65,
             fontFamily: 'var(--font-mono)',
-            fontWeight: 500,
             cursor
           }}
           codeTagProps={{
             style: {
               fontFamily: 'var(--font-mono)',
-              fontWeight: 500
+              fontSize: 12.5,
+              lineHeight: 1.6,
+              fontWeight: 450
             }
           }}
           lineNumberStyle={(lineNumber) => {
@@ -103,6 +102,7 @@ export function EditorCodeBlock({
               userSelect: 'none',
               opacity: 0.85,
               color: isDark ? '#7f848e' : '#475569',
+              fontSize: 12.5,
               ...(showBreakpoints && isBp
                 ? {
                     backgroundImage: `radial-gradient(circle, ${isDark ? '#ff5f56' : '#dc2626'} 48%, transparent 49%)`,

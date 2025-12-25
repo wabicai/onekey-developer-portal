@@ -9,7 +9,7 @@ function joinPath(basePath, pathname) {
 
 export function ProDeviceStatusBar({
   basePath,
-  usb = true,
+  usb = false,
   ble = 'enabled',
   battery = 60
 }) {
@@ -25,12 +25,13 @@ export function ProDeviceStatusBar({
 
   return (
     <div
-      className="absolute left-0 top-0 flex items-center justify-end gap-0"
+      className="absolute left-0 top-0 flex items-center justify-end gap-1"
       style={{
         width: PRO_SCREEN.width,
         height: PRO_SCREEN.statusBarHeight,
-        padding: '6px 4px',
-        color: PRO_COLORS.WHITE
+        padding: '10px 12px 0',
+        color: PRO_COLORS.WHITE,
+        opacity: 0.9
       }}
     >
       {usb ? (
@@ -38,7 +39,7 @@ export function ProDeviceStatusBar({
           src={`${iconBase}/usb.png`}
           alt=""
           draggable={false}
-          style={{ width: 32, height: 32 }}
+          style={{ width: 22, height: 22 }}
         />
       ) : null}
 
@@ -46,16 +47,15 @@ export function ProDeviceStatusBar({
         src={bleIcon}
         alt=""
         draggable={false}
-        style={{ width: 32, height: 32 }}
+        style={{ width: 22, height: 22 }}
       />
 
       <img
         src={batteryIcon}
         alt=""
         draggable={false}
-        style={{ width: 32, height: 32 }}
+        style={{ width: 24, height: 24 }}
       />
     </div>
   )
 }
-

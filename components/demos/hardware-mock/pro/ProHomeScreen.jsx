@@ -32,7 +32,15 @@ export function ProHomeScreen({ basePath, locale, device, busy = false }) {
         backgroundPosition: 'center'
       }}
     >
-      <ProDeviceStatusBar basePath={basePath} usb ble="enabled" battery={60} />
+      <div
+        className="absolute left-0 top-0"
+        style={{
+          width: PRO_SCREEN.width,
+          height: PRO_SCREEN.height,
+          background: 'linear-gradient(180deg, rgba(0,0,0,0.12) 0%, rgba(0,0,0,0.45) 100%)'
+        }}
+      />
+      <ProDeviceStatusBar basePath={basePath} ble="enabled" battery={60} />
 
       <div
         className="absolute left-0 top-0"
@@ -41,15 +49,14 @@ export function ProHomeScreen({ basePath, locale, device, busy = false }) {
         <div
           className="absolute left-1/2 -translate-x-1/2"
           style={{
-            top: 76,
-            width: 456,
-            height: 38,
+            top: 108,
+            width: 420,
             textAlign: 'center',
-            fontSize: 30,
+            fontSize: 26,
             fontWeight: 600,
-            letterSpacing: -1,
-            lineHeight: '38px',
-            color: PRO_COLORS.WHITE
+            letterSpacing: 0.2,
+            lineHeight: '32px',
+            color: 'rgba(255,255,255,0.9)'
           }}
         >
           {title}
@@ -59,14 +66,14 @@ export function ProHomeScreen({ basePath, locale, device, busy = false }) {
           <div
             className="absolute left-1/2 -translate-x-1/2"
             style={{
-              top: 130,
-              width: 456,
+              top: 146,
+              width: 420,
               textAlign: 'center',
-              fontSize: 30,
-              fontWeight: 400,
-              letterSpacing: -1,
-              lineHeight: '38px',
-              color: PRO_COLORS.WHITE
+              fontSize: 20,
+              fontWeight: 500,
+              letterSpacing: 0.2,
+              lineHeight: '26px',
+              color: 'rgba(255,255,255,0.65)'
             }}
           >
             {subtitle}
@@ -74,10 +81,10 @@ export function ProHomeScreen({ basePath, locale, device, busy = false }) {
         ) : null}
 
         <div
-          className="absolute left-0 flex flex-col items-center"
+          className="absolute left-1/2 -translate-x-1/2 flex flex-col items-center"
           style={{
-            bottom: 24,
-            width: PRO_SCREEN.width
+            bottom: 40,
+            width: 420
           }}
         >
           {!busy ? (
@@ -85,19 +92,19 @@ export function ProHomeScreen({ basePath, locale, device, busy = false }) {
               src={joinPath(basePath, '/hardware-pro/res/up-home.png')}
               alt=""
               draggable={false}
-              style={{ width: 48, height: 48, marginBottom: 8 }}
+              style={{ width: 34, height: 34, marginBottom: 10, opacity: 0.75 }}
             />
           ) : null}
 
           <div
             style={{
-              width: 456,
+              width: 360,
               textAlign: 'center',
-              fontSize: 26,
-              fontWeight: 400,
-              letterSpacing: -1,
-              lineHeight: '32px',
-              color: PRO_COLORS.WHITE
+              fontSize: 18,
+              fontWeight: 500,
+              letterSpacing: 0.8,
+              lineHeight: '24px',
+              color: 'rgba(255,255,255,0.78)'
             }}
           >
             {busy ? i18n.processing : i18n.homeSwipeUpToShowApps}
@@ -107,4 +114,3 @@ export function ProHomeScreen({ basePath, locale, device, busy = false }) {
     </div>
   )
 }
-

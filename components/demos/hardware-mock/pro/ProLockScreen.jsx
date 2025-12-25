@@ -43,11 +43,19 @@ export function ProLockScreen({ basePath, locale, device, disabled = false, onTa
           width: PRO_SCREEN.width,
           height: PRO_SCREEN.height,
           objectFit: 'cover',
-          opacity: 0.4
+          opacity: 0.55
+        }}
+      />
+      <div
+        className="absolute left-0 top-0"
+        style={{
+          width: PRO_SCREEN.width,
+          height: PRO_SCREEN.height,
+          background: 'linear-gradient(180deg, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0.55) 100%)'
         }}
       />
 
-      <ProDeviceStatusBar basePath={basePath} usb ble="enabled" battery={60} />
+      <ProDeviceStatusBar basePath={basePath} ble="enabled" battery={60} />
 
       <div
         className="absolute left-0 top-0"
@@ -56,16 +64,14 @@ export function ProLockScreen({ basePath, locale, device, disabled = false, onTa
         <div
           className="absolute left-1/2 -translate-x-1/2"
           style={{
-            top: 76,
-            width: 456,
-            height: 38,
+            top: 108,
+            width: 420,
             textAlign: 'center',
-            fontSize: 30,
+            fontSize: 28,
             fontWeight: 600,
-            letterSpacing: -1,
-            lineHeight: '38px',
-            color: PRO_COLORS.WHITE,
-            opacity: 0.85
+            letterSpacing: 0.2,
+            lineHeight: '32px',
+            color: 'rgba(255,255,255,0.85)'
           }}
         >
           {title}
@@ -75,15 +81,14 @@ export function ProLockScreen({ basePath, locale, device, disabled = false, onTa
           <div
             className="absolute left-1/2 -translate-x-1/2"
             style={{
-              top: 130,
-              width: 456,
+              top: 146,
+              width: 420,
               textAlign: 'center',
-              fontSize: 30,
-              fontWeight: 400,
-              letterSpacing: -1,
-              lineHeight: '38px',
-              color: PRO_COLORS.WHITE,
-              opacity: 0.85
+              fontSize: 22,
+              fontWeight: 500,
+              letterSpacing: 0.2,
+              lineHeight: '28px',
+              color: 'rgba(255,255,255,0.68)'
             }}
           >
             {subtitle}
@@ -91,28 +96,33 @@ export function ProLockScreen({ basePath, locale, device, disabled = false, onTa
         ) : null}
 
         <div
-          className="absolute left-0 flex flex-col items-center"
+          className="absolute left-1/2 -translate-x-1/2 flex flex-col items-center"
           style={{
-            bottom: 24,
-            width: PRO_SCREEN.width
+            bottom: 48,
+            width: 420
           }}
         >
           <img
             src={joinPath(basePath, '/hardware-pro/res/lock.png')}
             alt=""
             draggable={false}
-            style={{ width: 40, height: 40, marginBottom: 16, opacity: 0.85 }}
+            style={{ width: 32, height: 32, marginBottom: 14, opacity: 0.75 }}
           />
           <div
             style={{
-              width: 456,
-              textAlign: 'center',
-              fontSize: 26,
-              fontWeight: 400,
-              letterSpacing: -1,
-              lineHeight: '32px',
-              color: PRO_COLORS.WHITE,
-              opacity: 0.85
+              position: 'relative',
+              width: 360,
+              height: 46,
+              borderRadius: 999,
+              border: '1px solid rgba(255,255,255,0.22)',
+              background: 'rgba(255,255,255,0.08)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: 'rgba(255,255,255,0.8)',
+              fontSize: 18,
+              fontWeight: 500,
+              letterSpacing: 1
             }}
           >
             {i18n.lockTapToUnlock}

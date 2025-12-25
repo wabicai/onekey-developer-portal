@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Tour, TourContext, useTour } from '@reactour/tour'
-import { AlertTriangle, Info, ListChecks, Zap } from 'lucide-react'
+import { ListChecks, Zap } from 'lucide-react'
 import { hardwareMockTourBus } from './hardwareMockTourBus'
 import { createClassic1sInteractiveSteps } from './steps/classic1sSteps'
 import { createProInteractiveSteps } from './steps/proSteps'
@@ -50,20 +50,12 @@ function PortalTourProvider({ children, defaultOpen = false, startAt = 0, steps:
 function getDict(locale) {
   const isEn = locale === 'en'
   return {
-    tourTitle: isEn ? 'Hardware Mock tour' : '硬件 Mock 导览',
-    justTriggered: isEn ? 'Just triggered' : '刚刚触发',
-    now: isEn ? 'What happened' : '现在发生了什么',
-    next: isEn ? 'What you should do' : '你需要做什么',
+    tourTitle: isEn ? 'Hardware Mock' : '硬件 Mock',
+    justTriggered: isEn ? 'Triggered' : '已触发',
+    now: isEn ? 'Now' : '当前',
+    next: isEn ? 'Next' : '下一步',
     close: isEn ? 'Close' : '关闭导览'
   }
-}
-
-function compactText(text, { head = 10, tail = 8, maxLen = 26 } = {}) {
-  const s = String(text ?? '')
-  if (s.length <= maxLen) return s
-  const safeHead = Math.min(head, s.length)
-  const safeTail = Math.min(tail, Math.max(0, s.length - safeHead))
-  return `${s.slice(0, safeHead)}…${s.slice(s.length - safeTail)}`
 }
 
 function InlineCode({ children }) {
@@ -194,10 +186,8 @@ function createWaitingModelSteps(locale) {
       id: 'waiting-start',
       selector: '[data-tour="send-button"]',
       placement: 'bottom',
-      now: isEn
-        ? 'Tour waits for you to send a command.'
-        : '导览等待你发送命令。',
-      next: isEn ? 'Select command/params and tap “Send”.' : '选择命令与参数，点击「发送命令」。',
+      now: isEn ? 'Waiting for a command.' : '等待命令。',
+      next: isEn ? 'Pick a command and tap Send.' : '选择命令并发送。',
       expect: (evt) => evt?.type === 'command.sent'
     })
   ]
@@ -210,23 +200,23 @@ function createSearchDevicesSteps(locale) {
       id: 'example-code',
       selector: '[data-tour="example-code"]',
       placement: 'right',
-      now: isEn ? 'Triggered `searchDevices()`.' : '已触发 `searchDevices()`。',
-      next: isEn ? 'Next: watch the Result panel.' : '下一步：查看 Result 面板。'
+      now: isEn ? '`searchDevices` sent.' : '`searchDevices` 已发送。',
+      next: isEn ? 'Check the Result panel.' : '查看 Result 面板。'
     }),
     eventStep({
       id: 'wait-result',
       selector: '[data-tour="result-panel"]',
       placement: 'top',
-      now: isEn ? 'Waiting for result…' : '等待返回结果…',
-      next: isEn ? 'Result appears in the Result panel.' : '结果将出现在右侧 Result 面板。',
+      now: isEn ? 'Waiting for result…' : '等待结果…',
+      next: isEn ? 'Result shows here.' : '结果显示在这里。',
       expect: (evt) => evt?.type === 'command.result'
     }),
     hintStep({
       id: 'result',
       selector: '[data-tour="result-panel"]',
       placement: 'top',
-      now: isEn ? 'Discovered device list is here.' : '这里是发现到的设备列表。',
-      next: isEn ? 'Send `btcGetAddress` or `btcSignMessage` to explore UI_EVENT.' : '发送 `btcGetAddress` 或 `btcSignMessage`，体验 UI_EVENT 流程。'
+      now: isEn ? 'Device list ready.' : '设备列表已就绪。',
+      next: isEn ? 'Try `btcGetAddress` / `btcSignMessage`.' : '可继续 `btcGetAddress` / `btcSignMessage`。'
     })
   ]
 }
@@ -238,19 +228,15 @@ function createCallbackAndResultSteps(locale) {
       id: 'result',
       selector: '[data-tour="result-panel"]',
       placement: 'top',
-      now: isEn ? ['Final result payload'] : ['这里是最终返回结果（payload）'],
-      next: isEn ? 'Click “Next” to check the callbacks template.' : '点击「下一步」查看 UI_EVENT 回调模板。'
+      now: isEn ? ['Result payload ready.'] : ['结果 payload 已就绪。'],
+      next: isEn ? 'Open callbacks template.' : '查看回调模板。'
     }),
     hintStep({
       id: 'callback-code',
       selector: '[data-tour="callback-code"]',
       placement: 'right',
-      now: isEn
-        ? 'UI_EVENT wiring template. Handle `REQUEST_*` where needed.'
-        : '这里是 UI_EVENT 回调模板，归纳 `REQUEST_*`。',
-      next: isEn
-        ? 'Focus on `REQUEST_PIN`, `REQUEST_BUTTON`, `CLOSE_UI_WINDOW`.'
-        : '重点关注 `REQUEST_PIN` / `REQUEST_BUTTON` / `CLOSE_UI_WINDOW`。'
+      now: isEn ? 'UI_EVENT template.' : 'UI_EVENT 模板。',
+      next: isEn ? 'Handle `REQUEST_*` events.' : '处理 `REQUEST_*` 事件。'
     })
   ]
 }
@@ -274,124 +260,24 @@ function createFlowSteps(locale, startEvent) {
       selector: '[data-tour="example-code"]',
       placement: 'right',
       now: isEn ? [`Command: \`${command ?? '-'}\``] : [`命令：\`${command ?? '-'}\``],
-      next: isEn ? ['Send a supported command to start the flow'] : ['发送一个支持的命令以开始交互流程']
+      next: isEn ? ['Send a supported command.'] : ['发送支持的命令。']
     }),
     ...createCallbackAndResultSteps(locale)
   ]
 }
 
-function safeJsonStringify(value) {
-  try {
-    return JSON.stringify(value)
-  } catch {
-    return null
-  }
-}
-
-function formatEventValue(key, raw) {
-  if (raw == null) return null
-  if (typeof raw === 'string') {
-    if (key === 'messageHex') return `${compactText(raw, { head: 12, tail: 10, maxLen: 28 })} (${raw.length})`
-    if (raw.length > 48) return `${compactText(raw, { head: 16, tail: 12, maxLen: 34 })} (${raw.length})`
-    return raw
-  }
-  if (typeof raw === 'number' || typeof raw === 'boolean') return String(raw)
-  if (Array.isArray(raw)) {
-    const json = safeJsonStringify(raw)
-    return json ? compactText(json, { head: 18, tail: 10, maxLen: 40 }) : String(raw)
-  }
-  if (typeof raw === 'object') {
-    const json = safeJsonStringify(raw)
-    return json ? compactText(json, { head: 18, tail: 10, maxLen: 40 }) : String(raw)
-  }
-  return String(raw)
-}
-
-function formatEventBlock(evt) {
-  if (!evt) return ''
-  const lines = []
-
-  if (evt.type === 'command.sent') {
-    const command = String(evt.command ?? 'unknown')
-    lines.push(command)
-
-    const params = evt?.params
-    if (params && typeof params === 'object') {
-      const selectedKeys =
-        command === 'btcGetAddress'
-          ? ['path', 'coin', 'showOnOneKey']
-          : command === 'btcSignMessage'
-            ? ['path', 'coin', 'messageHex']
-            : command === 'searchDevices'
-              ? []
-              : ['path', 'coin', 'showOnOneKey', 'messageHex']
-
-      for (const key of selectedKeys) {
-        if (!(key in params)) continue
-        const v = formatEventValue(key, params[key])
-        if (v == null || v === '') continue
-        lines.push(`${key}=${v}`)
-      }
-    }
-    return lines.join('\n')
-  }
-
-  if (evt.type === 'command.result') {
-    lines.push(String(evt.command ?? 'unknown'))
-    if (evt?.log?.title) lines.push(`title=${compactText(evt.log.title, { head: 24, tail: 0, maxLen: 34 })}`)
-    return lines.join('\n')
-  }
-
-  if (evt.type === 'param.changed') return `${evt.key}=${String(evt.value)}`
-  if (evt.type === 'command.changed') return `command=${evt.command ?? ''}`
-  if (evt.type === 'code.updated') return `exampleCode updated\ncommand=${evt.command ?? ''}`.trim()
-  if (evt.type === 'code.copied') return `exampleCode copied\ncommand=${evt.command ?? ''}`.trim()
-
-  if (evt.type === 'ui.confirm') {
-    lines.push('ui.confirm')
-    if (evt.action) lines.push(`action=${evt.action}`)
-    lines.push(`approved=${String(Boolean(evt.approved))}`)
-    return lines.join('\n')
-  }
-
-  if (evt.type === 'ui.shown') {
-    lines.push('ui.shown')
-    if (evt.uiType) lines.push(`type=${evt.uiType}`)
-    if (evt.action) lines.push(`action=${evt.action}`)
-    return lines.join('\n')
-  }
-
-  if (evt.type === 'ui.unlock.tap') return 'ui.unlock.tap'
-  if (evt.type === 'ui.pin.submit') return `ui.pin.submit\nlen=${String(evt.pinLength ?? '')}`.trim()
-
-  return String(evt.type ?? '')
-}
-
-function CodeBlock({ children }) {
-  return (
-    <pre
-      className="mt-1 overflow-auto rounded-lg border px-2 py-2 text-[12px] leading-relaxed"
-      style={{
-        borderColor: 'var(--ok-tour-border)',
-        background: 'color-mix(in srgb, var(--ok-tour-bg) 92%, var(--ok-tour-text) 8%)',
-        color: 'var(--ok-tour-text)',
-        fontFamily: 'var(--font-mono)',
-        maxHeight: 140,
-        whiteSpace: 'pre',
-        overflowWrap: 'normal',
-        wordBreak: 'normal'
-      }}
-    >
-      <code>{children}</code>
-    </pre>
-  )
-}
 
 function focusTabForSelector(selector) {
   if (selector === '[data-tour="example-code"]') return 'example'
   if (selector === '[data-tour="callback-code"]') return 'callback'
   if (selector === '[data-tour="result-panel"]') return 'result'
   return null
+}
+
+function sidePlacementForSelector(selector) {
+  const token = String(selector ?? '')
+  if (token.includes('result-panel') || token.includes('example-code') || token.includes('callback-code')) return 'left'
+  return 'right'
 }
 
 function renderTourContent(value) {
@@ -418,7 +304,7 @@ function renderTourContent(value) {
 function TourCard({ icon: Icon, title, accentColor, children }) {
   return (
     <div
-      className="mt-2 rounded-xl border px-3 py-2.5"
+      className="mt-2 rounded-xl border px-3 py-2.5 ok-tour-card"
       style={{
         borderColor: `color-mix(in srgb, var(--ok-tour-border) 75%, ${accentColor} 25%)`,
         background: `color-mix(in srgb, var(--ok-tour-bg) 94%, ${accentColor} 6%)`,
@@ -437,10 +323,10 @@ function TourCard({ icon: Icon, title, accentColor, children }) {
             <Icon size={14} />
           </span>
         ) : null}
-      <div className="text-xs font-semibold" style={{ color: accentColor }}>
-        {title}
+        <div className="text-xs font-semibold" style={{ color: accentColor }}>
+          {title}
+        </div>
       </div>
-    </div>
       <div
         className="mt-1 text-sm leading-relaxed"
         style={{ color: 'var(--ok-tour-text)', overflowWrap: 'anywhere', wordBreak: 'break-word' }}
@@ -482,14 +368,13 @@ function createReactourSteps({ locale, dict, modelStepsRef, lastEventRef, curren
   const steps = modelStepsRef.current ?? []
   return steps.map((s) => ({
     selector: s.selector,
-    position: s.placement,
+    position: sidePlacementForSelector(s.selector),
     content: ({ currentStep, setCurrentStep, setIsOpen }) => {
       const liveSteps = modelStepsRef.current ?? []
       const maxIndex = liveSteps.length - 1
       const safeIndex = clamp(typeof currentStep === 'number' ? currentStep : 0, 0, maxIndex)
       currentStepRef.current = safeIndex
       const step = liveSteps[safeIndex]
-      const lastEvent = lastEventRef.current
       const canNext = Boolean(step?.mode === 'hint' && step?.allowNext !== false && safeIndex < maxIndex)
       const isLast = safeIndex >= maxIndex
       const isEvent = step?.mode === 'event'
@@ -499,17 +384,6 @@ function createReactourSteps({ locale, dict, modelStepsRef, lastEventRef, curren
         emitTourClosed()
         onExit?.()
       }
-
-      const mismatchHint = (() => {
-        if (!lastEvent) return null
-        if (!step) return null
-        if (lastEvent.type === 'command.sent') return null
-        if (safeExpect(step.expect, lastEvent)) return null
-        if (lastEvent.type !== 'command.changed' && lastEvent.type !== 'param.changed') return null
-        return locale === 'en'
-          ? `This tour expects: ${step.id}. You can close and restart by sending the command again.`
-          : `你当前触发的操作与预期步骤不一致（预期：${step.id}）。你可以先关闭导览，然后重新发送命令再开始。`
-      })()
 
       return (
         <div
@@ -531,13 +405,7 @@ function createReactourSteps({ locale, dict, modelStepsRef, lastEventRef, curren
             </div>
           </div>
 
-          {lastEvent ? (
-            <TourCard icon={Zap} title={dict.justTriggered} accentColor="var(--ok-tour-accent)">
-              <CodeBlock>{formatEventBlock(lastEvent)}</CodeBlock>
-            </TourCard>
-          ) : null}
-
-          <TourCard icon={Info} title={dict.now} accentColor="var(--info-500)">
+          <TourCard icon={Zap} title={dict.now} accentColor="var(--info-500)">
             {renderTourContent(step?.now)}
           </TourCard>
 
@@ -615,15 +483,6 @@ function createReactourSteps({ locale, dict, modelStepsRef, lastEventRef, curren
             ) : null}
           </div>
 
-          {mismatchHint ? (
-            <TourCard
-              icon={AlertTriangle}
-              title={locale === 'en' ? 'Mismatch' : '步骤不匹配'}
-              accentColor="var(--warning-500)"
-            >
-              {renderTourContent(mismatchHint)}
-            </TourCard>
-          ) : null}
         </div>
       )
     }
@@ -697,6 +556,7 @@ function HardwareMockTourEventBridge({
 }) {
   const { setIsOpen, setCurrentStep, currentStep, setSteps } = useTour()
   const onExitRef = useRef(onExit)
+  const focusElRef = useRef(null)
 
   useEffect(() => {
     onExitRef.current = onExit
@@ -707,6 +567,39 @@ function HardwareMockTourEventBridge({
     const maxIndex = steps.length - 1
     currentStepRef.current = clamp(typeof currentStep === 'number' ? currentStep : 0, 0, maxIndex)
   }, [currentStep, currentStepRef, modelStepsRef])
+
+  useEffect(() => {
+    if (!enabled) {
+      if (focusElRef.current) {
+        focusElRef.current.classList.remove('ok-tour-focus')
+        focusElRef.current = null
+      }
+      return
+    }
+
+    const steps = modelStepsRef.current ?? []
+    const maxIndex = Math.max(0, steps.length - 1)
+    const safeIndex = clamp(typeof currentStep === 'number' ? currentStep : 0, 0, maxIndex)
+    const selector = steps[safeIndex]?.selector
+    const nextEl = selector ? document.querySelector(selector) : null
+
+    if (focusElRef.current && focusElRef.current !== nextEl) {
+      focusElRef.current.classList.remove('ok-tour-focus')
+      focusElRef.current = null
+    }
+
+    if (nextEl && nextEl instanceof HTMLElement) {
+      nextEl.classList.add('ok-tour-focus')
+      focusElRef.current = nextEl
+    }
+
+    return () => {
+      if (focusElRef.current) {
+        focusElRef.current.classList.remove('ok-tour-focus')
+        focusElRef.current = null
+      }
+    }
+  }, [currentStep, enabled, modelStepsRef])
 
   useEffect(() => {
     if (!enabled) {

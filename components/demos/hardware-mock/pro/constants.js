@@ -4,6 +4,19 @@ export const PRO_SCREEN = {
   statusBarHeight: 44
 }
 
+export const PRO_DEVICE = {
+  width: 544,
+  height: 920,
+  frameRadius: 44,
+  innerRadius: 26,
+  screenRadius: 16,
+  framePadding: {
+    x: 32,
+    top: 44,
+    bottom: 76
+  }
+}
+
 export const PRO_COLORS = {
   WHITE: '#FFFFFF',
   BLACK: '#000000',
@@ -38,4 +51,3 @@ export const PRO_LAYOUT = {
   buttonRadius: 98,
   buttonHalfWidth: 224
 }
-
