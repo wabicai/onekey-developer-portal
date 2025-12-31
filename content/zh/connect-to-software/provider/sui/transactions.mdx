@@ -29,8 +29,13 @@ txb.transferObjects(
 const [coin] = txb.splitCoins(txb.gas, [txb.pure(1000000000)]) // 1 SUI
 txb.transferObjects([coin], txb.pure('0xrecipient_address'))
 
+const [account] = await provider.getAccounts()
+const chain = await provider.getActiveChain()
+
 // 签署并执行
 const result = await provider.signAndExecuteTransactionBlock({
+  account,
+  chain,
   transactionBlock: txb,
   options: {
     showEffects: true,
@@ -54,7 +59,12 @@ console.log({
 const txb = new TransactionBlock()
 // ... 构建交易
 
+const [account] = await provider.getAccounts()
+const chain = await provider.getActiveChain()
+
 const signedTxb = await provider.signTransactionBlock({
+  account,
+  chain,
   transactionBlock: txb,
 })
 
@@ -75,9 +85,19 @@ console.log({
 ## 签署并执行交易（新 API）
 
 ```typescript
-// 使用较新的 signAndExecuteTransaction API
+// 使用较新的 signAndExecuteTransaction API（Transaction 类型）
+import { Transaction } from '@mysten/sui.js/transactions'
+
+const tx = new Transaction()
+// ... 构建交易
+
+const [account] = await provider.getAccounts()
+const chain = await provider.getActiveChain()
+
 const result = await provider.signAndExecuteTransaction({
-  transaction: txb,
+  transaction: tx,
+  account,
+  chain,
   options: {
     showEffects: true,
   },
@@ -89,8 +109,18 @@ const result = await provider.signAndExecuteTransaction({
 ## 签署交易（新 API）
 
 ```typescript
+import { Transaction } from '@mysten/sui.js/transactions'
+
+const tx = new Transaction()
+// ... 构建交易
+
+const [account] = await provider.getAccounts()
+const chain = await provider.getActiveChain()
+
 const signedTxn = await provider.signTransaction({
-  transaction: txb,
+  transaction: tx,
+  account,
+  chain,
 })
 ```
 
@@ -113,7 +143,12 @@ txb.moveCall({
   typeArguments: ['0x2::sui::SUI'],
 })
 
+const [account] = await provider.getAccounts()
+const chain = await provider.getActiveChain()
+
 const result = await provider.signAndExecuteTransactionBlock({
+  account,
+  chain,
   transactionBlock: txb,
 })
 ```
@@ -135,7 +170,12 @@ const [upgradeCap] = txb.publish({
 
 txb.transferObjects([upgradeCap], txb.pure(senderAddress))
 
+const [account] = await provider.getAccounts()
+const chain = await provider.getActiveChain()
+
 const result = await provider.signAndExecuteTransactionBlock({
+  account,
+  chain,
   transactionBlock: txb,
 })
 ```
@@ -165,4 +205,3 @@ const txn = await client.getTransactionBlock({
   options: { showEffects: true },
 })
 ```
-

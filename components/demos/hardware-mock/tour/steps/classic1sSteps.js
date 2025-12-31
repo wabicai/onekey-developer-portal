@@ -18,10 +18,10 @@ function createClassic1sMatrixAndModalHintSteps(locale) {
   return [
     hintStep({
       id: 'pin-matrix-and-modal',
-      selector: '[data-tour="device-screen"]',
+      selector: '[data-tour="classic-pin-group"]',
       placement: 'right',
       now: isEn ? 'PIN matrix shown.' : 'PIN 矩阵已显示。',
-      next: isEn ? 'Open the PIN dialog.' : '打开 PIN 弹窗。'
+      next: isEn ? 'Use the PIN panel on the right.' : '在右侧 PIN 面板输入。'
     })
   ]
 }
@@ -31,12 +31,10 @@ function createClassic1sPinSteps(locale) {
   return [
     eventStep({
       id: 'pin',
-      selector: '[data-tour="classic-pin-modal"], [data-tour="device-screen"]',
+      selector: '[data-tour="classic-pin-group"]',
       placement: 'right',
-      now: isEn ? 'PIN requested on device.' : '设备请求输入 PIN。',
-      next: isEn
-        ? 'Enter PIN and submit.'
-        : '输入 PIN 并提交。',
+      now: isEn ? 'PIN requested.' : '已请求 PIN。',
+      next: isEn ? 'Submit any 4 digits in the PIN panel.' : '在 PIN 面板输入任意 4 位并提交。',
       expect: (evt) => evt?.type === 'ui.pin.submit'
     })
   ]

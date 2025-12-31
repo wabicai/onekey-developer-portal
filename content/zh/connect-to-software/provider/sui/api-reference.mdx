@@ -16,15 +16,15 @@ OneKey Sui provider 方法和类型的完整参考。
 | `hasPermissions()` | 检查是否已连接 |
 | `requestPermissions()` | 请求连接 |
 | `disconnect()` | 断开钱包连接 |
-| `getAccounts()` | 获取已连接的账户 |
+| `getAccounts()` | 获取已连接的账户（返回 `address`、`publicKey`） |
 | `getActiveChain()` | 获取当前链 |
 | `isConnected()` | 检查连接状态 |
-| `signAndExecuteTransactionBlock(input)` | 签署并执行交易 |
-| `signTransactionBlock(input)` | 仅签署交易 |
-| `signAndExecuteTransaction(input)` | 签署并执行（新 API） |
-| `signTransaction(input)` | 签署交易（新 API） |
-| `signMessage(input)` | 签署消息（旧版） |
-| `signPersonalMessage(input)` | 签署个人消息 |
+| `signAndExecuteTransactionBlock(input)` | 签署并执行交易，需传入 `account`/`chain` |
+| `signTransactionBlock(input)` | 仅签署交易，需传入 `account`/`chain` |
+| `signAndExecuteTransaction(input)` | 签署并执行（新 API，使用 `Transaction`，需 `account`/`chain`） |
+| `signTransaction(input)` | 签署交易（新 API，使用 `Transaction`，需 `account`/`chain`） |
+| `signMessage(input)` | 签署消息（旧版，需 `account`/`chain`） |
+| `signPersonalMessage(input)` | 签署个人消息（需 `account`/`chain`） |
 | `onAccountChange(callback)` | 监听账户变更 |
 | `onNetworkChange(callback)` | 监听网络变更 |
 
@@ -91,10 +91,8 @@ interface SignPersonalMessageOutput {
 
 | 链 | 标识符 |
 |----|--------|
-| 主网 | `sui:mainnet` |
 | 测试网 | `sui:testnet` |
 | 开发网 | `sui:devnet` |
-| 本地网 | `sui:localnet` |
 
 ---
 
@@ -116,4 +114,3 @@ interface SignPersonalMessageOutput {
 | 4001 | 用户拒绝请求 |
 | 4100 | 未授权 |
 | -32603 | 内部错误 |
-

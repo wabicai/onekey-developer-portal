@@ -20,8 +20,8 @@ function createProPinSteps(locale) {
       id: 'pin',
       selector: '[data-tour="device-screen"]',
       placement: 'right',
-      now: isEn ? 'PIN requested on device.' : '设备请求输入 PIN。',
-      next: isEn ? 'Enter PIN on device.' : '在设备上输入 PIN。',
+      now: isEn ? 'PIN requested.' : '已请求 PIN。',
+      next: isEn ? 'Complete the PIN request to continue.' : '完成 PIN 后继续。',
       expect: (evt) => evt?.type === 'ui.pin.submit'
     })
   ]

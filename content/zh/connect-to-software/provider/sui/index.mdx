@@ -81,9 +81,7 @@ const accounts = await provider.getAccounts()
 accounts.forEach(account => {
   console.log({
     address: account.address,     // Sui 地址
-    publicKey: account.publicKey, // 公钥字节
-    chains: account.chains,       // 支持的链
-    features: account.features,   // 支持的功能
+    publicKey: account.publicKey, // 公钥（hex 字符串）
   })
 })
 ```
@@ -93,7 +91,7 @@ accounts.forEach(account => {
 ```typescript
 const chain = await provider.getActiveChain()
 
-console.log('当前链:', chain) // 例如 'sui:mainnet'
+console.log('当前链:', chain) // 例如 'sui:testnet'
 ```
 
 ---
@@ -119,7 +117,12 @@ const [coin] = txb.splitCoins(txb.gas, [txb.pure(1000000000)]) // 1 SUI
 txb.transferObjects([coin], txb.pure('0xrecipient_address'))
 
 // 签名并执行
+const [account] = await provider.getAccounts()
+const chain = await provider.getActiveChain()
+
 const result = await provider.signAndExecuteTransactionBlock({
+  account,
+  chain,
   transactionBlock: txb,
   options: {
     showEffects: true,
@@ -141,7 +144,12 @@ console.log({
 const txb = new TransactionBlock()
 // ... 构建交易
 
+const [account] = await provider.getAccounts()
+const chain = await provider.getActiveChain()
+
 const signedTxb = await provider.signTransactionBlock({
+  account,
+  chain,
   transactionBlock: txb,
 })
 
@@ -160,9 +168,19 @@ console.log({
 ### 签名并执行交易（新 API）
 
 ```typescript
-// 使用新的 signAndExecuteTransaction API
+// 使用新的 signAndExecuteTransaction API（注意使用 Transaction 类型）
+import { Transaction } from '@mysten/sui.js/transactions'
+
+const tx = new Transaction()
+// ... 构建交易
+
+const [account] = await provider.getAccounts()
+const chain = await provider.getActiveChain()
+
 const result = await provider.signAndExecuteTransaction({
-  transaction: txb,
+  transaction: tx,
+  account,
+  chain,
   options: {
     showEffects: true,
   },
@@ -172,8 +190,18 @@ const result = await provider.signAndExecuteTransaction({
 ### 签名交易（新 API）
 
 ```typescript
+import { Transaction } from '@mysten/sui.js/transactions'
+
+const tx = new Transaction()
+// ... 构建交易
+
+const [account] = await provider.getAccounts()
+const chain = await provider.getActiveChain()
+
 const signedTxn = await provider.signTransaction({
-  transaction: txb,
+  transaction: tx,
+  account,
+  chain,
 })
 ```
 
@@ -187,9 +215,13 @@ const signedTxn = await provider.signTransaction({
 
 ```typescript
 const message = new TextEncoder().encode('Hello, Sui!')
+const [account] = await provider.getAccounts()
+const chain = await provider.getActiveChain()
 
 const result = await provider.signPersonalMessage({
   message,
+  account,
+  chain,
 })
 
 console.log({
@@ -202,9 +234,13 @@ console.log({
 
 ```typescript
 const message = new TextEncoder().encode('Hello, Sui!')
+const [account] = await provider.getAccounts()
+const chain = await provider.getActiveChain()
 
 const result = await provider.signMessage({
   message,
+  account,
+  chain,
 })
 
 console.log({
@@ -219,7 +255,9 @@ console.log({
 import { verifyPersonalMessage } from '@mysten/sui.js/verify'
 
 const message = new TextEncoder().encode('Hello, Sui!')
-const { signature } = await provider.signPersonalMessage({ message })
+const [account] = await provider.getAccounts()
+const chain = await provider.getActiveChain()
+const { signature } = await provider.signPersonalMessage({ message, account, chain })
 
 const accounts = await provider.getAccounts()
 const publicKey = accounts[0].publicKey
@@ -247,7 +285,12 @@ txb.moveCall({
   typeArguments: ['0x2::sui::SUI'],
 })
 
+const [account] = await provider.getAccounts()
+const chain = await provider.getActiveChain()
+
 const result = await provider.signAndExecuteTransactionBlock({
+  account,
+  chain,
   transactionBlock: txb,
 })
 ```
@@ -267,7 +310,12 @@ const [upgradeCap] = txb.publish({
 
 txb.transferObjects([upgradeCap], txb.pure(senderAddress))
 
+const [account] = await provider.getAccounts()
+const chain = await provider.getActiveChain()
+
 const result = await provider.signAndExecuteTransactionBlock({
+  account,
+  chain,
   transactionBlock: txb,
 })
 ```
@@ -283,26 +331,26 @@ const result = await provider.signAndExecuteTransactionBlock({
 | `hasPermissions()` | 检查是否已连接 |
 | `requestPermissions()` | 请求连接 |
 | `disconnect()` | 断开钱包连接 |
-| `getAccounts()` | 获取已连接账户 |
+| `getAccounts()` | 获取已连接账户（返回 `address`、`publicKey`） |
 | `getActiveChain()` | 获取当前链 |
-| `signAndExecuteTransactionBlock(input)` | 签名并执行交易 |
-| `signTransactionBlock(input)` | 仅签名交易 |
-| `signAndExecuteTransaction(input)` | 签名并执行（新 API） |
-| `signTransaction(input)` | 签名交易（新 API） |
-| `signMessage(input)` | 签名消息（旧版） |
-| `signPersonalMessage(input)` | 签名个人消息 |
+| `signAndExecuteTransactionBlock(input)` | 签名并执行交易，需传入 `account`/`chain` |
+| `signTransactionBlock(input)` | 仅签名交易，需传入 `account`/`chain` |
+| `signAndExecuteTransaction(input)` | 签名并执行（新 API，使用 `Transaction`，需 `account`/`chain`） |
+| `signTransaction(input)` | 签名交易（新 API，使用 `Transaction`，需 `account`/`chain`） |
+| `signMessage(input)` | 签名消息（旧版，需 `account`/`chain`） |
+| `signPersonalMessage(input)` | 签名个人消息（需 `account`/`chain`） |
 
 ### 类型
 
 ```typescript
 interface WalletAccount {
   address: string
-  publicKey: Uint8Array
-  chains: string[]
-  features: string[]
+  publicKey: string
 }
 
 interface SignAndExecuteTransactionBlockInput {
+  account: WalletAccount
+  chain?: string
   transactionBlock: TransactionBlock
   options?: {
     showEffects?: boolean
@@ -320,6 +368,8 @@ interface SignTransactionBlockOutput {
 }
 
 interface SignPersonalMessageInput {
+  account: WalletAccount
+  chain?: string
   message: Uint8Array
 }
 
@@ -333,10 +383,8 @@ interface SignPersonalMessageOutput {
 
 | 链 | 标识符 |
 |----|--------|
-| Mainnet | `sui:mainnet` |
 | Testnet | `sui:testnet` |
 | Devnet | `sui:devnet` |
-| Localnet | `sui:localnet` |
 
 ---
 

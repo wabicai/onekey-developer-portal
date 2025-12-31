@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Tour, TourContext, useTour } from '@reactour/tour'
-import { ListChecks, Zap } from 'lucide-react'
+import { Compass } from 'lucide-react'
 import { hardwareMockTourBus } from './hardwareMockTourBus'
 import { createClassic1sInteractiveSteps } from './steps/classic1sSteps'
 import { createProInteractiveSteps } from './steps/proSteps'
@@ -52,8 +52,7 @@ function getDict(locale) {
   return {
     tourTitle: isEn ? 'Hardware Mock' : '硬件 Mock',
     justTriggered: isEn ? 'Triggered' : '已触发',
-    now: isEn ? 'Now' : '当前',
-    next: isEn ? 'Next' : '下一步',
+    guide: isEn ? 'Guide' : '操作指引',
     close: isEn ? 'Close' : '关闭导览'
   }
 }
@@ -301,14 +300,24 @@ function renderTourContent(value) {
   return renderTourText(value)
 }
 
-function TourCard({ icon: Icon, title, accentColor, children }) {
+function normalizeTourItems(value) {
+  if (value == null) return []
+  return Array.isArray(value) ? value : [value]
+}
+
+function GuideCard({ icon: Icon, title, accentColor, primary, secondary }) {
+  const hasPrimary = Array.isArray(primary) && primary.length > 0
+  const hasSecondary = Array.isArray(secondary) && secondary.length > 0
+
   return (
     <div
-      className="mt-2 rounded-xl border px-3 py-2.5 ok-tour-card"
+      className="mt-2 rounded-lg border px-3 py-3 ok-tour-card"
       style={{
-        borderColor: `color-mix(in srgb, var(--ok-tour-border) 75%, ${accentColor} 25%)`,
-        background: `color-mix(in srgb, var(--ok-tour-bg) 94%, ${accentColor} 6%)`,
-        borderLeft: `3px solid ${accentColor}`
+        borderColor: `color-mix(in srgb, var(--ok-tour-border) 85%, ${accentColor} 15%)`,
+        backgroundColor: 'var(--ok-tour-bg)',
+        backgroundImage: 'none',
+        opacity: 1,
+        borderLeft: `2px solid ${accentColor}`
       }}
     >
       <div className="flex items-center gap-2">
@@ -316,23 +325,33 @@ function TourCard({ icon: Icon, title, accentColor, children }) {
           <span
             className="inline-flex h-5 w-5 items-center justify-center rounded-md"
             style={{
-              background: `color-mix(in srgb, var(--ok-tour-bg) 84%, ${accentColor} 16%)`,
+              background: `color-mix(in srgb, var(--ok-tour-bg) 94%, ${accentColor} 6%)`,
               color: accentColor
             }}
           >
             <Icon size={14} />
           </span>
         ) : null}
-        <div className="text-xs font-semibold" style={{ color: accentColor }}>
+        <div className="text-[11px] font-semibold uppercase tracking-[0.12em]" style={{ color: accentColor }}>
           {title}
         </div>
       </div>
-      <div
-        className="mt-1 text-sm leading-relaxed"
-        style={{ color: 'var(--ok-tour-text)', overflowWrap: 'anywhere', wordBreak: 'break-word' }}
-      >
-        {children}
-      </div>
+      {hasPrimary ? (
+        <div
+          className="mt-2 text-sm font-semibold leading-relaxed"
+          style={{ color: 'var(--ok-tour-text)', overflowWrap: 'anywhere', wordBreak: 'break-word' }}
+        >
+          {renderTourContent(primary)}
+        </div>
+      ) : null}
+      {hasSecondary ? (
+        <div
+          className="mt-1 text-xs leading-relaxed"
+          style={{ color: 'var(--ok-tour-muted)', overflowWrap: 'anywhere', wordBreak: 'break-word' }}
+        >
+          {renderTourContent(secondary)}
+        </div>
+      ) : null}
     </div>
   )
 }
@@ -405,13 +424,13 @@ function createReactourSteps({ locale, dict, modelStepsRef, lastEventRef, curren
             </div>
           </div>
 
-          <TourCard icon={Zap} title={dict.now} accentColor="var(--info-500)">
-            {renderTourContent(step?.now)}
-          </TourCard>
-
-          <TourCard icon={ListChecks} title={dict.next} accentColor="var(--ok-tour-accent)">
-            {renderTourContent(step?.next)}
-          </TourCard>
+          <GuideCard
+            icon={Compass}
+            title={dict.guide}
+            accentColor="var(--ok-tour-accent)"
+            primary={normalizeTourItems(step?.now)}
+            secondary={normalizeTourItems(step?.next)}
+          />
 
           <div className="mt-3 flex items-center justify-between gap-2">
             <button
@@ -442,13 +461,14 @@ function createReactourSteps({ locale, dict, modelStepsRef, lastEventRef, curren
                   currentStepRef.current = nextIndex
                   setCurrentStep(nextIndex)
                 }}
-                className="rounded-md px-3 py-1.5 text-xs font-medium text-white transition-opacity hover:opacity-95 active:opacity-80"
+                className="ok-tour-next rounded-md px-3 py-1.5 text-xs font-medium text-white transition-opacity hover:opacity-95 active:opacity-80"
                 style={{
                   background: 'var(--ok-tour-accent)',
                   boxShadow: '0 8px 18px rgba(0, 184, 18, 0.25)'
                 }}
               >
-                {locale === 'en' ? 'Next' : '下一步'}
+                <span>{locale === 'en' ? 'Next' : '下一步'}</span>
+                <span className="ok-tour-next-icon" aria-hidden="true">→</span>
               </button>
             ) : isLast ? (
               <button
@@ -516,13 +536,12 @@ export function HardwareMockTour({ locale = 'zh', enabled, onExit }) {
           overflowY: 'auto',
           overscrollBehavior: 'contain',
           wordBreak: 'break-word',
-          borderRadius: 14,
-          padding: 14,
-          background:
-            'linear-gradient(180deg, color-mix(in srgb, var(--ok-tour-bg) 96%, var(--ok-tour-text) 4%) 0%, var(--ok-tour-bg) 65%)',
+          borderRadius: 12,
+          padding: 12,
           backgroundColor: 'var(--ok-tour-bg)',
+          backgroundImage: 'none',
           border: '1px solid var(--ok-tour-border)',
-          boxShadow: 'var(--ok-tour-shadow)'
+          boxShadow: '0 10px 24px rgba(15, 23, 42, 0.12)'
         }),
         badge: (base) => ({ ...base, display: 'none' }),
         dot: (base) => ({ ...base, display: 'none' }),

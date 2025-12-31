@@ -39,7 +39,7 @@
   --ok-green-500: #00B812;
 
   /* Tour（reactour） */
-  --ok-tour-bg: #ffffff;
+  --ok-tour-bg: var(--gray-0);
   --ok-tour-text: #0f172a;
   --ok-tour-muted: #64748b;
   --ok-tour-border: #d5dbe1;
@@ -131,7 +131,7 @@
   --shadow-lg: 0px 8px 16px rgba(0, 0, 0, 0.4);
   --shadow-focus: 0 0 0 2px rgba(79, 245, 95, 0.25);
 
-  --ok-tour-bg: #10111a;
+  --ok-tour-bg: #0b0f14;
   --ok-tour-text: #e5e7eb;
   --ok-tour-muted: #a1a1aa;
   --ok-tour-border: #30313d;
@@ -854,6 +854,15 @@ aside.nextra-sidebar,
   border-right-color: var(--gray-800);
 }
 
+/* Sidebar footer (language/tools) align with menu item padding */
+aside.nextra-sidebar .nextra-sidebar-footer {
+  margin-left: 0;
+  margin-right: 0;
+  padding-left: var(--space-4);
+  padding-right: var(--space-4);
+  width: 100%;
+}
+
 /* Sidebar toggle button - ensure it's visible */
 button[aria-label="Hide sidebar"],
 button[aria-label="Show sidebar"],
@@ -1151,6 +1160,31 @@ select:focus {
 
 .ok-tour-card {
   animation: ok-tour-fade 180ms ease-out;
+}
+
+.ok-tour-next {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ok-tour-next-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  animation: ok-tour-nudge 1.2s ease-in-out infinite;
+}
+
+@keyframes ok-tour-nudge {
+  0%,
+  100% {
+    transform: translateX(0);
+    opacity: 0.8;
+  }
+  50% {
+    transform: translateX(3px);
+    opacity: 1;
+  }
 }
 
 .ok-tour-inline-hint {

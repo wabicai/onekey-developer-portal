@@ -2,7 +2,7 @@
 
 import { useMachine } from '@xstate/react'
 import gsap from 'gsap'
-import { Check, ChevronDown, Copy, Delete, ExternalLink, Info, Send, Sparkles, X } from 'lucide-react'
+import { Check, ChevronDown, Compass, Copy, Delete, ExternalLink, Info, Send, X } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { flushSync } from 'react-dom'
 import { createHardwareMockMachine } from './createHardwareMockMachine'
@@ -55,6 +55,7 @@ const I18N = {
       demoNotice: 'Mock 演示（不连接真实硬件）',
       pinNote: 'PIN：任意 4 位（Mock 不校验）',
       openEmulator: '打开 OneKey Emulator',
+      guide: '导览',
       devViewTitle: '开发者视角',
       tabExample: '示例代码',
       tabCallback: '回调处理',
@@ -64,23 +65,23 @@ const I18N = {
       noPayload: '无返回数据。'
     },
     tour: {
-      idleTitle: '导览提示',
-      idlePrimary: '点击「导览」并发送第一个命令，体验交互流程。',
-      idleSecondary: '也可以先预览右侧的示例与回调模板。',
+      idleTitle: '操作指引',
+      idlePrimary: '导览未开始。点击「导览」并发送第一个命令。',
+      idleSecondary: '右侧可先预览示例与回调，了解下一步。',
       actionTitle: '操作指引',
-      reviewTitle: '结果预览',
-      sendPrimary: '选择命令/参数后点击「发送命令」。',
-      sendSecondary: '结果会在右侧 Result 面板出现。',
-      pinPrimary: '在设备或弹窗输入任意 4 位 PIN。',
-      pinSecondary: '提交后导览会自动推进。',
-      confirmPrimary: '在设备上确认交互。',
-      confirmSecondary: '等待结果自动返回。',
-      waitResultPrimary: '等待结果自动呈现。',
-      waitResultSecondary: '可在 Result 面板中查看 payload。',
-      resultPrimary: '结果已准备好，从右侧阅读 payload。',
-      resultSecondary: '若需要，切换到 Callbacks 查阅 UI_EVENT。',
-      callbackPrimary: '回调模板在右侧，复盘 UI_EVENT。',
-      callbackSecondary: '参考 `REQUEST_*` 事件处理流程。'
+      reviewTitle: '操作指引',
+      sendPrimary: '请选择命令/参数，然后点击「发送命令」。',
+      sendSecondary: '结果会显示在右侧 Result 面板。',
+      pinPrimary: 'PIN 已请求，完成后会进入下一步。',
+      pinSecondary: '提交后会自动推进。',
+      confirmPrimary: '请在设备上确认本次交互。',
+      confirmSecondary: '确认后等待结果回传。',
+      waitResultPrimary: '正在等待结果返回。',
+      waitResultSecondary: 'Result 面板会显示 payload。',
+      resultPrimary: '结果已返回，请查看右侧 payload。',
+      resultSecondary: '需要事件细节可切到 Callbacks。',
+      callbackPrimary: '右侧是回调模板，复盘 UI_EVENT。',
+      callbackSecondary: '按 REQUEST_* 事件处理即可。'
     }
   },
   en: {
@@ -125,6 +126,7 @@ const I18N = {
       demoNotice: 'Mock demo (no real hardware)',
       pinNote: 'PIN: any 4 digits (not validated)',
       openEmulator: 'Open OneKey Emulator',
+      guide: 'Guide',
       devViewTitle: 'Developer View',
       tabExample: 'Example',
       tabCallback: 'Callbacks',
@@ -134,23 +136,23 @@ const I18N = {
       noPayload: 'No payload.'
     },
     tour: {
-      idleTitle: 'Tour hint',
-      idlePrimary: 'Enable the tour and send your first command to start the flow.',
-      idleSecondary: 'Or skim the example and callbacks on the right to preview the SDK.',
-      actionTitle: 'Action hint',
-      reviewTitle: 'Review hint',
-      sendPrimary: 'Select command/params and tap “Send”.',
-      sendSecondary: 'Result shows up in the Result panel on the right.',
-      pinPrimary: 'Enter any 4-digit PIN on the device (or dialog).',
-      pinSecondary: 'Submitting advances the tour automatically.',
+      idleTitle: 'Guide',
+      idlePrimary: 'Tour is idle. Click “Guide” and send your first command.',
+      idleSecondary: 'You can preview examples and callbacks on the right.',
+      actionTitle: 'Guide',
+      reviewTitle: 'Guide',
+      sendPrimary: 'Pick a command/params, then click “Send”.',
+      sendSecondary: 'The result will appear in the Result panel on the right.',
+      pinPrimary: 'PIN is requested. Completing it advances the flow.',
+      pinSecondary: 'Submitting moves to the next step automatically.',
       confirmPrimary: 'Confirm the interaction on the device.',
-      confirmSecondary: 'Wait for the result to appear in the Result tab.',
+      confirmSecondary: 'Wait for the result to return.',
       waitResultPrimary: 'Waiting for the result to arrive.',
-      waitResultSecondary: 'Result output appears on the right.',
-      resultPrimary: 'Payload is ready—review it on the right.',
-      resultSecondary: 'Switch to Callbacks if you need UI_EVENT guidance.',
-      callbackPrimary: 'Callback template lives on the right.',
-      callbackSecondary: 'Handle the REQUEST_* events based on UI hints.'
+      waitResultSecondary: 'The Result panel will show the payload.',
+      resultPrimary: 'Result returned. Review the payload on the right.',
+      resultSecondary: 'Switch to Callbacks for UI_EVENT details.',
+      callbackPrimary: 'Callback templates are on the right.',
+      callbackSecondary: 'Handle the REQUEST_* events as indicated.'
     }
   }
 }
@@ -236,18 +238,18 @@ function buildTourHintPayload({ locale, dict, stepId, tourEnabled, tourStarted }
   const tourDict = dict?.tour ?? {}
   const safeString = (key, fallback) => (tourDict[key] ?? fallback)
 
-  const defaultActionTitle = isEn ? 'Action hint' : '操作指引'
-  const defaultReviewTitle = isEn ? 'Review hint' : '结果预览'
-  const defaultSendPrimary = isEn ? 'Select command/params and tap “Send”.' : '选择命令/参数后点击「发送命令」。'
-  const defaultSendSecondary = isEn ? 'Result shows up in the Result panel on the right.' : '结果会在右侧 Result 面板出现。'
-  const defaultIdlePrimary = isEn ? 'Enable the tour and send your first command to start the flow.' : '点击「导览」并发送第一个命令，体验交互流程。'
-  const defaultIdleSecondary = isEn ? 'Or skim the example and callbacks on the right to preview the SDK.' : '也可以先预览右侧的示例与回调模板。'
+  const defaultActionTitle = isEn ? 'Guide' : '操作指引'
+  const defaultReviewTitle = isEn ? 'Guide' : '操作指引'
+  const defaultSendPrimary = isEn ? 'Pick a command/params, then click “Send”.' : '请选择命令/参数，然后点击「发送命令」。'
+  const defaultSendSecondary = isEn ? 'The result will appear in the Result panel on the right.' : '结果会显示在右侧 Result 面板。'
+  const defaultIdlePrimary = isEn ? 'Tour is idle. Click “Guide” and send your first command.' : '导览未开始。点击「导览」并发送第一个命令。'
+  const defaultIdleSecondary = isEn ? 'You can preview examples and callbacks on the right.' : '右侧可先预览示例与回调，了解下一步。'
 
   if (!tourEnabled || !tourStarted) {
     return {
       type: 'idle',
       accent: TOUR_HINT_ACCENTS.idle,
-      title: safeString('idleTitle', isEn ? 'Tour hint' : '导览提示'),
+      title: safeString('idleTitle', isEn ? 'Guide' : '操作指引'),
       primary: safeString('idlePrimary', defaultIdlePrimary),
       secondary: safeString('idleSecondary', defaultIdleSecondary)
     }
@@ -274,8 +276,8 @@ function buildTourHintPayload({ locale, dict, stepId, tourEnabled, tourStarted }
     case 'pin':
       return {
         ...actionBase,
-        primary: safeString('pinPrimary', isEn ? 'Enter any 4-digit PIN on the device (or dialog).' : '在设备或弹窗输入任意 4 位 PIN。'),
-        secondary: safeString('pinSecondary', isEn ? 'Submitting advances the tour automatically.' : '提交后导览会自动推进。')
+        primary: safeString('pinPrimary', isEn ? 'PIN is requested. Completing it advances the flow.' : 'PIN 已请求，完成后会进入下一步。'),
+        secondary: safeString('pinSecondary', isEn ? 'Submitting moves to the next step automatically.' : '提交后会自动推进。')
       }
     case 'callback-request-button':
     case 'confirm':
@@ -309,15 +311,15 @@ function buildTourHintPayload({ locale, dict, stepId, tourEnabled, tourStarted }
 
 function TourHintCard({ hint, locale, compact = false }) {
   const accent = hint?.accent ?? TOUR_HINT_ACCENTS.action
-  const title = hint?.title ?? (locale === 'en' ? 'Tour hint' : '导览提示')
+  const title = hint?.title ?? (locale === 'en' ? 'Guide' : '操作指引')
   const typeLabel =
     locale === 'en'
       ? hint?.type === 'review'
-        ? 'Review'
-        : 'Action'
+        ? 'Result'
+        : 'Next step'
       : hint?.type === 'review'
         ? '结果'
-        : '操作'
+        : '下一步'
 
   return (
     <div
@@ -517,9 +519,8 @@ export function HardwareMockDemo({ locale = 'zh' }) {
       case 'example-code':
         return isEn ? 'Example ready' : '示例已准备'
       case 'pin-matrix-and-modal':
-        return isEn ? 'Open PIN dialog' : '打开 PIN 弹窗'
       case 'pin':
-        return isEn ? 'Enter PIN on device' : '在设备上输入 PIN'
+        return null
       case 'callback-request-button':
         return isEn ? 'REQUEST_BUTTON triggered' : 'REQUEST_BUTTON 已触发'
       case 'confirm':
@@ -1052,185 +1053,186 @@ ${extraHint}`
     }
   }
 
+  const classicPinPanel =
+    deviceType === 'classic1s' && classicPinModalOpen && ui?.type === 'pin' ? (
+      <div
+        className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-[0_10px_24px_rgba(15,23,42,0.08)] dark:border-zinc-800 dark:bg-zinc-950"
+        data-tour="classic-pin-modal"
+      >
+        <div className="flex items-start justify-between gap-4 px-5 py-4">
+          <div className="min-w-0">
+            <div className="text-lg font-semibold tracking-tight text-zinc-900 dark:text-zinc-100">
+              {locale === 'en' ? 'PIN Panel' : 'PIN 面板'}
+            </div>
+            <div className="mt-2 text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">
+              {locale === 'en'
+                ? 'Match the PIN matrix on the device. Any 4 digits work (mock does not validate).'
+                : '对照设备上的 PIN 矩阵输入，任意 4 位即可提交（Mock 不校验）。'}
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => {
+              setClassicPinModalOpen(false)
+              setClassicPinEntryOnDevice(false)
+              setClassicPinValue('')
+              send({ type: 'CANCEL' })
+            }}
+            className="grid h-9 w-9 place-items-center rounded-lg text-zinc-500 hover:bg-zinc-100 hover:text-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-900 dark:hover:text-zinc-200"
+            aria-label={locale === 'en' ? 'Close' : '关闭'}
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        <div className="px-5 pb-4">
+          <div className="overflow-hidden rounded-2xl border border-zinc-200 bg-zinc-200 shadow-sm dark:border-zinc-800 dark:bg-zinc-800/60">
+            <div className="grid grid-cols-3 gap-px bg-zinc-200 dark:bg-zinc-800/60">
+              <div className="col-span-3 bg-white px-4 py-3 dark:bg-zinc-950">
+                <div className="flex h-10 items-center justify-center gap-2">
+                  {Array.from({ length: Math.min(4, classicPinValue.length) }).map((_, idx) => (
+                    <span
+                      key={`pin-dot-${idx}`}
+                      className="h-2.5 w-2.5 rounded-full bg-zinc-900 dark:bg-zinc-100"
+                    />
+                  ))}
+                </div>
+              </div>
+
+              {Array.from({ length: 12 }).map((_, cellIndex) => {
+                const isDeleteKey = cellIndex === 9
+                const isConfirmKey = cellIndex === 11
+                const positionIndex = cellIndex < 9 ? cellIndex : cellIndex === 10 ? 9 : null
+                const baseDisabled = isBusy || !allowPinInteraction
+
+                if (isDeleteKey) {
+                  const disabled = baseDisabled || !classicPinValue
+                  return (
+                    <button
+                      key="pin-delete"
+                      type="button"
+                      disabled={disabled}
+                      onClick={() => {
+                        if (disabled) return
+                        setClassicPinValue((prev) => prev.slice(0, -1))
+                      }}
+                      className={[
+                        'h-[68px] w-full',
+                        'grid place-items-center',
+                        'bg-zinc-200 text-zinc-700',
+                        'transition-colors',
+                        'hover:bg-zinc-300 active:bg-zinc-400',
+                        'focus:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400/40 dark:focus-visible:ring-zinc-500/40',
+                        'disabled:pointer-events-none disabled:opacity-50',
+                        'dark:bg-zinc-800 dark:text-zinc-100 dark:hover:bg-zinc-700 dark:active:bg-zinc-600'
+                      ].join(' ')}
+                      aria-label={locale === 'en' ? 'Delete' : '删除'}
+                    >
+                      <Delete className="h-5 w-5" />
+                    </button>
+                  )
+                }
+
+                if (isConfirmKey) {
+                  const disabled = baseDisabled || classicPinValue.length < 4
+                  return (
+                    <button
+                      key="pin-confirm"
+                      type="button"
+                      disabled={disabled}
+                      onClick={() => {
+                        if (disabled) return
+                        setClassicPinModalOpen(false)
+                        if (tourEnabled && tourStarted) {
+                          hardwareMockTourBus.emit('ui.pin.submit', { pinLength: String(classicPinValue ?? '').length })
+                        } else {
+                          setRightTab('callback')
+                          setEditorFocus((prev) => ({
+                            ...prev,
+                            tab: 'callback',
+                            activeLine: editorMarks.callback.callbackReceivePin ?? null
+                          }))
+                        }
+                        send({ type: 'SUBMIT_PIN', pin: String(classicPinValue ?? '').slice(0, 4) })
+                      }}
+                      className={[
+                        'h-[68px] w-full',
+                        'grid place-items-center',
+                        'bg-zinc-600 text-white',
+                        'transition-colors',
+                        'hover:bg-zinc-700 active:bg-zinc-800',
+                        'focus:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400/40 dark:focus-visible:ring-zinc-500/40',
+                        'disabled:pointer-events-none disabled:opacity-50',
+                        'dark:bg-zinc-300 dark:text-zinc-900 dark:hover:bg-zinc-200 dark:active:bg-zinc-100'
+                      ].join(' ')}
+                      aria-label={locale === 'en' ? 'Confirm' : '确认'}
+                    >
+                      <Check className="h-6 w-6" />
+                    </button>
+                  )
+                }
+
+                if (positionIndex === null) return null
+
+                return (
+                  <button
+                    key={`dot-${positionIndex}`}
+                    type="button"
+                    disabled={baseDisabled}
+                    onClick={() => {
+                      if (!allowPinInteraction) return
+                      const mapping = classicPinMatrix ?? [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+                      const digit = mapping[positionIndex]
+                      setClassicPinValue((prev) => `${prev}${String(digit)}`.slice(0, 4))
+                    }}
+                    className={[
+                      'h-[68px] w-full',
+                      'grid place-items-center',
+                      'bg-zinc-50',
+                      'transition-colors',
+                      'hover:bg-zinc-100 active:bg-zinc-200',
+                      'focus:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400/40 dark:focus-visible:ring-zinc-500/40',
+                      'disabled:pointer-events-none disabled:opacity-50',
+                      'dark:bg-zinc-900/40 dark:hover:bg-zinc-900/70 dark:active:bg-zinc-800'
+                    ].join(' ')}
+                    aria-label={`pin-dot-${positionIndex}`}
+                  >
+                    <span className="h-3 w-3 rounded-full bg-zinc-800 dark:bg-zinc-100" />
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+
+          <button
+            type="button"
+            disabled={isBusy || !allowPinInteraction}
+            onClick={() => {
+              if (!allowPinInteraction) return
+              setClassicPinModalOpen(false)
+              setClassicPinValue('')
+              setClassicPinEntryOnDevice(true)
+              if (tourGuided && currentTourStepIdRef.current === 'pin') {
+                window.setTimeout(() => {
+                  hardwareMockTourBus.emit('tour.refresh', { reason: 'classic1s.pin.switchToDevice' })
+                }, 0)
+              }
+            }}
+            className="mt-4 w-full text-center text-sm font-medium text-zinc-500 transition-colors hover:text-zinc-900 disabled:opacity-50 dark:text-zinc-400 dark:hover:text-zinc-100"
+          >
+            {locale === 'en' ? 'Use device input' : '使用设备输入'}
+          </button>
+        </div>
+      </div>
+    ) : null
+
+  const showClassicPinGroup = Boolean(classicPinPanel)
+
   return (
     <div className="not-prose my-0 w-full overflow-x-hidden ok-hardware-mock" style={{ fontFamily: 'var(--font-ui)' }}>
       <div className="p-0.5 sm:p-1">
         <HardwareMockTour locale={locale} enabled={tourEnabled} onExit={handleTourExit} />
-
-	        {deviceType === 'classic1s' && classicPinModalOpen && ui?.type === 'pin' ? (
-	          <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
-	            <div
-	              className="w-full max-w-[400px] overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-2xl dark:border-zinc-800 dark:bg-zinc-950"
-	              data-tour="classic-pin-modal"
-	            >
-		              <div className="flex items-start justify-between gap-4 px-5 py-4">
-			                <div className="min-w-0">
-			                  <div className="text-2xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-100">
-			                    {locale === 'en' ? 'Enter PIN' : '输入 PIN'}
-			                  </div>
-			                  <div className="mt-2 text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">
-			                    {locale === 'en'
-			                      ? 'Check the PIN matrix on your device, then click the matching positions here. Any 4 digits work (not validated in mock).'
-			                      : '请先在设备屏幕上查看 PIN 矩阵，再在此处点击对应位置输入。任意 4 位即可提交（Mock 不校验）。'}
-			                  </div>
-			                </div>
-
-	                <button
-	                  type="button"
-	                  onClick={() => {
-	                    setClassicPinModalOpen(false)
-	                    setClassicPinEntryOnDevice(false)
-	                    setClassicPinValue('')
-	                    send({ type: 'CANCEL' })
-	                  }}
-		                  className="grid h-9 w-9 place-items-center rounded-lg text-zinc-500 hover:bg-zinc-100 hover:text-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-900 dark:hover:text-zinc-200"
-	                  aria-label={locale === 'en' ? 'Close' : '关闭'}
-	                >
-	                  <X className="h-5 w-5" />
-	                </button>
-		              </div>
-
-		              <div className="px-5 pb-4">
-		                <div className="overflow-hidden rounded-2xl border border-zinc-200 bg-zinc-200 shadow-sm dark:border-zinc-800 dark:bg-zinc-800/60">
-		                  <div className="grid grid-cols-3 gap-px bg-zinc-200 dark:bg-zinc-800/60">
-		                      <div className="col-span-3 bg-white px-4 py-3 dark:bg-zinc-950">
-		                      <div className="flex h-10 items-center justify-center gap-2">
-		                        {Array.from({ length: Math.min(4, classicPinValue.length) }).map((_, idx) => (
-		                          <span
-		                            key={`pin-dot-${idx}`}
-		                            className="h-2.5 w-2.5 rounded-full bg-zinc-900 dark:bg-zinc-100"
-		                          />
-		                        ))}
-		                      </div>
-		                    </div>
-
-		                    {Array.from({ length: 12 }).map((_, cellIndex) => {
-		                      const isDeleteKey = cellIndex === 9
-		                      const isConfirmKey = cellIndex === 11
-		                      const positionIndex = cellIndex < 9 ? cellIndex : cellIndex === 10 ? 9 : null // 0-8 dots + bottom-middle dot(9)
-		                      const baseDisabled = isBusy || !allowPinInteraction
-
-		                      if (isDeleteKey) {
-		                        const disabled = baseDisabled || !classicPinValue
-		                        return (
-		                          <button
-		                            key="pin-delete"
-		                            type="button"
-		                            disabled={disabled}
-		                            onClick={() => {
-		                              if (disabled) return
-		                              setClassicPinValue((prev) => prev.slice(0, -1))
-		                            }}
-		                            className={[
-		                              'h-[68px] w-full',
-		                              'grid place-items-center',
-		                              'bg-zinc-200 text-zinc-700',
-		                              'transition-colors',
-		                              'hover:bg-zinc-300 active:bg-zinc-400',
-		                              'focus:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400/40 dark:focus-visible:ring-zinc-500/40',
-		                              'disabled:pointer-events-none disabled:opacity-50',
-		                              'dark:bg-zinc-800 dark:text-zinc-100 dark:hover:bg-zinc-700 dark:active:bg-zinc-600'
-		                            ].join(' ')}
-		                            aria-label={locale === 'en' ? 'Delete' : '删除'}
-		                          >
-		                            <Delete className="h-5 w-5" />
-		                          </button>
-		                        )
-		                      }
-
-		                      if (isConfirmKey) {
-		                        const disabled = baseDisabled || classicPinValue.length < 4
-		                        return (
-		                          <button
-		                            key="pin-confirm"
-		                            type="button"
-		                            disabled={disabled}
-		                            onClick={() => {
-		                              if (disabled) return
-		                              setClassicPinModalOpen(false)
-		                              if (tourEnabled && tourStarted) {
-		                                hardwareMockTourBus.emit('ui.pin.submit', { pinLength: String(classicPinValue ?? '').length })
-		                              } else {
-		                                setRightTab('callback')
-		                                setEditorFocus((prev) => ({
-		                                  ...prev,
-		                                  tab: 'callback',
-		                                  activeLine: editorMarks.callback.callbackReceivePin ?? null
-		                                }))
-		                              }
-		                              send({ type: 'SUBMIT_PIN', pin: String(classicPinValue ?? '').slice(0, 4) })
-		                            }}
-		                            className={[
-		                              'h-[68px] w-full',
-		                              'grid place-items-center',
-		                              'bg-zinc-600 text-white',
-		                              'transition-colors',
-		                              'hover:bg-zinc-700 active:bg-zinc-800',
-		                              'focus:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400/40 dark:focus-visible:ring-zinc-500/40',
-		                              'disabled:pointer-events-none disabled:opacity-50',
-		                              'dark:bg-zinc-300 dark:text-zinc-900 dark:hover:bg-zinc-200 dark:active:bg-zinc-100'
-		                            ].join(' ')}
-		                            aria-label={locale === 'en' ? 'Confirm' : '确认'}
-		                          >
-		                            <Check className="h-6 w-6" />
-		                          </button>
-		                        )
-		                      }
-
-		                      if (positionIndex === null) return null
-
-		                      return (
-		                        <button
-		                          key={`dot-${positionIndex}`}
-		                          type="button"
-		                          disabled={baseDisabled}
-		                          onClick={() => {
-		                            if (!allowPinInteraction) return
-		                            const mapping = classicPinMatrix ?? [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
-		                            const digit = mapping[positionIndex]
-		                            setClassicPinValue((prev) => `${prev}${String(digit)}`.slice(0, 4))
-		                          }}
-		                          className={[
-		                            'h-[68px] w-full',
-		                            'grid place-items-center',
-		                            'bg-zinc-50',
-		                            'transition-colors',
-		                            'hover:bg-zinc-100 active:bg-zinc-200',
-		                            'focus:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400/40 dark:focus-visible:ring-zinc-500/40',
-		                            'disabled:pointer-events-none disabled:opacity-50',
-		                            'dark:bg-zinc-900/40 dark:hover:bg-zinc-900/70 dark:active:bg-zinc-800'
-		                          ].join(' ')}
-		                          aria-label={`pin-dot-${positionIndex}`}
-		                        >
-		                          <span className="h-3 w-3 rounded-full bg-zinc-800 dark:bg-zinc-100" />
-		                        </button>
-		                      )
-		                    })}
-		                  </div>
-		                </div>
-
-		                <button
-		                  type="button"
-		                  disabled={isBusy || !allowPinInteraction}
-		                  onClick={() => {
-		                    if (!allowPinInteraction) return
-		                    setClassicPinModalOpen(false)
-		                    setClassicPinValue('')
-		                    setClassicPinEntryOnDevice(true)
-		                    if (tourGuided && currentTourStepIdRef.current === 'pin') {
-		                      window.setTimeout(() => {
-		                        hardwareMockTourBus.emit('tour.refresh', { reason: 'classic1s.pin.switchToDevice' })
-		                      }, 0)
-		                    }
-		                  }}
-		                  className="mt-4 w-full text-center text-sm font-medium text-zinc-500 transition-colors hover:text-zinc-900 disabled:opacity-50 dark:text-zinc-400 dark:hover:text-zinc-100"
-		                >
-		                  {locale === 'en' ? 'Use device input' : '使用设备输入'}
-		                </button>
-		              </div>
-	            </div>
-	          </div>
-	        ) : null}
 
         {(mockError || lastError) && (
           <div className="mt-2 rounded-xl bg-red-50 p-3 text-sm text-red-700 dark:bg-red-950/30 dark:text-red-200">
@@ -1245,463 +1247,479 @@ ${extraHint}`
             <div className="pointer-events-none absolute inset-0 rounded-[28px] bg-[radial-gradient(circle_at_top,_rgba(255,255,255,0.55),_transparent_55%)] opacity-60 dark:opacity-20" />
             <div className="relative grid gap-4 lg:grid-cols-[minmax(240px,_0.3fr)_minmax(0,_0.7fr)] lg:gap-5">
               <div className="flex min-w-0 flex-col gap-4 lg:gap-5">
-                <div className="relative min-h-[470px] overflow-hidden rounded-[26px] border border-white/80 bg-white/80 px-2 py-3 shadow-[0_14px_30px_rgba(30,20,10,0.08)] backdrop-blur lg:min-h-[600px] dark:border-white/10 dark:bg-white/5">
-                  <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(255,255,255,0.55),_transparent_55%)] opacity-50 dark:opacity-10" />
-                  <div className="relative">
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="flex items-center gap-1 text-[9px] font-semibold uppercase tracking-[0.2em] text-zinc-400 dark:text-zinc-500">
-                        <span>{dict.labels.device}</span>
-                        <span className="rounded-full bg-zinc-100/80 px-1.5 py-0.5 text-[8px] font-semibold text-zinc-500 dark:bg-zinc-900/40 dark:text-zinc-400">
-                          {dict.labels.mock}
-                        </span>
-                      </div>
-                      <div className="flex min-w-0 items-center gap-1.5">
-                        <div className="inline-flex items-center rounded-full bg-white/80 p-0.5 ring-1 ring-zinc-200/70 shadow-sm dark:bg-zinc-900/60 dark:ring-zinc-700/70">
-                          {[
-                            { value: 'pro', label: 'Pro' },
-                            { value: 'classic1s', label: 'Classic 1s' }
-                          ].map((item) => {
-                            const active = deviceTypeControl === item.value
-                            return (
+                <div className="relative overflow-visible">
+                  {showClassicPinGroup ? (
+                    <div
+                      data-tour="classic-pin-group"
+                      className="pointer-events-none absolute left-0 top-0 h-full w-full lg:w-[calc(100%+344px)]"
+                    />
+                  ) : null}
+                  {classicPinPanel ? (
+                    <div className="mt-3 lg:absolute lg:left-full lg:top-6 lg:ml-6 lg:mt-0 lg:w-[320px]">
+                      {classicPinPanel}
+                    </div>
+                  ) : null}
+
+                  <div className="relative min-h-[560px] overflow-hidden rounded-[26px] border border-white/80 bg-white/80 px-2 py-3 shadow-[0_14px_30px_rgba(30,20,10,0.08)] backdrop-blur lg:min-h-[640px] dark:border-white/10 dark:bg-white/5">
+                    <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(255,255,255,0.55),_transparent_55%)] opacity-50 dark:opacity-10" />
+                    <div className="relative">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-1 text-[9px] font-semibold uppercase tracking-[0.2em] text-zinc-400 dark:text-zinc-500">
+                          <span>{dict.labels.device}</span>
+                          <span className="rounded-full bg-zinc-100/80 px-1.5 py-0.5 text-[8px] font-semibold text-zinc-500 dark:bg-zinc-900/40 dark:text-zinc-400">
+                            {dict.labels.mock}
+                          </span>
+                        </div>
+                        <div className="flex min-w-0 items-center gap-1.5">
+                          <div className="inline-flex items-center rounded-full bg-white/80 p-0.5 ring-1 ring-zinc-200/70 shadow-sm dark:bg-zinc-900/60 dark:ring-zinc-700/70">
+                            {[
+                              { value: 'pro', label: 'Pro' },
+                              { value: 'classic1s', label: 'Classic 1s' }
+                            ].map((item) => {
+                              const active = deviceTypeControl === item.value
+                              return (
+                                <button
+                                  key={item.value}
+                                  type="button"
+                                  disabled={modelControlDisabled}
+                                  onClick={() => {
+                                    if (modelControlDisabled) return
+                                    const next = item.value
+                                    setDeviceTypeControl(next)
+                                    send({ type: 'SEND', command: 'setDeviceModel', params: { deviceType: next } })
+                                  }}
+                                  className={[
+                                    'h-5 rounded-full px-2 text-[9px] font-semibold transition-colors',
+                                    active
+                                      ? 'bg-zinc-900 text-white shadow-sm dark:bg-zinc-100 dark:text-zinc-900'
+                                      : 'text-zinc-600 hover:text-zinc-900 dark:text-zinc-300 dark:hover:text-white',
+                                    modelControlDisabled ? 'cursor-not-allowed opacity-60' : ''
+                                  ].join(' ')}
+                                >
+                                  {item.label}
+                                </button>
+                              )
+                            })}
+                          </div>
+
+                          <div className="inline-flex items-center gap-1 rounded-full border border-white/70 bg-white/80 p-0.5 text-[9px] shadow-sm dark:border-white/10 dark:bg-white/5">
+                            <div className="relative group">
+                              <a
+                                href="https://hardware-example.onekey.so/#/emulator"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="grid h-5 w-5 place-items-center rounded-full text-zinc-700 transition-all hover:-translate-y-[1px] hover:bg-white hover:text-zinc-900 dark:text-zinc-200 dark:hover:bg-white/10 dark:hover:text-white"
+                                aria-label={dict.labels.openEmulator}
+                                title={dict.labels.openEmulator}
+                              >
+                                <ExternalLink size={11} strokeWidth={1.8} />
+                              </a>
+                              <div className="pointer-events-none absolute right-0 top-full z-20 mt-2 origin-top-right scale-95 opacity-0 transition duration-150 group-hover:scale-100 group-hover:opacity-100">
+                                <div className="whitespace-nowrap rounded-lg border border-white/70 bg-white/90 px-2.5 py-1 text-[10px] font-medium text-zinc-700 shadow-sm dark:border-white/10 dark:bg-zinc-950/70 dark:text-zinc-200">
+                                  {dict.labels.openEmulator}
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="relative group">
                               <button
-                                key={item.value}
                                 type="button"
-                                disabled={modelControlDisabled}
                                 onClick={() => {
-                                  if (modelControlDisabled) return
-                                  const next = item.value
-                                  setDeviceTypeControl(next)
-                                  send({ type: 'SEND', command: 'setDeviceModel', params: { deviceType: next } })
+                                  const next = !tourEnabledRef.current
+                                  tourEnabledRef.current = next
+                                  setTourEnabled(next)
                                 }}
                                 className={[
-                                  'h-5 rounded-full px-2 text-[9px] font-semibold transition-colors',
-                                  active
-                                    ? 'bg-zinc-900 text-white shadow-sm dark:bg-zinc-100 dark:text-zinc-900'
-                                    : 'text-zinc-600 hover:text-zinc-900 dark:text-zinc-300 dark:hover:text-white',
-                                  modelControlDisabled ? 'cursor-not-allowed opacity-60' : ''
+                                  'inline-flex h-6 items-center gap-1.5 rounded-full border px-2 text-[10px] font-semibold transition-all hover:-translate-y-[1px]',
+                                  tourEnabled
+                                    ? 'border-[#00B812]/50 bg-[#00B812]/15 text-[#0a7024] hover:bg-[#00B812]/20 dark:border-[#00B812]/40 dark:bg-[#00B812]/20 dark:text-[#b6ffc6]'
+                                    : 'border-transparent text-zinc-700 hover:bg-white hover:text-zinc-900 dark:text-zinc-200 dark:hover:bg-white/10 dark:hover:text-white'
                                 ].join(' ')}
+                                aria-pressed={tourEnabled}
+                                aria-label={dict.labels.guide}
+                                title={dict.labels.guide}
                               >
-                                {item.label}
+                                <Compass size={12} strokeWidth={1.8} />
+                                <span>{dict.labels.guide}</span>
                               </button>
-                            )
-                          })}
-                        </div>
-
-                        <div className="inline-flex items-center gap-1 rounded-full border border-white/70 bg-white/80 p-0.5 text-[9px] shadow-sm dark:border-white/10 dark:bg-white/5">
-                          <div className="relative group">
-                            <a
-                              href="https://hardware-example.onekey.so/#/emulator"
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="grid h-5 w-5 place-items-center rounded-full text-zinc-700 transition-all hover:-translate-y-[1px] hover:bg-white hover:text-zinc-900 dark:text-zinc-200 dark:hover:bg-white/10 dark:hover:text-white"
-                              aria-label={dict.labels.openEmulator}
-                              title={dict.labels.openEmulator}
-                            >
-                              <ExternalLink size={11} strokeWidth={1.8} />
-                            </a>
-                            <div className="pointer-events-none absolute right-0 top-full z-20 mt-2 origin-top-right scale-95 opacity-0 transition duration-150 group-hover:scale-100 group-hover:opacity-100">
-                              <div className="whitespace-nowrap rounded-lg border border-white/70 bg-white/90 px-2.5 py-1 text-[10px] font-medium text-zinc-700 shadow-sm dark:border-white/10 dark:bg-zinc-950/70 dark:text-zinc-200">
-                                {dict.labels.openEmulator}
+                              <div className="pointer-events-none absolute right-0 top-full z-20 mt-2 w-[240px] origin-top-right scale-95 opacity-0 transition duration-150 group-hover:pointer-events-auto group-hover:scale-100 group-hover:opacity-100">
+                                <TourHintCard hint={tourHint} locale={locale} compact />
                               </div>
                             </div>
                           </div>
-
-                          <div className="relative group">
-                            <button
-                              type="button"
-                              onClick={() => {
-                                const next = !tourEnabledRef.current
-                                tourEnabledRef.current = next
-                                setTourEnabled(next)
-                              }}
-                              className={[
-                                'grid h-5 w-5 place-items-center rounded-full border transition-all hover:-translate-y-[1px]',
-                                tourEnabled
-                                  ? 'border-[#00B812]/50 bg-[#00B812]/15 text-[#0a7024] hover:bg-[#00B812]/20 dark:border-[#00B812]/40 dark:bg-[#00B812]/20 dark:text-[#b6ffc6]'
-                                  : 'border-transparent text-zinc-700 hover:bg-white hover:text-zinc-900 dark:text-zinc-200 dark:hover:bg-white/10 dark:hover:text-white'
-                              ].join(' ')}
-                              aria-pressed={tourEnabled}
-                              aria-label={locale === 'en' ? 'Tour' : '导览'}
-                              title={locale === 'en' ? 'Tour' : '导览'}
-                            >
-                              <Sparkles size={11} strokeWidth={1.8} />
-                            </button>
-                            <div className="pointer-events-none absolute right-0 top-full z-20 mt-2 w-[240px] origin-top-right scale-95 opacity-0 transition duration-150 group-hover:pointer-events-auto group-hover:scale-100 group-hover:opacity-100">
-                              <TourHintCard hint={tourHint} locale={locale} compact />
-                            </div>
-                          </div>
                         </div>
                       </div>
-                    </div>
 
-                    <div className="mt-2 rounded-2xl border border-zinc-200/60 bg-white/70 p-2.5 shadow-sm dark:border-zinc-800/60 dark:bg-white/5 ok-command-panel">
-                      <div className="flex items-center gap-2">
-                        <span className="text-[11px] font-medium text-zinc-500 dark:text-zinc-400">{dict.labels.command}</span>
-                        <div className="relative min-w-0 flex-1">
-                          <select
-                            data-tour="command-select"
-                            value={command}
-                            onChange={(e) => {
-                              const nextCommand = e.target.value
-                              setCommand(nextCommand)
-                              if (tourEnabled) {
-                                hardwareMockTourBus.emit('command.changed', { command: nextCommand })
-                              }
-                            }}
-                            disabled={controlsDisabled}
-                            className="w-full appearance-none pr-8 text-xs text-zinc-900 outline-none dark:text-zinc-100"
-                          >
-                            {commandOptions.map((option) => (
-                              <option key={option.value} value={option.value}>
-                                {option.title}
-                              </option>
-                            ))}
-                          </select>
-                          <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-zinc-400 dark:text-zinc-500" />
-                        </div>
-
-                        <button
-                          type="button"
-                          onClick={handleSendCommand}
-                          disabled={controlsDisabled}
-                          data-tour="send-button"
-                          className="inline-flex h-7 shrink-0 items-center justify-center gap-1.5 rounded-lg border border-[#00B812]/25 bg-[#00B812]/10 px-2.5 text-xs font-medium text-[#0a7024] transition-colors hover:bg-[#00B812]/15 focus:outline-none focus:ring-2 focus:ring-[#00B812]/20 disabled:cursor-not-allowed disabled:opacity-50 dark:border-[#00B812]/30 dark:bg-[#00B812]/15 dark:text-[#b6ffc6]"
-                        >
-                          <Send size={14} strokeWidth={1.8} />
-                          {dict.labels.sendCommand}
-                        </button>
-                      </div>
-
-                      <div className="mt-2.5 grid gap-2">
-                        {command !== 'searchDevices' ? (
-                          <label className="grid gap-1 text-xs text-zinc-600 dark:text-zinc-300">
-                            <span className="text-[11px] font-medium text-zinc-400 dark:text-zinc-500">Path</span>
-                            <input
-                              value={btcPath}
-                              onChange={(e) => setBtcPath(e.target.value)}
-                              disabled={controlsDisabled}
-                              className="w-full"
-                            />
-                          </label>
-                        ) : null}
-
-                        {command === 'btcSignMessage' ? (
-                          <label className="grid gap-1 text-xs text-zinc-600 dark:text-zinc-300">
-                            <span className="text-[11px] font-medium text-zinc-400 dark:text-zinc-500">Message</span>
-                            <textarea
-                              value={messageHex}
-                              onChange={(e) => setMessageHex(e.target.value)}
-                              disabled={controlsDisabled}
-                              rows={2}
-                              className="w-full resize-none"
-                            />
-                          </label>
-                        ) : null}
-
-                        {command === 'btcGetAddress' ? (
-                          <div data-tour="show-on-onekey" className="flex items-center justify-between gap-3 text-xs text-zinc-600 dark:text-zinc-300">
-                            <span className="font-mono text-[11px] text-zinc-500 dark:text-zinc-400">{compactShowOnDeviceLabel}</span>
-                            <button
-                              type="button"
-                              aria-pressed={addressShowOnOneKey}
-                              onClick={() => {
-                                if (controlsDisabled) return
-                                const next = !addressShowOnOneKey
-                                setAddressShowOnOneKey(next)
+                      <div className="mt-2 rounded-2xl border border-zinc-200/60 bg-white/70 p-2.5 shadow-sm dark:border-zinc-800/60 dark:bg-white/5 ok-command-panel">
+                        <div className="flex items-center gap-2">
+                          <span className="text-[11px] font-medium text-zinc-500 dark:text-zinc-400">{dict.labels.command}</span>
+                          <div className="relative min-w-0 flex-1">
+                            <select
+                              data-tour="command-select"
+                              value={command}
+                              onChange={(e) => {
+                                const nextCommand = e.target.value
+                                setCommand(nextCommand)
                                 if (tourEnabled) {
-                                  hardwareMockTourBus.emit('param.changed', { key: 'showOnOneKey', value: next })
+                                  hardwareMockTourBus.emit('command.changed', { command: nextCommand })
                                 }
                               }}
                               disabled={controlsDisabled}
-                              className={[
-                                'inline-flex h-6 min-w-[48px] items-center justify-center rounded-full px-2 text-[11px] font-semibold transition-colors',
-                                addressShowOnOneKey
-                                  ? 'bg-[#00B812] text-white shadow-sm'
-                                  : 'bg-zinc-200 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300',
-                                controlsDisabled ? 'opacity-60' : 'hover:brightness-95'
-                              ].join(' ')}
+                              className="w-full appearance-none pr-8 text-xs text-zinc-900 outline-none dark:text-zinc-100"
                             >
-                              {addressShowOnOneKey ? 'ON' : 'OFF'}
-                            </button>
+                              {commandOptions.map((option) => (
+                                <option key={option.value} value={option.value}>
+                                  {option.title}
+                                </option>
+                              ))}
+                            </select>
+                            <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-zinc-400 dark:text-zinc-500" />
                           </div>
-                        ) : null}
 
-                        {command === 'searchDevices' ? (
-                          <div className="text-[11px] font-medium text-zinc-500 dark:text-zinc-400">
-                            {dict.labels.commandNoParams}
-                          </div>
-                        ) : null}
+                          <button
+                            type="button"
+                            onClick={handleSendCommand}
+                            disabled={controlsDisabled}
+                            data-tour="send-button"
+                            className="inline-flex h-7 shrink-0 items-center justify-center gap-1.5 rounded-lg border border-[#00B812]/25 bg-[#00B812]/10 px-2.5 text-xs font-medium text-[#0a7024] transition-colors hover:bg-[#00B812]/15 focus:outline-none focus:ring-2 focus:ring-[#00B812]/20 disabled:cursor-not-allowed disabled:opacity-50 dark:border-[#00B812]/30 dark:bg-[#00B812]/15 dark:text-[#b6ffc6]"
+                          >
+                            <Send size={14} strokeWidth={1.8} />
+                            {dict.labels.sendCommand}
+                          </button>
+                        </div>
+
+                        <div className="mt-2.5 grid gap-2">
+                          {command !== 'searchDevices' ? (
+                            <label className="grid gap-1 text-xs text-zinc-600 dark:text-zinc-300">
+                              <span className="text-[11px] font-medium text-zinc-400 dark:text-zinc-500">Path</span>
+                              <input
+                                value={btcPath}
+                                onChange={(e) => setBtcPath(e.target.value)}
+                                disabled={controlsDisabled}
+                                className="w-full"
+                              />
+                            </label>
+                          ) : null}
+
+                          {command === 'btcSignMessage' ? (
+                            <label className="grid gap-1 text-xs text-zinc-600 dark:text-zinc-300">
+                              <span className="text-[11px] font-medium text-zinc-400 dark:text-zinc-500">Message</span>
+                              <textarea
+                                value={messageHex}
+                                onChange={(e) => setMessageHex(e.target.value)}
+                                disabled={controlsDisabled}
+                                rows={2}
+                                className="w-full resize-none"
+                              />
+                            </label>
+                          ) : null}
+
+                          {command === 'btcGetAddress' ? (
+                            <div data-tour="show-on-onekey" className="flex items-center justify-between gap-3 text-xs text-zinc-600 dark:text-zinc-300">
+                              <span className="font-mono text-[11px] text-zinc-500 dark:text-zinc-400">{compactShowOnDeviceLabel}</span>
+                              <button
+                                type="button"
+                                aria-pressed={addressShowOnOneKey}
+                                onClick={() => {
+                                  if (controlsDisabled) return
+                                  const next = !addressShowOnOneKey
+                                  setAddressShowOnOneKey(next)
+                                  if (tourEnabled) {
+                                    hardwareMockTourBus.emit('param.changed', { key: 'showOnOneKey', value: next })
+                                  }
+                                }}
+                                disabled={controlsDisabled}
+                                className={[
+                                  'inline-flex h-6 min-w-[48px] items-center justify-center rounded-full px-2 text-[11px] font-semibold transition-colors',
+                                  addressShowOnOneKey
+                                    ? 'bg-[#00B812] text-white shadow-sm'
+                                    : 'bg-zinc-200 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300',
+                                  controlsDisabled ? 'opacity-60' : 'hover:brightness-95'
+                                ].join(' ')}
+                              >
+                                {addressShowOnOneKey ? 'ON' : 'OFF'}
+                              </button>
+                            </div>
+                          ) : null}
+
+                          {command === 'searchDevices' ? (
+                            <div className="text-[11px] font-medium text-zinc-500 dark:text-zinc-400">
+                              {dict.labels.commandNoParams}
+                            </div>
+                          ) : null}
+                        </div>
+                      </div>
+
+                      <div ref={deviceRef} className="mt-3 flex justify-center" data-tour="device-screen">
+                        {deviceType === 'classic1s' ? (
+                          <Classic1sDeviceScreen
+                            locale={locale}
+                            busy={isBusy}
+                            device={state.context.device}
+                            ui={ui}
+                            overlay={deviceTourOverlay}
+                            pinEntryOnDevice={classicPinEntryOnDevice}
+                            pinMatrix={classicPinMatrix}
+                            allowPinInput={allowPinInteraction}
+                            allowConfirmInput={allowConfirmInteraction}
+                            onSubmitPin={(pinValue) => {
+                              if (!allowPinInteraction) return
+                              if (tourEnabled && tourStarted) {
+                                hardwareMockTourBus.emit('ui.pin.submit', { pinLength: String(pinValue ?? '').length })
+                              } else {
+                                setRightTab('callback')
+                                setEditorFocus((prev) => ({
+                                  ...prev,
+                                  tab: 'callback',
+                                  activeLine: editorMarks.callback.callbackReceivePin ?? null
+                                }))
+                              }
+                              send({ type: 'SUBMIT_PIN', pin: pinValue })
+                            }}
+                            onConfirm={() => {
+                              if (!allowConfirmInteraction) return
+                              if (tourEnabled && tourStarted) {
+                                hardwareMockTourBus.emit('ui.confirm', { action: ui?.action ?? null, approved: true })
+                              } else if (ui?.action === 'btcGetAddress') {
+                                setRightTab('callback')
+                                setEditorFocus((prev) => ({ ...prev, tab: 'callback', activeLine: editorMarks.callback.callbackOn ?? null }))
+                              }
+                              send({ type: 'CONFIRM', approved: true })
+                            }}
+                            onReject={() => {
+                              if (!allowConfirmInteraction) return
+                              if (tourEnabled) {
+                                hardwareMockTourBus.emit('ui.confirm', { action: ui?.action ?? null, approved: false })
+                              }
+                              send({ type: 'CONFIRM', approved: false })
+                            }}
+                            onTapToUnlock={() => {
+                              if (tourGuided) return
+                              if (!mockReady || isBusy || isAwaitingUi) return
+                              pinOriginRef.current = 'manual'
+                              setClassicPinModalOpen(false)
+                              setClassicPinEntryOnDevice(true)
+                              setClassicPinValue('')
+                              if (tourEnabled) {
+                                hardwareMockTourBus.emit('ui.unlock.tap', {})
+                              }
+                              send({ type: 'SEND', command: 'deviceUnlock', params: { connectId: state.context.device?.connectId ?? null } })
+                            }}
+                          />
+                        ) : (
+                          <ProDeviceScreen
+                            basePath={basePath}
+                            locale={locale}
+                            busy={isBusy}
+                            device={state.context.device}
+                            ui={ui}
+                            overlay={deviceTourOverlay}
+                            allowPinInput={allowPinInteraction}
+                            allowConfirmInput={allowConfirmInteraction}
+                            onSubmitPin={(pinValue) => {
+                              if (!allowPinInteraction) return
+                              if (tourEnabled && tourStarted) {
+                                hardwareMockTourBus.emit('ui.pin.submit', { pinLength: String(pinValue ?? '').length })
+                              } else {
+                                setRightTab('callback')
+                                setEditorFocus((prev) => ({
+                                  ...prev,
+                                  tab: 'callback',
+                                  activeLine: editorMarks.callback.callbackReceivePin ?? null
+                                }))
+                              }
+                              send({ type: 'SUBMIT_PIN', pin: pinValue })
+                            }}
+                            onConfirm={() => {
+                              if (!allowConfirmInteraction) return
+                              if (tourEnabled && tourStarted) {
+                                hardwareMockTourBus.emit('ui.confirm', { action: ui?.action ?? null, approved: true })
+                              } else if (ui?.action === 'btcGetAddress') {
+                                setRightTab('callback')
+                                setEditorFocus((prev) => ({ ...prev, tab: 'callback', activeLine: editorMarks.callback.callbackOn ?? null }))
+                              }
+                              send({ type: 'CONFIRM', approved: true })
+                            }}
+                            onReject={() => {
+                              if (!allowConfirmInteraction) return
+                              if (tourEnabled) {
+                                hardwareMockTourBus.emit('ui.confirm', { action: ui?.action ?? null, approved: false })
+                              }
+                              send({ type: 'CONFIRM', approved: false })
+                            }}
+                            onCancel={() => send({ type: 'CANCEL' })}
+                            onTapToUnlock={() => {
+                              if (tourGuided) return
+                              if (!mockReady || isBusy || isAwaitingUi) return
+                              if (tourEnabled) {
+                                hardwareMockTourBus.emit('ui.unlock.tap', {})
+                              }
+                              send({ type: 'SEND', command: 'deviceUnlock', params: { connectId: state.context.device?.connectId ?? null } })
+                            }}
+                          />
+                        )}
+                      </div>
+
+                      <div className="mt-2 flex flex-wrap items-center gap-2">
+                        <div className="inline-flex items-center gap-1 rounded-full border border-white/70 bg-white/80 px-2 py-0.5 text-[10px] font-medium text-zinc-600 shadow-sm dark:border-white/10 dark:bg-white/5 dark:text-zinc-300">
+                          <Info size={14} strokeWidth={2} className="text-zinc-400 dark:text-zinc-500" />
+                          <span className="whitespace-nowrap">{dict.labels.pinNote}</span>
+                        </div>
                       </div>
                     </div>
-
-                    <div ref={deviceRef} className="mt-3 flex justify-center" data-tour="device-screen">
-                      {deviceType === 'classic1s' ? (
-                        <Classic1sDeviceScreen
-                          locale={locale}
-                          busy={isBusy}
-                          device={state.context.device}
-                          ui={ui}
-                          overlay={deviceTourOverlay}
-                          pinEntryOnDevice={classicPinEntryOnDevice}
-                          pinMatrix={classicPinMatrix}
-                          allowPinInput={allowPinInteraction}
-                          allowConfirmInput={allowConfirmInteraction}
-                          onSubmitPin={(pinValue) => {
-                            if (!allowPinInteraction) return
-                            if (tourEnabled && tourStarted) {
-                              hardwareMockTourBus.emit('ui.pin.submit', { pinLength: String(pinValue ?? '').length })
-                            } else {
-                              setRightTab('callback')
-                              setEditorFocus((prev) => ({
-                                ...prev,
-                                tab: 'callback',
-                                activeLine: editorMarks.callback.callbackReceivePin ?? null
-                              }))
-                            }
-                            send({ type: 'SUBMIT_PIN', pin: pinValue })
-                          }}
-                          onConfirm={() => {
-                            if (!allowConfirmInteraction) return
-                            if (tourEnabled && tourStarted) {
-                              hardwareMockTourBus.emit('ui.confirm', { action: ui?.action ?? null, approved: true })
-                            } else if (ui?.action === 'btcGetAddress') {
-                              setRightTab('callback')
-                              setEditorFocus((prev) => ({ ...prev, tab: 'callback', activeLine: editorMarks.callback.callbackOn ?? null }))
-                            }
-                            send({ type: 'CONFIRM', approved: true })
-                          }}
-                          onReject={() => {
-                            if (!allowConfirmInteraction) return
-                            if (tourEnabled) {
-                              hardwareMockTourBus.emit('ui.confirm', { action: ui?.action ?? null, approved: false })
-                            }
-                            send({ type: 'CONFIRM', approved: false })
-                          }}
-                          onTapToUnlock={() => {
-                            if (tourGuided) return
-                            if (!mockReady || isBusy || isAwaitingUi) return
-                            pinOriginRef.current = 'manual'
-                            setClassicPinModalOpen(false)
-                            setClassicPinEntryOnDevice(true)
-                            setClassicPinValue('')
-                            if (tourEnabled) {
-                              hardwareMockTourBus.emit('ui.unlock.tap', {})
-                            }
-                            send({ type: 'SEND', command: 'deviceUnlock', params: { connectId: state.context.device?.connectId ?? null } })
-                          }}
-                        />
-                      ) : (
-                        <ProDeviceScreen
-                          basePath={basePath}
-                          locale={locale}
-                          busy={isBusy}
-                          device={state.context.device}
-                          ui={ui}
-                          overlay={deviceTourOverlay}
-                          allowPinInput={allowPinInteraction}
-                          allowConfirmInput={allowConfirmInteraction}
-                          onSubmitPin={(pinValue) => {
-                            if (!allowPinInteraction) return
-                            if (tourEnabled && tourStarted) {
-                              hardwareMockTourBus.emit('ui.pin.submit', { pinLength: String(pinValue ?? '').length })
-                            } else {
-                              setRightTab('callback')
-                              setEditorFocus((prev) => ({
-                                ...prev,
-                                tab: 'callback',
-                                activeLine: editorMarks.callback.callbackReceivePin ?? null
-                              }))
-                            }
-                            send({ type: 'SUBMIT_PIN', pin: pinValue })
-                          }}
-                          onConfirm={() => {
-                            if (!allowConfirmInteraction) return
-                            if (tourEnabled && tourStarted) {
-                              hardwareMockTourBus.emit('ui.confirm', { action: ui?.action ?? null, approved: true })
-                            } else if (ui?.action === 'btcGetAddress') {
-                              setRightTab('callback')
-                              setEditorFocus((prev) => ({ ...prev, tab: 'callback', activeLine: editorMarks.callback.callbackOn ?? null }))
-                            }
-                            send({ type: 'CONFIRM', approved: true })
-                          }}
-                          onReject={() => {
-                            if (!allowConfirmInteraction) return
-                            if (tourEnabled) {
-                              hardwareMockTourBus.emit('ui.confirm', { action: ui?.action ?? null, approved: false })
-                            }
-                            send({ type: 'CONFIRM', approved: false })
-                          }}
-                          onCancel={() => send({ type: 'CANCEL' })}
-                          onTapToUnlock={() => {
-                            if (tourGuided) return
-                            if (!mockReady || isBusy || isAwaitingUi) return
-                            if (tourEnabled) {
-                              hardwareMockTourBus.emit('ui.unlock.tap', {})
-                            }
-                            send({ type: 'SEND', command: 'deviceUnlock', params: { connectId: state.context.device?.connectId ?? null } })
-                          }}
-                        />
-                      )}
-                    </div>
-
-                  <div className="mt-2 flex flex-wrap items-center gap-2">
-                    <div className="inline-flex items-center gap-1 rounded-full border border-white/70 bg-white/80 px-2 py-0.5 text-[10px] font-medium text-zinc-600 shadow-sm dark:border-white/10 dark:bg-white/5 dark:text-zinc-300">
-                      <Info size={14} strokeWidth={2} className="text-zinc-400 dark:text-zinc-500" />
-                      <span className="whitespace-nowrap">{dict.labels.pinNote}</span>
-                    </div>
-                  </div>
                   </div>
                 </div>
-
               </div>
 
-              <div className="relative min-w-0 h-[560px] overflow-hidden rounded-[26px] border border-white/80 bg-white/90 p-4 shadow-[0_14px_30px_rgba(30,20,10,0.08)] backdrop-blur lg:h-[640px] dark:border-white/10 dark:bg-white/5">
-                <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(255,255,255,0.5),_transparent_60%)] opacity-40 dark:opacity-10" />
-                <div className="relative flex h-full flex-col">
+              <div className="relative min-w-0">
+                <div className="relative min-w-0 overflow-hidden rounded-[26px] border border-white/80 bg-white/90 p-4 shadow-[0_14px_30px_rgba(30,20,10,0.08)] backdrop-blur min-h-[560px] lg:min-h-[640px] dark:border-white/10 dark:bg-white/5">
+                  <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(255,255,255,0.5),_transparent_60%)] opacity-40 dark:opacity-10" />
+                  <div className="relative flex h-full flex-col">
                     <div className="flex items-center justify-between gap-3">
                       <div className="flex min-w-0 items-center gap-2">
                         <div className="text-sm font-medium text-zinc-900 dark:text-zinc-100">{dict.labels.devViewTitle}</div>
-                      <span className="truncate font-mono text-[10px] text-zinc-500/80 dark:text-zinc-500">
-                        {command}
-                      </span>
-                    </div>
+                        <span className="truncate font-mono text-[10px] text-zinc-500/80 dark:text-zinc-500">
+                          {command}
+                        </span>
+                      </div>
 
-                    <div className="flex items-center gap-2">
-                      {rightTab === 'example' ? (
-                        <button
-                          type="button"
-                          onClick={handleCopy}
-                          disabled={tourGuided}
-                          className="grid h-7 w-7 place-items-center rounded-md bg-white/80 text-zinc-900 shadow-sm transition-colors hover:bg-white disabled:cursor-not-allowed disabled:opacity-60 dark:bg-zinc-950/60 dark:text-zinc-100 dark:hover:bg-zinc-950"
-                          aria-label={copied ? dict.labels.copied : dict.labels.copy}
-                          title={copied ? dict.labels.copied : dict.labels.copy}
-                        >
-                          {copied ? <Check size={14} strokeWidth={1.8} /> : <Copy size={14} strokeWidth={1.8} />}
-                        </button>
-                      ) : null}
-
-                      <div className="inline-flex rounded-lg bg-white/80 p-0.5 text-xs shadow-sm dark:bg-zinc-950/60">
-                        {[
-                          { key: 'example', label: dict.labels.tabExample },
-                          { key: 'callback', label: dict.labels.tabCallback },
-                          { key: 'result', label: dict.labels.tabResult }
-                        ].map((tab) => (
+                      <div className="flex items-center gap-2">
+                        {rightTab === 'example' ? (
                           <button
-                            key={tab.key}
                             type="button"
+                            onClick={handleCopy}
                             disabled={tourGuided}
-                            onClick={() => {
-                              if (tourGuided) return
-                              setRightTab(tab.key)
-                              setEditorFocus((prev) => {
-                                if (tab.key === 'example') return { ...prev, tab: tab.key, activeLine: editorMarks.example.exampleCall ?? null }
-                                if (tab.key === 'callback') return { ...prev, tab: tab.key, activeLine: editorMarks.callback.callbackOn ?? null }
-                                if (tab.key === 'result') return { ...prev, tab: tab.key, activeLine: null }
-                                return { ...prev, tab: tab.key }
-                              })
-                            }}
-                            className={[
-                              'rounded px-2.5 py-1 font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-60',
-                              rightTab === tab.key
-                                ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900'
-                                : 'text-zinc-700 hover:bg-zinc-50 dark:text-zinc-200 dark:hover:bg-zinc-900'
-                            ].join(' ')}
+                            className="grid h-7 w-7 place-items-center rounded-md bg-white/80 text-zinc-900 shadow-sm transition-colors hover:bg-white disabled:cursor-not-allowed disabled:opacity-60 dark:bg-zinc-950/60 dark:text-zinc-100 dark:hover:bg-zinc-950"
+                            aria-label={copied ? dict.labels.copied : dict.labels.copy}
+                            title={copied ? dict.labels.copied : dict.labels.copy}
                           >
-                            {tab.label}
+                            {copied ? <Check size={14} strokeWidth={1.8} /> : <Copy size={14} strokeWidth={1.8} />}
                           </button>
-                        ))}
+                        ) : null}
+
+                        <div className="inline-flex rounded-lg bg-white/80 p-0.5 text-xs shadow-sm dark:bg-zinc-950/60">
+                          {[
+                            { key: 'example', label: dict.labels.tabExample },
+                            { key: 'callback', label: dict.labels.tabCallback },
+                            { key: 'result', label: dict.labels.tabResult }
+                          ].map((tab) => (
+                            <button
+                              key={tab.key}
+                              type="button"
+                              disabled={tourGuided}
+                              onClick={() => {
+                                if (tourGuided) return
+                                setRightTab(tab.key)
+                                setEditorFocus((prev) => {
+                                  if (tab.key === 'example') return { ...prev, tab: tab.key, activeLine: editorMarks.example.exampleCall ?? null }
+                                  if (tab.key === 'callback') return { ...prev, tab: tab.key, activeLine: editorMarks.callback.callbackOn ?? null }
+                                  if (tab.key === 'result') return { ...prev, tab: tab.key, activeLine: null }
+                                  return { ...prev, tab: tab.key }
+                                })
+                              }}
+                              className={[
+                                'rounded px-2.5 py-1 font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-60',
+                                rightTab === tab.key
+                                  ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900'
+                                  : 'text-zinc-700 hover:bg-zinc-50 dark:text-zinc-200 dark:hover:bg-zinc-900'
+                              ].join(' ')}
+                            >
+                              {tab.label}
+                            </button>
+                          ))}
+                        </div>
                       </div>
                     </div>
-                  </div>
 
-                  <div className="mt-3 flex min-h-0 flex-1 flex-col">
-                    {rightTab === 'example' ? (
-                      <EditorCodeBlock
-                        dataTour="example-code"
-                        code={code}
-                        language="typescript"
-                        filename={exampleFilename}
-                        activeLine={tourEnabled && tourStarted && editorFocus.tab === 'example' ? editorFocus.activeLine : null}
-                        breakpoints={
-                          tourEnabled && tourStarted && editorFocus.tab === 'example' && editorFocus.activeLine ? [editorFocus.activeLine] : []
-                        }
-                        showBreakpoints={tourEnabled && tourStarted}
-                        className="min-h-0 flex-1"
-                      />
-                    ) : null}
+                    <div className="mt-3 flex min-h-0 flex-1 flex-col">
+                      {rightTab === 'example' ? (
+                        <EditorCodeBlock
+                          dataTour="example-code"
+                          code={code}
+                          language="typescript"
+                          filename={exampleFilename}
+                          activeLine={tourEnabled && tourStarted && editorFocus.tab === 'example' ? editorFocus.activeLine : null}
+                          breakpoints={
+                            tourEnabled && tourStarted && editorFocus.tab === 'example' && editorFocus.activeLine ? [editorFocus.activeLine] : []
+                          }
+                          showBreakpoints={tourEnabled && tourStarted}
+                          className="min-h-0 flex-1"
+                        />
+                      ) : null}
 
-                    {rightTab === 'callback' ? (
-                      <EditorCodeBlock
-                        dataTour="callback-code"
-                        code={callbackCode}
-                        language="typescript"
-                        filename={callbackFilename}
-                        activeLine={tourEnabled && tourStarted && editorFocus.tab === 'callback' ? editorFocus.activeLine : null}
-                        breakpoints={
-                          tourEnabled && tourStarted && editorFocus.tab === 'callback' && editorFocus.activeLine ? [editorFocus.activeLine] : []
-                        }
-                        showBreakpoints={tourEnabled && tourStarted}
-                        className="min-h-0 flex-1"
-                      />
-                    ) : null}
+                      {rightTab === 'callback' ? (
+                        <EditorCodeBlock
+                          dataTour="callback-code"
+                          code={callbackCode}
+                          language="typescript"
+                          filename={callbackFilename}
+                          activeLine={tourEnabled && tourStarted && editorFocus.tab === 'callback' ? editorFocus.activeLine : null}
+                          breakpoints={
+                            tourEnabled && tourStarted && editorFocus.tab === 'callback' && editorFocus.activeLine ? [editorFocus.activeLine] : []
+                          }
+                          showBreakpoints={tourEnabled && tourStarted}
+                          className="min-h-0 flex-1"
+                        />
+                      ) : null}
 
-                    {rightTab === 'result'
-                      ? (() => {
-                          const last = [...logs].reverse().find((item) => item.level === 'response' || item.level === 'error') ?? null
-                          return (
-                            <div className="flex min-h-0 flex-1 flex-col gap-2" data-tour="result-panel">
-                              {last ? (
-                                <div className="font-mono text-xs">
-                                  <span className="text-zinc-500 dark:text-zinc-500">[{formatTime(last.ts)}]</span>{' '}
-                                  <span className={getLevelStyle(last.level)}>{last.title}</span>
-                                </div>
-                              ) : null}
-
-                              {last && last.data !== undefined ? (
-                                <EditorCodeBlock
-                                  code={formatJsonPretty(last.data)}
-                                  language="json"
-                                  filename={resultFilename}
-                                  activeLine={null}
-                                  breakpoints={[]}
-                                  cursor="default"
-                                  className="min-h-0 flex-1"
-                                />
-                              ) : (
-                                <div className="flex min-h-0 flex-1 items-center justify-center rounded-xl bg-white/70 p-3 text-xs text-zinc-500 dark:bg-zinc-950/40 dark:text-zinc-500">
-                                  {!last ? dict.labels.noResult : dict.labels.noPayload}
-                                </div>
-                              )}
-
-                              {last ? (
-                                <details>
-                                  <summary className="cursor-pointer select-none text-xs text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200">
-                                    {dict.labels.showRawLogs}
-                                  </summary>
-                                  <div className="mt-2 space-y-1 font-mono text-[11px] text-zinc-700 dark:text-zinc-200">
-                                    {logs.map((item) => (
-                                      <div key={item.id}>
-                                        <span className="text-zinc-500 dark:text-zinc-500">[{formatTime(item.ts)}]</span>{' '}
-                                        <span className={getLevelStyle(item.level)}>{item.title}</span>
-                                        {item.data !== undefined ? (
-                                          <span className="text-zinc-500 dark:text-zinc-400"> {formatJson(item.data)}</span>
-                                        ) : null}
-                                      </div>
-                                    ))}
+                      {rightTab === 'result'
+                        ? (() => {
+                            const last = [...logs].reverse().find((item) => item.level === 'response' || item.level === 'error') ?? null
+                            return (
+                              <div className="flex min-h-0 flex-1 flex-col gap-2" data-tour="result-panel">
+                                {last ? (
+                                  <div className="font-mono text-xs">
+                                    <span className="text-zinc-500 dark:text-zinc-500">[{formatTime(last.ts)}]</span>{' '}
+                                    <span className={getLevelStyle(last.level)}>{last.title}</span>
                                   </div>
-                                </details>
-                              ) : null}
-                            </div>
-                          )
-                        })()
-                      : null}
+                                ) : null}
+
+                                {last && last.data !== undefined ? (
+                                  <EditorCodeBlock
+                                    code={formatJsonPretty(last.data)}
+                                    language="json"
+                                    filename={resultFilename}
+                                    activeLine={null}
+                                    breakpoints={[]}
+                                    cursor="default"
+                                    className="min-h-0 flex-1"
+                                  />
+                                ) : (
+                                  <div className="flex min-h-0 flex-1 items-center justify-center rounded-xl bg-white/70 p-3 text-xs text-zinc-500 dark:bg-zinc-950/40 dark:text-zinc-500">
+                                    {!last ? dict.labels.noResult : dict.labels.noPayload}
+                                  </div>
+                                )}
+
+                                {last ? (
+                                  <details>
+                                    <summary className="cursor-pointer select-none text-xs text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200">
+                                      {dict.labels.showRawLogs}
+                                    </summary>
+                                    <div className="mt-2 space-y-1 font-mono text-[11px] text-zinc-700 dark:text-zinc-200">
+                                      {logs.map((item) => (
+                                        <div key={item.id}>
+                                          <span className="text-zinc-500 dark:text-zinc-500">[{formatTime(item.ts)}]</span>{' '}
+                                          <span className={getLevelStyle(item.level)}>{item.title}</span>
+                                          {item.data !== undefined ? (
+                                            <span className="text-zinc-500 dark:text-zinc-400"> {formatJson(item.data)}</span>
+                                          ) : null}
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </details>
+                                ) : null}
+                              </div>
+                            )
+                          })()
+                        : null}
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
+          </div>
         </div>
       </div>
-    </div>
     </div>
   )
 }

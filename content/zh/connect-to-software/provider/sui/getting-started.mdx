@@ -64,9 +64,7 @@ const accounts = await provider.getAccounts()
 accounts.forEach(account => {
   console.log({
     address: account.address,     // Sui 地址
-    publicKey: account.publicKey, // 公钥字节
-    chains: account.chains,       // 支持的链
-    features: account.features,   // 支持的功能
+    publicKey: account.publicKey, // 公钥（hex 字符串）
   })
 })
 ```
@@ -78,7 +76,7 @@ accounts.forEach(account => {
 ```typescript
 const chain = await provider.getActiveChain()
 
-console.log('当前链:', chain) // 例如 'sui:mainnet'
+console.log('当前链:', chain) // 例如 'sui:testnet'
 ```
 
 ---
@@ -157,4 +155,3 @@ function App() {
 ```
 
 OneKey 会通过 Sui Wallet Standard 自动被检测。
-

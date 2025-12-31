@@ -17,9 +17,13 @@ import { Callout } from 'nextra/components'
 
 ```typescript
 const message = new TextEncoder().encode('Hello, Sui!')
+const [account] = await provider.getAccounts()
+const chain = await provider.getActiveChain()
 
 const result = await provider.signPersonalMessage({
   message,
+  account,
+  chain,
 })
 
 console.log({
@@ -34,9 +38,13 @@ console.log({
 
 ```typescript
 const message = new TextEncoder().encode('Hello, Sui!')
+const [account] = await provider.getAccounts()
+const chain = await provider.getActiveChain()
 
 const result = await provider.signMessage({
   message,
+  account,
+  chain,
 })
 
 console.log({
@@ -53,7 +61,9 @@ console.log({
 import { verifyPersonalMessage } from '@mysten/sui.js/verify'
 
 const message = new TextEncoder().encode('Hello, Sui!')
-const { signature } = await provider.signPersonalMessage({ message })
+const [account] = await provider.getAccounts()
+const chain = await provider.getActiveChain()
+const { signature } = await provider.signPersonalMessage({ message, account, chain })
 
 const accounts = await provider.getAccounts()
 const publicKey = accounts[0].publicKey
@@ -87,4 +97,3 @@ try {
 | 4001 | 用户拒绝请求 |
 | 4100 | 未授权 |
 | -32603 | 内部错误 |
-

@@ -99,7 +99,7 @@ export default async function LocaleLayout({ children, params }) {
           backToTop: lang === 'zh' ? '返回顶部' : 'Back to top'
         }}
         navigation={false}
-        darkMode={true}
+        darkMode={false}
       >
         {children}
       </Layout>
