@@ -3,15 +3,12 @@
 import Link from 'next/link'
 import {
   ArrowRight,
+  ArrowUpRight,
   Usb,
-  QrCode,
-  Bluetooth,
-  Globe,
-  Puzzle,
-  BookOpen,
   Terminal,
-  ExternalLink,
   ChevronRight,
+  Layers,
+  Bug,
 } from 'lucide-react'
 
 // OneKey Logo SVG Component
@@ -50,12 +47,6 @@ const GitHubIcon = ({ className }) => (
   </svg>
 )
 
-const DiscordIcon = ({ className }) => (
-  <svg className={className} width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
-    <path d="M20.317 4.3698a19.7913 19.7913 0 00-4.8851-1.5152.0741.0741 0 00-.0785.0371c-.211.3753-.4447.8648-.6083 1.2495-1.8447-.2762-3.68-.2762-5.4868 0-.1636-.3933-.4058-.8742-.6177-1.2495a.077.077 0 00-.0785-.037 19.7363 19.7363 0 00-4.8852 1.515.0699.0699 0 00-.0321.0277C.5334 9.0458-.319 13.5799.0992 18.0578a.0824.0824 0 00.0312.0561c2.0528 1.5076 4.0413 2.4228 5.9929 3.0294a.0777.0777 0 00.0842-.0276c.4616-.6304.8731-1.2952 1.226-1.9942a.076.076 0 00-.0416-.1057c-.6528-.2476-1.2743-.5495-1.8722-.8923a.077.077 0 01-.0076-.1277c.1258-.0943.2517-.1923.3718-.2914a.0743.0743 0 01.0776-.0105c3.9278 1.7933 8.18 1.7933 12.0614 0a.0739.0739 0 01.0785.0095c.1202.099.246.1981.3728.2924a.077.077 0 01-.0066.1276 12.2986 12.2986 0 01-1.873.8914.0766.0766 0 00-.0407.1067c.3604.698.7719 1.3628 1.225 1.9932a.076.076 0 00.0842.0286c1.961-.6067 3.9495-1.5219 6.0023-3.0294a.077.077 0 00.0313-.0552c.5004-5.177-.8382-9.6739-3.5485-13.6604a.061.061 0 00-.0312-.0286zM8.02 15.3312c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9555-2.4189 2.157-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.9555 2.4189-2.1569 2.4189zm7.9748 0c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9554-2.4189 2.1569-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.946 2.4189-2.1568 2.4189Z" />
-  </svg>
-)
-
 // Open Source Badge Icon
 const OpenSourceIcon = () => (
   <a href="https://github.com/OneKeyHQ" target="_blank" rel="noopener noreferrer" className="opacity-50 hover:opacity-80 transition-opacity">
@@ -76,83 +67,23 @@ const OpenSourceIcon = () => (
   </a>
 )
 
-// Section Header Component with optional action button
-const SectionHeader = ({ title, subtitle, actionLabel, actionHref, actionExternal }) => (
-  <div className="mb-10">
-    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-2">
-      <h2 className="text-2xl font-bold text-zinc-900 dark:text-white flex items-center gap-3">
-        <div className="w-1 h-6 bg-[#00B812] rounded-full"></div>
-        {title}
-      </h2>
-      {actionLabel && actionHref && (
-        <a
-          href={actionHref}
-          target={actionExternal ? '_blank' : undefined}
-          rel={actionExternal ? 'noopener noreferrer' : undefined}
-          className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-[#00B812] bg-[#00B812]/10 hover:bg-[#00B812]/20 rounded-lg transition-colors no-underline"
-        >
-          <Terminal className="w-4 h-4" />
-          {actionLabel}
-          {actionExternal && <ExternalLink className="w-3 h-3" />}
-        </a>
-      )}
-    </div>
-    {subtitle && (
-      <p className="text-zinc-500 dark:text-zinc-400 mt-2 ml-4 max-w-2xl">
-        {subtitle}
-      </p>
-    )}
-  </div>
-)
-
-// Feature Card Component
-const FeatureCard = ({ icon: Icon, title, description, href, tags = [], linkText = 'View Docs' }) => (
+const DividerRowLink = ({ href, label, isLast = false }) => (
   <Link
     href={href}
-    className="group flex flex-col p-6 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl hover:border-[#00B812]/50 dark:hover:border-[#00B812]/50 hover:shadow-lg hover:shadow-[#00B812]/5 transition-all duration-300 h-full relative overflow-hidden no-underline"
+    className={`group flex items-center justify-between gap-4 rounded-lg px-2 py-3 transition-colors no-underline ${isLast ? '' : 'border-b border-zinc-200/70 dark:border-zinc-800'} hover:bg-zinc-100/70 dark:hover:bg-zinc-900/40`}
   >
-    {/* Background decoration */}
-    <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-zinc-50 dark:from-zinc-800 to-transparent rounded-bl-3xl opacity-50 group-hover:from-[#00B812]/5 dark:group-hover:from-[#00B812]/10 transition-colors"></div>
-
-    <div className="mb-4 inline-flex p-3 bg-zinc-100 dark:bg-zinc-800 rounded-xl text-zinc-600 dark:text-zinc-400 group-hover:bg-[#00B812] group-hover:text-white transition-colors duration-300 w-fit">
-      <Icon className="w-6 h-6" strokeWidth={1.5} />
-    </div>
-
-    <h3 className="text-lg font-bold text-zinc-900 dark:text-white mb-2 group-hover:text-[#00B812] dark:group-hover:text-[#00B812] transition-colors">
-      {title}
-    </h3>
-    <p className="text-sm text-zinc-500 dark:text-zinc-400 leading-relaxed mb-6 flex-grow">
-      {description}
-    </p>
-
-    {/* Tags */}
-    {tags.length > 0 && (
-      <div className="flex flex-wrap gap-2 mb-4">
-        {tags.map((tag, idx) => (
-          <span
-            key={idx}
-            className="px-2 py-0.5 bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 text-[10px] uppercase font-bold rounded"
-          >
-            {tag}
-          </span>
-        ))}
-      </div>
-    )}
-
-    <div className="flex items-center text-sm font-semibold text-[#00B812]">
-      {linkText}
-      <ArrowRight className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform" />
-    </div>
+    <span className="text-sm md:text-base text-zinc-700 dark:text-zinc-300">
+      {label}
+    </span>
+    <ArrowUpRight className="w-4 h-4 text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-white transition-colors" />
   </Link>
 )
 
 export function LandingPage({ locale = 'en' }) {
   const isZh = locale === 'zh'
-
   const content = {
     en: {
       hero: {
-        badge: 'Developer Portal',
         titleLine1: 'OneKey',
         titleLine2: 'Developer Portal',
         subtitle: 'Build secure, transparent Web3 experiences with OneKey hardware wallets. Full-stack open-source hardware and software integration solutions for developers.',
@@ -160,74 +91,66 @@ export function LandingPage({ locale = 'en' }) {
         secondaryCta: 'Changelog',
       },
       codeSnippet: {
-        filename: 'connect-device.ts',
-        comment: '// Connect to OneKey hardware wallet',
+        filename: 'init-sdk.ts',
+        comment: '// Initialize OneKey Hardware SDK',
       },
-      hardwareSection: {
-        title: 'Hardware Integration',
-        subtitle: 'Connect to OneKey hardware devices through multiple protocols for ultimate security.',
-        playgroundLabel: 'Playground',
-        items: [
-          {
-            icon: Usb,
-            title: 'Hardware SDK',
-            desc: 'Access OneKey devices via USB bridge or direct connection. Supports account retrieval, transaction signing, and core key management.',
-            href: `/${locale}/hardware-sdk/getting-started`,
-            tags: ['TypeScript', 'Core'],
-            linkText: 'View SDK Docs',
-          },
-          {
-            icon: QrCode,
-            title: 'Air-Gap (QR Code)',
-            desc: 'QR code-based data transfer protocol for cold wallet environments. Provides completely air-gapped signing for maximum security.',
-            href: `/${locale}/air-gap`,
-            tags: ['UR Protocol', 'Offline'],
-            linkText: 'View Protocol Spec',
-          },
-          {
-            icon: Bluetooth,
-            title: 'Native BLE',
-            desc: 'Bluetooth Low Energy communication support for iOS, Android, and Flutter applications to connect with OneKey hardware devices.',
-            href: `/${locale}/hardware-sdk/transport/native-ble`,
-            tags: ['Mobile', 'Flutter', 'React Native'],
-            linkText: 'View BLE Guide',
-          },
-        ],
+      sdkSection: {
+        title: 'Choose your integration path',
+        subtitle: 'Select the SDK path that matches your runtime. Jump into hardware transports or software integration docs.',
+        hardware: {
+          badge: 'Hardware SDKs',
+          title: 'Integrate with Secure Devices',
+          desc: 'Build tools that communicate directly with OneKey hardware wallets for USB, BLE, and offline signing.',
+          bullets: [
+            {
+              label: 'WebUSB connection guide',
+              href: `/${locale}/hardware-sdk/transport/web-usb`,
+            },
+            {
+              label: 'Native BLE integration',
+              href: `/${locale}/hardware-sdk/transport/native-ble`,
+            },
+            {
+              label: 'Air-Gap (QR) signing flow',
+              href: `/${locale}/air-gap`,
+            },
+          ],
+          ctaLabel: 'Explore Hardware Documentation',
+          ctaHref: `/${locale}/hardware-sdk`,
+        },
+        software: {
+          badge: 'Software SDKs',
+          title: 'Power Your Web3 Applications',
+          desc: 'Seamlessly connect your dApp to OneKey with provider APIs, wallet kits, and hooks.',
+          bullets: [
+            {
+              label: 'Provider API (EIP-1193)',
+              href: `/${locale}/connect-to-software/provider`,
+            },
+            {
+              label: 'Wallet Kits integrations',
+              href: `/${locale}/connect-to-software/wallet-ui`,
+            },
+            {
+              label: 'React Hooks (Wagmi)',
+              href: `/${locale}/connect-to-software/react-hooks`,
+            },
+          ],
+          ctaLabel: 'Get Started with Software SDKs',
+          ctaHref: `/${locale}/connect-to-software`,
+        },
       },
-      softwareSection: {
-        title: 'DApp Integration',
-        subtitle: 'Seamlessly integrate OneKey ecosystem into your decentralized applications.',
-        items: [
-          {
-            icon: Globe,
-            title: 'Provider APIs',
-            desc: 'EIP-1193 compliant Provider. Inject OneKey into browser environments just like MetaMask.',
-            href: `/${locale}/connect-to-software/provider`,
-            tags: ['EIP-1193', 'Web3'],
-            linkText: 'View Provider Docs',
-          },
-          {
-            icon: Puzzle,
-            title: 'Wallet Kits',
-            desc: 'Quick integration plugins for RainbowKit, Web3Modal, Web3-Onboard, and other popular wallet connection libraries.',
-            href: `/${locale}/connect-to-software/wallet-kits`,
-            tags: ['UI Kits', 'React'],
-            linkText: 'View Integrations',
-          },
-          {
-            icon: BookOpen,
-            title: 'Developer Guides',
-            desc: 'Best practices from authentication to transaction signing to production deployment. Complete debugging flow and error handling.',
-            href: `/${locale}/connect-to-software/guides/developer-guide`,
-            tags: ['Tutorials', 'Best Practices'],
-            linkText: 'Read Guides',
-          },
-        ],
+      supportSection: {
+        title: 'Need integration support?',
+        subtitle: 'Get help with architecture reviews, transport selection, and production rollouts.',
+        primaryCta: 'Submit a Request',
+        primaryHref: 'https://help.onekey.so/hc/requests/new',
+        secondaryCta: 'GitHub Issues',
+        secondaryHref: 'https://github.com/OneKeyHQ/hardware-js-sdk/issues',
       },
     },
     zh: {
       hero: {
-        badge: '开发者门户',
         titleLine1: 'OneKey',
         titleLine2: '开发者门户',
         subtitle: '使用 OneKey 硬件钱包构建安全、透明的 Web3 体验。为开发者提供全栈式的开源硬件与软件集成方案。',
@@ -235,136 +158,103 @@ export function LandingPage({ locale = 'en' }) {
         secondaryCta: '更新日志',
       },
       codeSnippet: {
-        filename: 'connect-device.ts',
-        comment: '// 连接 OneKey 硬件钱包',
+        filename: 'init-sdk.ts',
+        comment: '// 初始化 OneKey 硬件 SDK',
       },
-      hardwareSection: {
-        title: '硬件集成 (Hardware Integration)',
-        subtitle: '通过多种协议连接 OneKey 硬件设备，为用户提供极致安全保障。',
-        playgroundLabel: '在线体验',
-        items: [
-          {
-            icon: Usb,
-            title: 'Hardware SDK',
-            desc: '通过 USB 桥接或直连访问 OneKey 设备。支持获取账户、签名交易及核心密钥管理功能。',
-            href: `/${locale}/hardware-sdk/quick-start`,
-            tags: ['TypeScript', 'Core'],
-            linkText: '查看 SDK 文档',
-          },
-          {
-            icon: QrCode,
-            title: 'Air-Gap (二维码)',
-            desc: '基于二维码的数据传输协议，为冷钱包环境提供完全物理隔离的签名方案，极致安全。',
-            href: `/${locale}/air-gap`,
-            tags: ['UR Protocol', 'Offline'],
-            linkText: '查看协议规范',
-          },
-          {
-            icon: Bluetooth,
-            title: '原生 BLE',
-            desc: '为 iOS、Android 和 Flutter 应用提供低功耗蓝牙通信支持，连接 OneKey 硬件设备。',
-            href: `/${locale}/hardware-sdk/transport/native-ble`,
-            tags: ['Mobile', 'Flutter', 'React Native'],
-            linkText: '查看蓝牙指南',
-          },
-        ],
+      sdkSection: {
+        title: '选择你的集成路径',
+        subtitle: '按运行环境选择 SDK 路线，快速进入硬件传输或软件集成文档。',
+        hardware: {
+          badge: '硬件 SDKs',
+          title: '连接安全设备',
+          desc: '面向 USB、BLE 与离线签名的硬件钱包接入能力。',
+          bullets: [
+            {
+              label: 'WebUSB 连接指南',
+              href: `/${locale}/hardware-sdk/transport/web-usb`,
+            },
+            {
+              label: '原生 BLE 集成',
+              href: `/${locale}/hardware-sdk/transport/native-ble`,
+            },
+            {
+              label: 'Air-Gap（二维码）签名流程',
+              href: `/${locale}/air-gap`,
+            },
+          ],
+          ctaLabel: '查看硬件文档',
+          ctaHref: `/${locale}/hardware-sdk`,
+        },
+        software: {
+          badge: '软件 SDKs',
+          title: '驱动你的 Web3 应用',
+          desc: '通过 Provider API、Wallet Kits 与 Hooks 快速接入 OneKey 生态。',
+          bullets: [
+            {
+              label: 'Provider API（EIP-1193）',
+              href: `/${locale}/connect-to-software/provider`,
+            },
+            {
+              label: 'Wallet Kits 集成',
+              href: `/${locale}/connect-to-software/wallet-ui`,
+            },
+            {
+              label: 'React Hooks（Wagmi）',
+              href: `/${locale}/connect-to-software/react-hooks`,
+            },
+          ],
+          ctaLabel: '开始使用软件 SDK',
+          ctaHref: `/${locale}/connect-to-software`,
+        },
       },
-      softwareSection: {
-        title: 'DApp 方案 (Software & DApp)',
-        subtitle: '将 OneKey 生态无缝集成到您的去中心化应用中。',
-        items: [
-          {
-            icon: Globe,
-            title: 'Provider API',
-            desc: '符合 EIP-1193 标准的 Provider。像 MetaMask 一样，将 OneKey 注入到浏览器环境中。',
-            href: `/${locale}/connect-to-software/provider`,
-            tags: ['EIP-1193', 'Web3'],
-            linkText: '查看 Provider 文档',
-          },
-          {
-            icon: Puzzle,
-            title: 'Wallet Kits',
-            desc: '支持 RainbowKit, Web3Modal, Web3-Onboard 等主流钱包连接库的快速集成插件。',
-            href: `/${locale}/connect-to-software/wallet-kits`,
-            tags: ['UI Kits', 'React'],
-            linkText: '查看集成方案',
-          },
-          {
-            icon: BookOpen,
-            title: '开发指南',
-            desc: '从认证、交易签名到生产环境的最佳实践。包含完整的调试流程与错误处理机制。',
-            href: `/${locale}/connect-to-software/guides/developer-guide`,
-            tags: ['Tutorials', 'Best Practices'],
-            linkText: '阅读指南',
-          },
-        ],
+      supportSection: {
+        title: '需要集成支持？',
+        subtitle: '我们可协助评估架构、选择传输方案并完成生产环境落地。',
+        primaryCta: '提交工单',
+        primaryHref: 'https://help.onekey.so/hc/requests/new',
+        secondaryCta: '提交 Issue',
+        secondaryHref: 'https://github.com/OneKeyHQ/hardware-js-sdk/issues',
       },
     },
   }
 
   const t = content[isZh ? 'zh' : 'en']
 
-  // Scroll to hardware section
+  // Scroll to SDK section
   const scrollToContent = () => {
-    const element = document.getElementById('hardware-section')
+    const element = document.getElementById('sdk-section')
     if (element) {
       element.scrollIntoView({ behavior: 'smooth' })
     }
   }
 
   return (
-    <div className="landing-page flex-1 flex flex-col">
+    <div className="landing-page flex-1 flex flex-col bg-white text-zinc-900 dark:bg-black dark:text-white">
       {/* Hero Section */}
-      <section className="relative overflow-hidden bg-white dark:bg-zinc-900">
+      <section className="relative overflow-hidden bg-white dark:bg-black">
         {/* Background Effects */}
         <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          {/* Dot pattern - Light mode */}
-          <div
-            className="absolute inset-0 dark:hidden"
-            style={{
-              backgroundImage: `radial-gradient(circle, rgba(0, 184, 18, 0.45) 1.2px, transparent 1.2px)`,
-              backgroundSize: '22px 22px',
-              maskImage: 'linear-gradient(to right, rgba(0,0,0,0.45) 0%, rgba(0,0,0,0.18) 50%, transparent 80%)',
-              WebkitMaskImage: 'linear-gradient(to right, rgba(0,0,0,0.45) 0%, rgba(0,0,0,0.18) 50%, transparent 80%)',
-            }}
-          />
-
-          {/* Dot pattern - Dark mode */}
-          <div
-            className="absolute inset-0 hidden dark:block"
-            style={{
-              backgroundImage: `radial-gradient(circle, rgba(34, 197, 94, 0.55) 1.2px, transparent 1.2px)`,
-              backgroundSize: '22px 22px',
-              maskImage: 'linear-gradient(to right, rgba(0,0,0,0.65) 0%, rgba(0,0,0,0.22) 55%, transparent 80%)',
-              WebkitMaskImage: 'linear-gradient(to right, rgba(0,0,0,0.65) 0%, rgba(0,0,0,0.22) 55%, transparent 80%)',
-            }}
-          />
-
-          {/* Subtle glow behind content */}
-          <div className="absolute top-1/2 left-1/4 -translate-y-1/2 w-[600px] h-[400px] bg-gradient-to-r from-[#00B812]/7 dark:from-[#00B812]/10 to-transparent rounded-full blur-3xl" />
+          <div className="absolute top-[8%] right-[-10%] w-[640px] h-[640px] bg-[#2563eb]/10 rounded-full blur-[140px] dark:bg-emerald-500/10"></div>
+          <div className="absolute -left-24 -top-24 w-[420px] h-[420px] bg-[#0f172a]/10 rounded-full blur-[140px] dark:bg-emerald-500/5"></div>
+          <div className="absolute inset-0 dark:hidden" style={{ background: 'radial-gradient(circle at 20% 20%, rgba(37, 99, 235, 0.12), transparent 50%)' }} />
+          <div className="absolute inset-0 hidden dark:block" style={{ background: 'radial-gradient(circle at 30% 30%, rgba(16, 185, 129, 0.1), transparent 55%)' }} />
         </div>
 
         <div className="relative z-10 max-w-6xl mx-auto py-16 md:py-24 px-6">
           <div className="flex flex-col lg:flex-row items-center gap-12">
             {/* Left Content */}
             <div className="flex-1 text-center lg:text-left space-y-6">
-              {/* Badge */}
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#00B812]/10 text-[#00B812] text-xs font-bold uppercase tracking-wide">
-                <span className="w-2 h-2 rounded-full bg-[#00B812] animate-pulse"></span>
-                {t.hero.badge}
-              </div>
-
               {/* Title */}
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-zinc-900 dark:text-white tracking-tight leading-[1.1]">
                 {t.hero.titleLine1}
                 <br />
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#00B812] to-emerald-500">
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-zinc-900 to-zinc-500 dark:from-emerald-300 dark:to-zinc-100">
                   {t.hero.titleLine2}
                 </span>
               </h1>
 
               {/* Subtitle */}
-              <p className="text-lg text-zinc-500 dark:text-zinc-400 max-w-xl leading-relaxed">
+              <p className="text-lg text-zinc-600 dark:text-zinc-400 max-w-xl leading-relaxed">
                 {t.hero.subtitle}
               </p>
 
@@ -372,8 +262,7 @@ export function LandingPage({ locale = 'en' }) {
               <div className="flex flex-col sm:flex-row items-center gap-4">
                 <button
                   onClick={scrollToContent}
-                  className="w-full sm:w-auto px-8 py-3.5 bg-[#00B812] hover:bg-[#00a010] font-bold rounded-lg shadow-lg shadow-[#00B812]/20 transition-all active:scale-[0.98] flex items-center justify-center gap-2 cursor-pointer border-none"
-                  style={{ color: 'white' }}
+                  className="w-full sm:w-auto px-8 py-3.5 bg-zinc-900 hover:bg-zinc-800 font-semibold rounded-full shadow-[0_4px_20px_rgba(15,23,42,0.2)] transition-all active:scale-[0.98] flex items-center justify-center gap-2 cursor-pointer border-none text-white dark:bg-white dark:text-black dark:hover:bg-zinc-200"
                 >
                   {t.hero.primaryCta}
                   <ChevronRight className="w-4 h-4" />
@@ -382,7 +271,7 @@ export function LandingPage({ locale = 'en' }) {
                   href="https://github.com/OneKeyHQ/hardware-js-sdk/releases"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="w-full sm:w-auto px-8 py-3.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 hover:border-zinc-300 dark:hover:border-zinc-600 hover:bg-zinc-50 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 font-bold rounded-lg transition-all active:scale-[0.98] no-underline flex items-center justify-center"
+                  className="w-full sm:w-auto px-8 py-3.5 bg-white border border-zinc-200 hover:border-zinc-300 hover:bg-zinc-50 text-zinc-700 font-semibold rounded-full transition-all active:scale-[0.98] no-underline flex items-center justify-center dark:bg-zinc-950 dark:border-zinc-800 dark:hover:border-zinc-600 dark:hover:bg-zinc-900 dark:text-zinc-200"
                   style={{ textDecoration: 'none' }}
                 >
                   {t.hero.secondaryCta}
@@ -392,15 +281,15 @@ export function LandingPage({ locale = 'en' }) {
 
             {/* Right Content - Code Snippet */}
             <div className="flex-1 w-full max-w-lg hidden lg:block">
-              <div className="relative rounded-2xl bg-[#0F172A] dark:bg-zinc-950 p-4 shadow-2xl border border-zinc-800">
+              <div className="relative rounded-2xl bg-[#0F0F0F] p-4 shadow-2xl border border-zinc-800">
                 {/* Terminal Header */}
-                <div className="flex items-center gap-2 mb-4 border-b border-zinc-700 pb-4">
+                <div className="flex items-center gap-2 mb-4 border-b border-zinc-800 pb-4">
                   <div className="flex gap-1.5">
-                    <div className="w-3 h-3 rounded-full bg-red-500/80"></div>
-                    <div className="w-3 h-3 rounded-full bg-yellow-500/80"></div>
-                    <div className="w-3 h-3 rounded-full bg-green-500/80"></div>
+                    <div className="w-3 h-3 rounded-full bg-red-500/20 border border-red-500/40"></div>
+                    <div className="w-3 h-3 rounded-full bg-yellow-500/20 border border-yellow-500/40"></div>
+                    <div className="w-3 h-3 rounded-full bg-green-500/20 border border-green-500/40"></div>
                   </div>
-                  <div className="text-xs text-zinc-400 font-mono ml-4">
+                  <div className="text-xs text-zinc-500 font-mono ml-4">
                     {t.codeSnippet.filename}
                   </div>
                 </div>
@@ -409,51 +298,48 @@ export function LandingPage({ locale = 'en' }) {
                 <div className="font-mono text-sm leading-relaxed text-zinc-300 overflow-x-auto">
                   <div>
                     <span className="text-purple-400">import</span>{' '}
-                    <span className="text-zinc-300">{'{'}</span>{' '}
                     <span className="text-yellow-300">HardwareSDK</span>{' '}
-                    <span className="text-zinc-300">{'}'}</span>{' '}
                     <span className="text-purple-400">from</span>{' '}
-                    <span className="text-green-400">'@onekeyfe/hd-core'</span>
+                    <span className="text-green-400">'@onekeyfe/hd-common-connect-sdk'</span>
                   </div>
                   <br />
                   <div className="text-zinc-500">{t.codeSnippet.comment}</div>
                   <div>
-                    <span className="text-blue-400">const</span>{' '}
-                    <span className="text-yellow-300">sdk</span>{' '}
-                    <span className="text-zinc-300">=</span>{' '}
                     <span className="text-purple-400">await</span>{' '}
                     <span className="text-zinc-300">HardwareSDK.</span>
                     <span className="text-blue-400">init</span>
-                    <span className="text-zinc-300">()</span>
-                  </div>
-                  <br />
-                  <div>
-                    <span className="text-blue-400">const</span>{' '}
-                    <span className="text-yellow-300">result</span>{' '}
-                    <span className="text-zinc-300">=</span>{' '}
-                    <span className="text-purple-400">await</span>{' '}
-                    <span className="text-zinc-300">sdk.</span>
-                    <span className="text-blue-400">evmGetAddress</span>
-                    <span className="text-zinc-300">(</span>
-                    <span className="text-yellow-300">connectId</span>
-                    <span className="text-zinc-300">,</span>{' '}
-                    <span className="text-yellow-300">deviceId</span>
-                    <span className="text-zinc-300">,</span>{' '}
-                    <span className="text-zinc-300">{'{'}</span>
+                    <span className="text-zinc-300">({'{'}</span>
                   </div>
                   <div className="pl-4">
-                    <span className="text-sky-300">path</span>
+                    <span className="text-sky-300">env</span>
                     <span className="text-zinc-300">:</span>{' '}
-                    <span className="text-green-400">"m/44'/60'/0'/0/0"</span>
+                    <span className="text-green-400">'webusb'</span>
                     <span className="text-zinc-300">,</span>
                   </div>
                   <div className="pl-4">
-                    <span className="text-sky-300">showOnOneKey</span>
+                    <span className="text-sky-300">debug</span>
+                    <span className="text-zinc-300">:</span>{' '}
+                    <span className="text-zinc-300">process.env.NODE_ENV !==</span>{' '}
+                    <span className="text-green-400">'production'</span>
+                    <span className="text-zinc-300">,</span>
+                  </div>
+                  <div className="pl-4">
+                    <span className="text-sky-300">fetchConfig</span>
                     <span className="text-zinc-300">:</span>{' '}
                     <span className="text-orange-400">true</span>
                   </div>
                   <div>
                     <span className="text-zinc-300">{'}'})</span>
+                  </div>
+                  <br />
+                  <div>
+                    <span className="text-blue-400">const</span>{' '}
+                    <span className="text-yellow-300">devices</span>{' '}
+                    <span className="text-zinc-300">=</span>{' '}
+                    <span className="text-purple-400">await</span>{' '}
+                    <span className="text-zinc-300">HardwareSDK.</span>
+                    <span className="text-blue-400">searchDevices</span>
+                    <span className="text-zinc-300">()</span>
                   </div>
                   <br />
                   <div className="flex items-center gap-2">
@@ -468,51 +354,118 @@ export function LandingPage({ locale = 'en' }) {
         </div>
       </section>
 
-      {/* Hardware Integration Section */}
-      <section id="hardware-section" className="bg-white dark:bg-zinc-900 pt-16 pb-8">
+      {/* SDK Selection Section */}
+      <section id="sdk-section" className="relative bg-zinc-50 dark:bg-[#0A0A0A] pt-12 pb-14 border-t border-zinc-200 dark:border-zinc-800">
+        <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.03] dark:opacity-5 mix-blend-overlay"></div>
         <div className="max-w-6xl mx-auto px-6">
-          <SectionHeader
-            title={t.hardwareSection.title}
-            subtitle={t.hardwareSection.subtitle}
-            actionLabel={t.hardwareSection.playgroundLabel}
-            actionHref="https://hardware-example.onekey.so/"
-            actionExternal={true}
-          />
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {t.hardwareSection.items.map((item, i) => (
-              <FeatureCard
-                key={i}
-                icon={item.icon}
-                title={item.title}
-                description={item.desc}
-                href={item.href}
-                tags={item.tags}
-                linkText={item.linkText}
-              />
-            ))}
+          <div className="max-w-3xl mx-auto text-center mb-8 relative z-10">
+            <h2 className="text-2xl md:text-3xl font-semibold text-zinc-900 dark:text-white">
+              {t.sdkSection.title}
+            </h2>
+            <p className="text-zinc-600 dark:text-zinc-400 mt-3 text-base md:text-lg leading-relaxed">
+              {t.sdkSection.subtitle}
+            </p>
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 relative z-10">
+            <div className="rounded-3xl border border-zinc-200 bg-white p-7 md:p-8 shadow-[0_20px_60px_-40px_rgba(15,23,42,0.2)] dark:border-zinc-800 dark:bg-[#0F0F0F] dark:shadow-[0_0_100px_-40px_rgba(22,163,74,0.18)]">
+              <div className="inline-flex items-center gap-2 rounded-full border border-zinc-200 bg-zinc-100 px-3 py-1 text-xs font-semibold tracking-[0.2em] text-zinc-600 uppercase dark:border-zinc-800 dark:bg-zinc-900/60 dark:text-zinc-300">
+                <Usb className="w-4 h-4 text-zinc-500 dark:text-zinc-300" />
+                {t.sdkSection.hardware.badge}
+              </div>
+              <h3 className="text-xl md:text-2xl font-bold text-zinc-900 dark:text-white mt-5">
+                {t.sdkSection.hardware.title}
+              </h3>
+              <p className="text-zinc-600 dark:text-zinc-400 leading-relaxed mt-2 text-sm md:text-base">
+                {t.sdkSection.hardware.desc}
+              </p>
+              <ul className="mt-6 text-sm text-zinc-700 dark:text-zinc-300">
+                {t.sdkSection.hardware.bullets.map((item, i) => (
+                  <li key={i}>
+                    <DividerRowLink
+                      href={item.href}
+                      label={item.label}
+                      isLast={i === t.sdkSection.hardware.bullets.length - 1}
+                    />
+                  </li>
+                ))}
+              </ul>
+              <Link
+                href={t.sdkSection.hardware.ctaHref}
+                className="mt-8 inline-flex w-full items-center justify-center rounded-full bg-zinc-900 text-white px-6 py-3 font-semibold hover:bg-zinc-800 transition-colors no-underline dark:bg-white dark:text-black dark:hover:bg-zinc-200"
+              >
+                {t.sdkSection.hardware.ctaLabel}
+                <ArrowRight className="w-4 h-4 ml-2" />
+              </Link>
+            </div>
+            <div className="rounded-3xl border border-zinc-200 bg-white p-7 md:p-8 shadow-[0_20px_60px_-40px_rgba(15,23,42,0.2)] dark:border-zinc-800 dark:bg-[#0F0F0F]">
+              <div className="inline-flex items-center gap-2 rounded-full border border-zinc-200 bg-zinc-100 px-3 py-1 text-xs font-semibold tracking-[0.2em] text-zinc-600 uppercase dark:border-zinc-800 dark:bg-zinc-900/60 dark:text-zinc-300">
+                <Layers className="w-4 h-4 text-zinc-500 dark:text-zinc-300" />
+                {t.sdkSection.software.badge}
+              </div>
+              <h3 className="text-xl md:text-2xl font-bold text-zinc-900 dark:text-white mt-5">
+                {t.sdkSection.software.title}
+              </h3>
+              <p className="text-zinc-600 dark:text-zinc-400 leading-relaxed mt-2 text-sm md:text-base">
+                {t.sdkSection.software.desc}
+              </p>
+              <ul className="mt-6 text-sm text-zinc-700 dark:text-zinc-300">
+                {t.sdkSection.software.bullets.map((item, i) => (
+                  <li key={i}>
+                    <DividerRowLink
+                      href={item.href}
+                      label={item.label}
+                      isLast={i === t.sdkSection.software.bullets.length - 1}
+                    />
+                  </li>
+                ))}
+              </ul>
+              <Link
+                href={t.sdkSection.software.ctaHref}
+                className="mt-8 inline-flex w-full items-center justify-center rounded-full border border-zinc-300 bg-white text-zinc-900 px-6 py-3 font-semibold hover:bg-zinc-100 transition-colors no-underline dark:border-zinc-700 dark:bg-zinc-900 dark:text-white dark:hover:bg-zinc-800"
+              >
+                {t.sdkSection.software.ctaLabel}
+                <ArrowRight className="w-4 h-4 ml-2" />
+              </Link>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* Software Integration Section */}
-      <section className="flex-1 bg-white dark:bg-zinc-900 pt-8 pb-24">
+      {/* Support Section */}
+      <section className="bg-white dark:bg-black pb-24">
         <div className="max-w-6xl mx-auto px-6">
-          <SectionHeader
-            title={t.softwareSection.title}
-            subtitle={t.softwareSection.subtitle}
-          />
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {t.softwareSection.items.map((item, i) => (
-              <FeatureCard
-                key={i}
-                icon={item.icon}
-                title={item.title}
-                description={item.desc}
-                href={item.href}
-                tags={item.tags}
-                linkText={item.linkText}
-              />
-            ))}
+          <div className="rounded-3xl border border-zinc-200 bg-gradient-to-r from-white to-zinc-50 p-8 md:p-12 flex flex-col md:flex-row items-start md:items-center justify-between gap-8 dark:border-zinc-800 dark:from-[#0F0F0F] dark:to-[#161616]">
+            <div className="flex items-start gap-4">
+              <div className="hidden md:flex h-12 w-12 items-center justify-center rounded-full bg-[#00B812]/10 text-[#00B812] shrink-0">
+                <Terminal className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="text-2xl font-bold text-zinc-900 dark:text-white mb-2">
+                  {t.supportSection.title}
+                </h3>
+                <p className="text-zinc-600 dark:text-zinc-400 max-w-md">
+                  {t.supportSection.subtitle}
+                </p>
+              </div>
+            </div>
+            <div className="flex flex-col sm:flex-row gap-4 w-full md:w-auto">
+              <a
+                href={t.supportSection.primaryHref}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex-1 md:flex-none px-6 py-3 rounded-full bg-zinc-900 text-white font-semibold hover:bg-zinc-800 transition-colors whitespace-nowrap text-center dark:bg-white dark:text-black dark:hover:bg-zinc-200"
+              >
+                {t.supportSection.primaryCta}
+              </a>
+              <a
+                href={t.supportSection.secondaryHref}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex-1 md:flex-none px-6 py-3 rounded-full border border-zinc-300 text-zinc-700 hover:bg-zinc-100 transition-colors whitespace-nowrap text-center dark:border-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-800"
+              >
+                {t.supportSection.secondaryCta}
+              </a>
+            </div>
           </div>
         </div>
       </section>
@@ -552,12 +505,12 @@ export function LandingPage({ locale = 'en' }) {
                     <GitHubIcon className="w-6 h-6" />
                   </a>
                   <a
-                    href="https://discord.gg/onekey"
+                    href="https://github.com/OneKeyHQ/hardware-js-sdk/issues"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-zinc-400 hover:text-white transition-colors"
                   >
-                    <DiscordIcon className="w-6 h-6" />
+                    <Bug className="w-6 h-6" />
                   </a>
                 </div>
 
@@ -650,8 +603,8 @@ export function LandingPage({ locale = 'en' }) {
                     </a>
                   </li>
                   <li>
-                    <a href="https://discord.gg/onekey" target="_blank" rel="noopener noreferrer" className="text-zinc-300 hover:text-white text-sm transition-colors">
-                      Discord
+                    <a href="https://github.com/OneKeyHQ/hardware-js-sdk/issues" target="_blank" rel="noopener noreferrer" className="text-zinc-300 hover:text-white text-sm transition-colors">
+                      {isZh ? 'Issue 列表' : 'GitHub Issues'}
                     </a>
                   </li>
                   <li>
@@ -732,12 +685,12 @@ export function LandingPage({ locale = 'en' }) {
                     <GitHubIcon className="w-5 h-5" />
                   </a>
                   <a
-                    href="https://discord.gg/onekey"
+                    href="https://github.com/OneKeyHQ/hardware-js-sdk/issues"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-zinc-400 hover:text-white transition-colors"
                   >
-                    <DiscordIcon className="w-5 h-5" />
+                    <Bug className="w-5 h-5" />
                   </a>
                 </div>
                 <OpenSourceIcon />

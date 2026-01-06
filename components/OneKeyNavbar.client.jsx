@@ -6,6 +6,7 @@ import { Anchor, Button } from 'nextra/components'
 import { useFSRoute } from 'nextra/hooks'
 import { ArrowRightIcon, MenuIcon } from 'nextra/icons'
 import { setMenu, useConfig, useMenu, useThemeConfig } from 'nextra-theme-docs'
+import { useTheme } from 'next-themes'
 
 const classes = {
   link: cn(
@@ -28,16 +29,16 @@ const menuButtonClass = ({ focus }) =>
 const menuItemClass = ({ active }) =>
   cn(
     'x:block x:py-1.5 x:transition-colors x:ps-3 x:pe-9',
-    active ? 'x:text-gray-900 x:dark:text-gray-100' : 'x:text-gray-600 x:dark:text-gray-400'
+    active ? 'x:text-gray-900 x:dark:text-zinc-100' : 'x:text-gray-600 x:dark:text-zinc-300'
   )
 
 const menuItemsClass = cn(
   'x:focus-visible:nextra-focus',
   'nextra-scrollbar x:motion-reduce:transition-none',
   'x:origin-top x:transition x:duration-200 x:ease-out x:data-closed:scale-95 x:data-closed:opacity-0',
-  'x:border x:border-black/5 x:dark:border-white/20',
+  'x:border x:border-gray-200 x:dark:border-zinc-800',
   'x:z-30 x:rounded-md x:py-1 x:text-sm x:shadow-lg',
-  'x:backdrop-blur-md x:bg-nextra-bg/70',
+  'x:backdrop-blur-md x:bg-white x:text-gray-800 x:dark:bg-[#0B0F14] x:dark:text-zinc-100 x:dark:shadow-[0_12px_30px_rgba(0,0,0,0.6)]',
   'x:max-h-[min(calc(100vh-5rem),256px)]!'
 )
 
@@ -48,6 +49,8 @@ const menuAnchor = {
 }
 
 const NavbarMenu = ({ menu, children }) => {
+  const { resolvedTheme } = useTheme()
+  const isDark = resolvedTheme === 'dark'
   const routes =
     menu.children?.reduce((acc, child) => {
       if (child?.name) acc[child.name] = child
@@ -71,7 +74,15 @@ const NavbarMenu = ({ menu, children }) => {
         {children}
         <ArrowRightIcon height="14" className="x:*:origin-center x:*:transition-transform x:*:rotate-90" />
       </MenuButton>
-      <MenuItems transition className={menuItemsClass} anchor={menuAnchor}>
+      <MenuItems
+        transition
+        className={menuItemsClass}
+        anchor={menuAnchor}
+        style={{
+          backgroundColor: isDark ? '#0B0F14' : '#FFFFFF',
+          color: isDark ? '#E4E4E7' : '#1F2937'
+        }}
+      >
         {menuItems}
       </MenuItems>
     </Menu>

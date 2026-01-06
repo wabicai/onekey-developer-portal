@@ -668,6 +668,7 @@ header.nextra-navbar button[data-onekey-nav-active="true"] {
   color: #ffffff !important;
 }
 
+
 /* ============================================
    Search Box Styling (Nextra)
    ============================================ */
@@ -983,6 +984,20 @@ nav[aria-label="Table of contents"] a[aria-current="true"] {
     padding: 0 !important;
   }
 }
+
+/* Dark navbar dropdown panel - non-important override */
+html.dark header.nextra-navbar [data-headlessui-state][role="menu"].nextra-scrollbar {
+  background-color: #111827;
+  border-color: rgba(255, 255, 255, 0.16);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.55);
+}
+
+html.dark header.nextra-navbar [data-headlessui-state][role="menu"].nextra-scrollbar a,
+html.dark header.nextra-navbar [data-headlessui-state][role="menu"].nextra-scrollbar button,
+html.dark header.nextra-navbar [data-headlessui-state][role="menu"].nextra-scrollbar span {
+  color: #e4e4e7;
+}
+
 
 /* ============================================
    Badge Component
