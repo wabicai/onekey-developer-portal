@@ -10,7 +10,7 @@ export async function generateStaticParams() {
   return [{ lang: 'en' }, { lang: 'zh' }]
 }
 
-function patchPageMapForConnectToHardware(pageMap, lang) {
+function patchPageMapForTopNav(pageMap, lang) {
   if (!Array.isArray(pageMap) || pageMap.length === 0) return pageMap
 
   const [first, ...rest] = pageMap
@@ -20,44 +20,37 @@ function patchPageMapForConnectToHardware(pageMap, lang) {
 
   const hardwareSdkItem = items.find((item) => item?.name === 'hardware-sdk')
   const airGapItem = items.find((item) => item?.name === 'air-gap')
-  if (!hardwareSdkItem || !airGapItem) return pageMap
+  const connectSoftwareItem = items.find((item) => item?.name === 'connect-to-software')
+  if (!hardwareSdkItem || !airGapItem || !connectSoftwareItem) return pageMap
 
   const filteredItems = items.filter(
-    (item) => item?.name !== 'hardware-sdk' && item?.name !== 'air-gap'
+    (item) =>
+      item?.name !== 'hardware-sdk' &&
+      item?.name !== 'air-gap' &&
+      item?.name !== 'connect-to-software' &&
+      item?.name !== 'connect-to-hardware'
   )
 
-  const title = lang === 'zh' ? '连接硬件' : 'Connect to hardware'
+  const connectHardwareTitle = lang === 'zh' ? '连接硬件' : 'Connect to hardware'
+  const connectSoftwareTitle = lang === 'zh' ? '连接软件' : 'Connect to Software'
+  const offlineSigningTitle = lang === 'zh' ? '离线签名' : 'Offline Signing'
 
-  const wrapper = {
-    name: '__connect-to-hardware__',
-    title,
-    route: `/${lang}/__connect-to-hardware__`,
-    frontMatter: {
-      type: 'doc',
-      display: 'children'
-    },
-    children: [
-      {
-        data: {
-          'hardware-sdk': { type: 'page' },
-          'air-gap': { type: 'page' }
-        }
-      },
-      hardwareSdkItem,
-      airGapItem
-    ]
-  }
+  const connectHardware = { ...hardwareSdkItem, title: connectHardwareTitle }
+  const connectSoftware = { ...connectSoftwareItem, title: connectSoftwareTitle }
+  const offlineSigning = { ...airGapItem, title: offlineSigningTitle }
 
-  return metaItem ? [metaItem, wrapper, ...filteredItems] : [wrapper, ...filteredItems]
+  const resultItems = [connectHardware, connectSoftware, offlineSigning, ...filteredItems]
+  return metaItem ? [metaItem, ...resultItems] : resultItems
 }
 
 export default async function LocaleLayout({ children, params }) {
   const { lang } = await params
-  const pageMap = patchPageMapForConnectToHardware(await getPageMap(`/${lang}`), lang)
+  const pageMap = patchPageMapForTopNav(await getPageMap(`/${lang}`), lang)
 
   const navbar = (
     <OneKeyNavbar
       logo={<OneKeyWordmark />}
+      logoLink={`/${lang}`}
       projectLink="https://github.com/OneKeyHQ/hardware-js-sdk"
     >
       <NavbarMenuActiveMarker lang={lang} />
@@ -99,8 +92,8 @@ export default async function LocaleLayout({ children, params }) {
           backToTop: lang === 'zh' ? '返回顶部' : 'Back to top'
         }}
         navigation={false}
-        darkMode={true}
-        nextThemes={{ defaultTheme: 'dark' }}
+        darkMode={false}
+        nextThemes={{ defaultTheme: 'light', forcedTheme: 'light' }}
       >
         {children}
       </Layout>

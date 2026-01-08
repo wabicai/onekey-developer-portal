@@ -1,14 +1,12 @@
 'use client'
 
 import Link from 'next/link'
-import landingBackground from '../background.webp'
 import {
-  ArrowRight,
   ArrowUpRight,
-  Usb,
+  Cpu,
+  Code2,
+  QrCode,
   Terminal,
-  ChevronRight,
-  Layers,
   Bug,
 } from 'lucide-react'
 
@@ -68,15 +66,24 @@ const OpenSourceIcon = () => (
   </a>
 )
 
-const DividerRowLink = ({ href, label, isLast = false }) => (
+const IntegrationCard = ({ title, description, href }) => (
   <Link
     href={href}
-    className={`group flex items-center justify-between gap-4 rounded-lg px-2 py-3 transition-colors no-underline ${isLast ? '' : 'border-b border-zinc-200/70 dark:border-zinc-800'} hover:bg-zinc-100/70 dark:hover:bg-zinc-900/40`}
+    className="group flex flex-col gap-2 rounded-2xl border border-zinc-200/80 bg-zinc-50/70 p-4 md:p-5 min-h-[128px] no-underline transition-all hover:-translate-y-0.5 hover:shadow-[0_14px_32px_-24px_rgba(15,23,42,0.25)] hover:border-zinc-300 dark:border-zinc-800/80 dark:bg-[#0B0B0B]/70 dark:hover:border-zinc-700"
   >
-    <span className="text-sm md:text-base text-zinc-700 dark:text-zinc-300">
-      {label}
-    </span>
-    <ArrowUpRight className="w-4 h-4 text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-white transition-colors" />
+    <div className="flex items-start justify-between gap-4">
+      <div>
+        <p className="text-base font-semibold text-zinc-900 dark:text-zinc-100">
+          {title}
+        </p>
+        {description ? (
+          <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1 leading-relaxed">
+            {description}
+          </p>
+        ) : null}
+      </div>
+      <ArrowUpRight className="w-4 h-4 text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-white transition-colors mt-1" />
+    </div>
   </Link>
 )
 
@@ -97,48 +104,54 @@ export function LandingPage({ locale = 'en' }) {
       },
       sdkSection: {
         title: 'Choose your integration path',
-        subtitle: 'Select the SDK path that matches your runtime. Jump into hardware transports or software integration docs.',
+        subtitle: '',
         hardware: {
-          badge: 'Hardware SDKs',
-          title: 'Integrate with Secure Devices',
-          desc: 'Build tools that communicate directly with OneKey hardware wallets for USB, BLE, and offline signing.',
-          bullets: [
+          title: 'Hardware Integration',
+          desc: 'Direct USB & BLE connections',
+          items: [
             {
-              label: 'WebUSB connection guide',
+              title: 'WebUSB Connection',
+              description: 'Browser USB transport for desktop dApps.',
               href: `/${locale}/hardware-sdk/transport/web-usb`,
             },
             {
-              label: 'Native BLE integration',
+              title: 'React Native BLE',
+              description: 'BLE transport for React Native.',
+              href: `/${locale}/hardware-sdk/transport/react-native-ble`,
+            },
+            {
+              title: 'Native Mobile BLE',
+              description: 'BLE transport for native apps.',
               href: `/${locale}/hardware-sdk/transport/native-ble`,
             },
-            {
-              label: 'Air-Gap (QR) signing flow',
-              href: `/${locale}/air-gap`,
-            },
           ],
-          ctaLabel: 'Explore Hardware Documentation',
-          ctaHref: `/${locale}/hardware-sdk`,
         },
-        software: {
-          badge: 'Software SDKs',
-          title: 'Power Your Web3 Applications',
-          desc: 'Seamlessly connect your dApp to OneKey with provider APIs, wallet kits, and hooks.',
-          bullets: [
+        dapp: {
+          title: 'DAPP Development',
+          desc: 'Providers & UI kits for wallet connectivity',
+          providersLabel: 'Providers',
+          providers: [
             {
-              label: 'Provider API (EIP-1193)',
+              title: 'Provider API (EIP-1193)',
+              description: 'Standardized provider interface for dApps.',
               href: `/${locale}/connect-to-software/provider`,
             },
+          ],
+          uiLabel: 'UI Kits',
+          uiKits: [
             {
-              label: 'Wallet Kits integrations',
-              href: `/${locale}/connect-to-software/wallet-ui`,
-            },
-            {
-              label: 'React Hooks (Wagmi)',
-              href: `/${locale}/connect-to-software/react-hooks`,
+              title: 'Web3Modal',
+              description: 'Drop-in wallet UI with mobile support.',
+              href: `/${locale}/connect-to-software/wallet-ui/web3modal`,
             },
           ],
-          ctaLabel: 'Get Started with Software SDKs',
-          ctaHref: `/${locale}/connect-to-software`,
+        },
+        airgap: {
+          title: 'Air-Gap Solutions',
+          desc: 'QR-based offline signing',
+          summary: 'Use QR codes to sign transactions offline with OneKey hardware.',
+          ctaLabel: 'Explore Air-Gap Flow',
+          ctaHref: `/${locale}/air-gap`,
         },
       },
       supportSection: {
@@ -164,48 +177,54 @@ export function LandingPage({ locale = 'en' }) {
       },
       sdkSection: {
         title: '选择你的集成路径',
-        subtitle: '按运行环境选择 SDK 路线，快速进入硬件传输或软件集成文档。',
+        subtitle: '',
         hardware: {
-          badge: '硬件 SDKs',
-          title: '连接安全设备',
-          desc: '面向 USB、BLE 与离线签名的硬件钱包接入能力。',
-          bullets: [
+          title: '硬件集成',
+          desc: '直连 USB 与 BLE 传输',
+          items: [
             {
-              label: 'WebUSB 连接指南',
+              title: 'WebUSB 连接',
+              description: '桌面浏览器 USB 传输。',
               href: `/${locale}/hardware-sdk/transport/web-usb`,
             },
             {
-              label: '原生 BLE 集成',
+              title: 'React Native BLE',
+              description: 'React Native 的 BLE 传输。',
+              href: `/${locale}/hardware-sdk/transport/react-native-ble`,
+            },
+            {
+              title: '原生移动端 BLE',
+              description: '原生应用的 BLE 传输。',
               href: `/${locale}/hardware-sdk/transport/native-ble`,
             },
-            {
-              label: 'Air-Gap（二维码）签名流程',
-              href: `/${locale}/air-gap`,
-            },
           ],
-          ctaLabel: '查看硬件文档',
-          ctaHref: `/${locale}/hardware-sdk`,
         },
-        software: {
-          badge: '软件 SDKs',
-          title: '驱动你的 Web3 应用',
-          desc: '通过 Provider API、Wallet Kits 与 Hooks 快速接入 OneKey 生态。',
-          bullets: [
+        dapp: {
+          title: 'DAPP 开发',
+          desc: 'Provider 接入与 UI 组件库',
+          providersLabel: 'Providers',
+          providers: [
             {
-              label: 'Provider API（EIP-1193）',
+              title: 'Provider API（EIP-1193）',
+              description: '标准化的 dApp Provider 接口。',
               href: `/${locale}/connect-to-software/provider`,
             },
+          ],
+          uiLabel: 'UI Kits',
+          uiKits: [
             {
-              label: 'Wallet Kits 集成',
-              href: `/${locale}/connect-to-software/wallet-ui`,
-            },
-            {
-              label: 'React Hooks（Wagmi）',
-              href: `/${locale}/connect-to-software/react-hooks`,
+              title: 'Web3Modal',
+              description: '内置移动端支持的快速接入组件。',
+              href: `/${locale}/connect-to-software/wallet-ui/web3modal`,
             },
           ],
-          ctaLabel: '开始使用软件 SDK',
-          ctaHref: `/${locale}/connect-to-software`,
+        },
+        airgap: {
+          title: 'Air-Gap 方案',
+          desc: '二维码离线签名',
+          summary: '通过二维码完成离线签名与传输，提升安全性。',
+          ctaLabel: '了解 Air-Gap 流程',
+          ctaHref: `/${locale}/air-gap`,
         },
       },
       supportSection: {
@@ -230,16 +249,8 @@ export function LandingPage({ locale = 'en' }) {
   }
 
   return (
-    <div
-      className="landing-page flex-1 flex flex-col bg-transparent text-zinc-900 dark:text-white"
-      style={{ '--landing-bg-image': `url(${landingBackground.src})` }}
-    >
+    <div className="landing-page flex-1 flex flex-col bg-transparent text-zinc-900 dark:text-white">
       <div className="relative">
-        <div className="pointer-events-none absolute inset-0">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_18%,rgba(255,255,255,0.35),transparent_60%)] dark:bg-[radial-gradient(circle_at_50%_18%,rgba(15,23,42,0.65),transparent_60%)]" />
-          <div className="absolute inset-0 bg-[linear-gradient(to_bottom,rgba(248,247,244,0.3),rgba(248,247,244,0.65))] dark:bg-[linear-gradient(to_bottom,rgba(8,10,14,0.45),rgba(8,10,14,0.85))]" />
-          <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.02] dark:opacity-[0.05] mix-blend-overlay" />
-        </div>
         {/* Hero Section */}
         <section className="relative overflow-hidden bg-transparent">
 
@@ -249,10 +260,10 @@ export function LandingPage({ locale = 'en' }) {
               <div className="w-full max-w-3xl text-center space-y-6">
                 {/* Title */}
                 <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold text-zinc-900 dark:text-white tracking-tight leading-[1.05]">
-                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-zinc-900 via-slate-700 to-zinc-500 dark:from-slate-100 dark:via-blue-200 dark:to-slate-300">
+                  <span className="text-zinc-900 dark:text-slate-100">
                     {t.hero.titleLine1}
                   </span>{' '}
-                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-zinc-900 via-slate-600 to-zinc-500 dark:from-blue-300 dark:via-indigo-200 dark:to-slate-100">
+                  <span className="landing-title-dynamic text-transparent bg-clip-text bg-gradient-to-r from-slate-900 via-blue-700 to-blue-500 dark:from-blue-300 dark:via-indigo-200 dark:to-slate-100">
                     {t.hero.titleLine2}
                   </span>
                 </h1>
@@ -266,7 +277,7 @@ export function LandingPage({ locale = 'en' }) {
                 <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
                   <button
                     onClick={scrollToContent}
-                    className="w-full sm:w-auto px-10 py-3.5 font-semibold rounded-full transition-all duration-300 active:scale-[0.98] flex items-center justify-center gap-2 cursor-pointer border border-white/10 bg-[linear-gradient(140deg,#0b1220,#121827)] text-white shadow-[0_20px_50px_-30px_rgba(15,23,42,0.75)] hover:-translate-y-0.5 hover:shadow-[0_28px_70px_-36px_rgba(30,64,175,0.45)] hover:bg-[linear-gradient(140deg,#101a2e,#161d30)]"
+                    className="w-full sm:w-auto px-10 py-3.5 font-semibold rounded-full transition-all duration-300 active:scale-[0.98] flex items-center justify-center gap-2 cursor-pointer border border-zinc-900/10 bg-[linear-gradient(140deg,#0f172a,#111827)] text-white shadow-[0_20px_50px_-34px_rgba(15,23,42,0.25)] hover:-translate-y-0.5 hover:shadow-[0_26px_60px_-32px_rgba(15,23,42,0.35)] hover:bg-[linear-gradient(140deg,#111827,#1f2937)] dark:border-white/10 dark:shadow-[0_20px_50px_-30px_rgba(15,23,42,0.75)]"
                   >
                     {t.hero.primaryCta}
                   </button>
@@ -274,7 +285,7 @@ export function LandingPage({ locale = 'en' }) {
                     href="https://help.onekey.so/en/articles/11536900-contact-us"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="w-full sm:w-auto px-10 py-3.5 border border-white/20 bg-white/5 text-white/70 font-semibold rounded-full transition-all duration-300 active:scale-[0.98] no-underline flex items-center justify-center backdrop-blur-md hover:border-white/35 hover:text-white/90 hover:bg-white/10 hover:-translate-y-0.5 dark:border-white/25 dark:bg-white/6 dark:text-white/70 dark:hover:bg-white/12"
+                    className="w-full sm:w-auto px-10 py-3.5 border border-zinc-300 bg-white text-zinc-700 font-semibold rounded-full transition-all duration-300 active:scale-[0.98] no-underline flex items-center justify-center hover:border-zinc-400 hover:text-zinc-900 hover:bg-zinc-50 hover:-translate-y-0.5 dark:border-white/25 dark:bg-white/6 dark:text-white/70 dark:hover:bg-white/12"
                     style={{ textDecoration: 'none' }}
                   >
                     {t.hero.secondaryCta}
@@ -288,74 +299,100 @@ export function LandingPage({ locale = 'en' }) {
         {/* SDK Selection Section */}
         <section id="sdk-section" className="relative bg-transparent pt-12 pb-14">
           <div className="max-w-6xl mx-auto px-6">
-            <div className="max-w-3xl mx-auto text-center mb-8 relative z-10">
+            <div className="max-w-3xl text-left mb-4 md:mb-5 relative z-10">
               <h2 className="text-2xl md:text-3xl font-semibold text-zinc-900 dark:text-white">
                 {t.sdkSection.title}
               </h2>
-              <p className="text-zinc-600 dark:text-zinc-400 mt-3 text-base md:text-lg leading-relaxed">
-                {t.sdkSection.subtitle}
-              </p>
+              {t.sdkSection.subtitle ? (
+                <p className="text-zinc-600 dark:text-zinc-400 mt-3 text-base md:text-lg leading-relaxed">
+                  {t.sdkSection.subtitle}
+                </p>
+              ) : null}
             </div>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 relative z-10">
-              <div className="rounded-3xl border border-zinc-200/80 bg-white/90 p-7 md:p-8 shadow-[0_20px_60px_-40px_rgba(15,23,42,0.2)] backdrop-blur-md dark:border-zinc-800/80 dark:bg-[#0F0F0F]/85 dark:shadow-[0_0_120px_-40px_rgba(59,130,246,0.2)]">
-                <div className="inline-flex items-center gap-2 rounded-full border border-zinc-200 bg-zinc-100 px-3 py-1 text-xs font-semibold tracking-[0.2em] text-zinc-600 uppercase dark:border-zinc-800 dark:bg-zinc-900/60 dark:text-zinc-300">
-                  <Usb className="w-4 h-4 text-zinc-500 dark:text-zinc-300" />
-                  {t.sdkSection.hardware.badge}
+            <div className="relative z-10 divide-y divide-zinc-200/80 dark:divide-zinc-800/80">
+              <div className="py-2.5 md:py-3">
+                <div className="flex items-center gap-4">
+                  <div className="h-11 w-11 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center shadow-sm">
+                    <Cpu className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <h3 className="text-2xl font-semibold text-zinc-900 dark:text-white">
+                      {t.sdkSection.hardware.title}
+                    </h3>
+                    <p className="text-zinc-500 dark:text-zinc-400 mt-1">
+                      {t.sdkSection.hardware.desc}
+                    </p>
+                  </div>
                 </div>
-                <h3 className="text-xl md:text-2xl font-bold text-zinc-900 dark:text-white mt-5">
-                  {t.sdkSection.hardware.title}
-                </h3>
-                <p className="text-zinc-600 dark:text-zinc-400 leading-relaxed mt-2 text-sm md:text-base">
-                  {t.sdkSection.hardware.desc}
-                </p>
-                <ul className="mt-6 text-sm text-zinc-700 dark:text-zinc-300">
-                  {t.sdkSection.hardware.bullets.map((item, i) => (
-                    <li key={i}>
-                      <DividerRowLink
-                        href={item.href}
-                        label={item.label}
-                        isLast={i === t.sdkSection.hardware.bullets.length - 1}
-                      />
-                    </li>
+                <div className="mt-3 grid grid-cols-1 md:grid-cols-3 gap-3">
+                  {t.sdkSection.hardware.items.map((item) => (
+                    <IntegrationCard
+                      key={item.title}
+                      title={item.title}
+                      description={item.description}
+                      href={item.href}
+                    />
                   ))}
-                </ul>
-                <Link
-                  href={t.sdkSection.hardware.ctaHref}
-                  className="mt-8 inline-flex w-full items-center justify-center rounded-full bg-zinc-900 text-white px-6 py-3 font-semibold hover:bg-zinc-800 transition-colors no-underline dark:bg-white dark:text-black dark:hover:bg-zinc-200"
-                >
-                  {t.sdkSection.hardware.ctaLabel}
-                  <ArrowRight className="w-4 h-4 ml-2" />
-                </Link>
+                </div>
               </div>
-              <div className="rounded-3xl border border-zinc-200/80 bg-white/90 p-7 md:p-8 shadow-[0_20px_60px_-40px_rgba(15,23,42,0.2)] backdrop-blur-md dark:border-zinc-800/80 dark:bg-[#0F0F0F]/85">
-                <div className="inline-flex items-center gap-2 rounded-full border border-zinc-200 bg-zinc-100 px-3 py-1 text-xs font-semibold tracking-[0.2em] text-zinc-600 uppercase dark:border-zinc-800 dark:bg-zinc-900/60 dark:text-zinc-300">
-                  <Layers className="w-4 h-4 text-zinc-500 dark:text-zinc-300" />
-                  {t.sdkSection.software.badge}
+
+              <div className="py-2.5 md:py-3">
+                <div className="flex items-center gap-4">
+                  <div className="h-11 w-11 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center shadow-sm">
+                    <Code2 className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <h3 className="text-2xl font-semibold text-zinc-900 dark:text-white">
+                      {t.sdkSection.dapp.title}
+                    </h3>
+                    <p className="text-zinc-500 dark:text-zinc-400 mt-1">
+                      {t.sdkSection.dapp.desc}
+                    </p>
+                  </div>
                 </div>
-                <h3 className="text-xl md:text-2xl font-bold text-zinc-900 dark:text-white mt-5">
-                  {t.sdkSection.software.title}
-                </h3>
-                <p className="text-zinc-600 dark:text-zinc-400 leading-relaxed mt-2 text-sm md:text-base">
-                  {t.sdkSection.software.desc}
-                </p>
-                <ul className="mt-6 text-sm text-zinc-700 dark:text-zinc-300">
-                  {t.sdkSection.software.bullets.map((item, i) => (
-                    <li key={i}>
-                      <DividerRowLink
-                        href={item.href}
-                        label={item.label}
-                        isLast={i === t.sdkSection.software.bullets.length - 1}
-                      />
-                    </li>
+                <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {t.sdkSection.dapp.providers.map((item) => (
+                    <IntegrationCard
+                      key={item.title}
+                      title={item.title}
+                      description={item.description}
+                      href={item.href}
+                    />
                   ))}
-                </ul>
-                <Link
-                  href={t.sdkSection.software.ctaHref}
-                  className="mt-8 inline-flex w-full items-center justify-center rounded-full border border-zinc-300 bg-white text-zinc-900 px-6 py-3 font-semibold hover:bg-zinc-100 transition-colors no-underline dark:border-zinc-700 dark:bg-zinc-900 dark:text-white dark:hover:bg-zinc-800"
-                >
-                  {t.sdkSection.software.ctaLabel}
-                  <ArrowRight className="w-4 h-4 ml-2" />
-                </Link>
+                  {t.sdkSection.dapp.uiKits.map((item) => (
+                    <IntegrationCard
+                      key={item.title}
+                      title={item.title}
+                      description={item.description}
+                      href={item.href}
+                    />
+                  ))}
+                </div>
+              </div>
+
+              <div className="py-2.5 md:py-3">
+                <div className="flex items-center gap-4">
+                  <div className="h-11 w-11 rounded-2xl bg-violet-50 text-violet-600 flex items-center justify-center shadow-sm">
+                    <QrCode className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <h3 className="text-2xl font-semibold text-zinc-900 dark:text-white">
+                      {t.sdkSection.airgap.title}
+                    </h3>
+                    <p className="text-zinc-500 dark:text-zinc-400 mt-1">
+                      {t.sdkSection.airgap.desc}
+                    </p>
+                  </div>
+                </div>
+                <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div className="md:col-span-2">
+                    <IntegrationCard
+                      title={t.sdkSection.airgap.ctaLabel}
+                      description={t.sdkSection.airgap.summary}
+                      href={t.sdkSection.airgap.ctaHref}
+                    />
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -364,7 +401,7 @@ export function LandingPage({ locale = 'en' }) {
         {/* Support Section */}
         <section className="bg-transparent pb-24">
           <div className="max-w-6xl mx-auto px-6">
-            <div className="rounded-3xl border border-zinc-200/80 bg-white/90 p-8 md:p-12 flex flex-col md:flex-row items-start md:items-center justify-between gap-8 backdrop-blur-md dark:border-zinc-800/80 dark:bg-[#0F0F0F]/85">
+            <div className="rounded-3xl border border-zinc-200/80 bg-white p-8 md:p-12 flex flex-col md:flex-row items-start md:items-center justify-between gap-8 backdrop-blur-md dark:border-zinc-800/80 dark:bg-[#0F0F0F]/85">
               <div className="flex items-start gap-4">
                 <div className="hidden md:flex h-12 w-12 items-center justify-center rounded-full bg-blue-500/10 text-blue-500 shrink-0">
                   <Terminal className="w-6 h-6" />
@@ -383,7 +420,8 @@ export function LandingPage({ locale = 'en' }) {
                   href={t.supportSection.primaryHref}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex-1 md:flex-none px-6 py-3 rounded-full bg-zinc-900 text-white font-semibold hover:bg-zinc-800 transition-colors whitespace-nowrap text-center dark:bg-white dark:text-black dark:hover:bg-zinc-200"
+                  className="flex-1 md:flex-none px-6 py-3 rounded-full border border-transparent bg-zinc-900 text-white font-semibold shadow-[0_16px_40px_-28px_rgba(15,23,42,0.35)] transition-all hover:-translate-y-0.5 hover:shadow-[0_22px_50px_-30px_rgba(15,23,42,0.45)] hover:bg-zinc-800 whitespace-nowrap text-center dark:bg-white dark:text-black dark:hover:bg-zinc-200"
+                  style={{ color: '#ffffff' }}
                 >
                   {t.supportSection.primaryCta}
                 </a>
