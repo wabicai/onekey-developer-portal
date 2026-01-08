@@ -1461,11 +1461,11 @@ hr {
 
 /* Links */
 .dark article a {
-  color: #22c55e;
+  color: var(--gray-100);
 }
 
 .dark article a:hover {
-  color: #4ade80;
+  color: #f4f4f5;
 }
 
 /* Let Nextra handle sidebar and TOC active states */
@@ -1528,12 +1528,29 @@ html:has(.landing-page) {
 }
 
 html:has(.landing-page) body {
+  --landing-bg-image: url('/background.webp');
   min-height: 100vh;
-  background-color: #ffffff;
+  background-color: #f8f7f4;
+  background-image:
+    radial-gradient(900px 520px at 20% 10%, rgba(255, 255, 255, 0.65), transparent 65%),
+    radial-gradient(900px 520px at 80% 18%, rgba(186, 200, 226, 0.45), transparent 62%),
+    linear-gradient(180deg, rgba(248, 247, 244, 0.85) 0%, rgba(248, 247, 244, 0.92) 40%, rgba(248, 247, 244, 0.98) 100%),
+    var(--landing-bg-image);
+  background-size: auto, auto, auto, cover;
+  background-position: center top, center top, center top, center top;
+  background-repeat: no-repeat;
 }
 
 .dark:has(.landing-page) body {
-  background-color: #18181b;
+  background-color: #05060a;
+  background-image:
+    radial-gradient(900px 520px at 20% 10%, rgba(30, 41, 59, 0.9), transparent 65%),
+    radial-gradient(900px 520px at 85% 20%, rgba(59, 130, 246, 0.25), transparent 66%),
+    linear-gradient(180deg, rgba(5, 6, 10, 0.68) 0%, rgba(5, 6, 10, 0.82) 45%, rgba(5, 6, 10, 0.94) 100%),
+    var(--landing-bg-image);
+  background-size: auto, auto, auto, cover;
+  background-position: center top, center top, center top, center top;
+  background-repeat: no-repeat;
 }
 
 /* Hide breadcrumb on landing page */
@@ -1554,6 +1571,25 @@ body:has(.landing-page) article > div,
 body:has(.landing-page) article > div > div {
   padding: 0 !important;
   margin: 0 !important;
+}
+
+/* Landing page navbar - blend into hero background */
+body:has(.landing-page) header.nextra-navbar {
+  background: transparent !important;
+  box-shadow: none !important;
+  border: none !important;
+}
+
+body:has(.landing-page) .nextra-navbar-blur {
+  background-color: rgba(255, 255, 255, 0.92) !important;
+  backdrop-filter: blur(12px) saturate(160%) !important;
+  border-bottom: none !important;
+}
+
+html.dark body:has(.landing-page) .nextra-navbar-blur {
+  background-color: rgba(10, 12, 16, 0.88) !important;
+  backdrop-filter: blur(12px) saturate(160%) !important;
+  border-bottom: none !important;
 }
 
 /* Landing page footer styles */

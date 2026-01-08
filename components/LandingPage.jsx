@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import landingBackground from '../background.webp'
 import {
   ArrowRight,
   ArrowUpRight,
@@ -86,9 +87,9 @@ export function LandingPage({ locale = 'en' }) {
       hero: {
         titleLine1: 'OneKey',
         titleLine2: 'Developer Portal',
-        subtitle: 'Build secure, transparent Web3 experiences with OneKey hardware wallets. Full-stack open-source hardware and software integration solutions for developers.',
+        subtitle: 'Build secure Web3 experiences with OneKey hardware.',
         primaryCta: 'Start Building',
-        secondaryCta: 'Changelog',
+        secondaryCta: 'Contact Us',
       },
       codeSnippet: {
         filename: 'init-sdk.ts',
@@ -153,9 +154,9 @@ export function LandingPage({ locale = 'en' }) {
       hero: {
         titleLine1: 'OneKey',
         titleLine2: '开发者门户',
-        subtitle: '使用 OneKey 硬件钱包构建安全、透明的 Web3 体验。为开发者提供全栈式的开源硬件与软件集成方案。',
+        subtitle: '用 OneKey 硬件构建安全的 Web3 体验。',
         primaryCta: '开始构建',
-        secondaryCta: '更新日志',
+        secondaryCta: '联系我们',
       },
       codeSnippet: {
         filename: 'init-sdk.ts',
@@ -229,246 +230,176 @@ export function LandingPage({ locale = 'en' }) {
   }
 
   return (
-    <div className="landing-page flex-1 flex flex-col bg-white text-zinc-900 dark:bg-black dark:text-white">
-      {/* Hero Section */}
-      <section className="relative overflow-hidden bg-white dark:bg-black">
-        {/* Background Effects */}
-        <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          <div className="absolute top-[8%] right-[-10%] w-[640px] h-[640px] bg-[#2563eb]/10 rounded-full blur-[140px] dark:bg-emerald-500/10"></div>
-          <div className="absolute -left-24 -top-24 w-[420px] h-[420px] bg-[#0f172a]/10 rounded-full blur-[140px] dark:bg-emerald-500/5"></div>
-          <div className="absolute inset-0 dark:hidden" style={{ background: 'radial-gradient(circle at 20% 20%, rgba(37, 99, 235, 0.12), transparent 50%)' }} />
-          <div className="absolute inset-0 hidden dark:block" style={{ background: 'radial-gradient(circle at 30% 30%, rgba(16, 185, 129, 0.1), transparent 55%)' }} />
+    <div
+      className="landing-page flex-1 flex flex-col bg-transparent text-zinc-900 dark:text-white"
+      style={{ '--landing-bg-image': `url(${landingBackground.src})` }}
+    >
+      <div className="relative">
+        <div className="pointer-events-none absolute inset-0">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_18%,rgba(255,255,255,0.35),transparent_60%)] dark:bg-[radial-gradient(circle_at_50%_18%,rgba(15,23,42,0.65),transparent_60%)]" />
+          <div className="absolute inset-0 bg-[linear-gradient(to_bottom,rgba(248,247,244,0.3),rgba(248,247,244,0.65))] dark:bg-[linear-gradient(to_bottom,rgba(8,10,14,0.45),rgba(8,10,14,0.85))]" />
+          <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.02] dark:opacity-[0.05] mix-blend-overlay" />
         </div>
+        {/* Hero Section */}
+        <section className="relative overflow-hidden bg-transparent">
 
-        <div className="relative z-10 max-w-6xl mx-auto py-16 md:py-24 px-6">
-          <div className="flex flex-col lg:flex-row items-center gap-12">
-            {/* Left Content */}
-            <div className="flex-1 text-center lg:text-left space-y-6">
-              {/* Title */}
-              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-zinc-900 dark:text-white tracking-tight leading-[1.1]">
-                {t.hero.titleLine1}
-                <br />
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-zinc-900 to-zinc-500 dark:from-emerald-300 dark:to-zinc-100">
-                  {t.hero.titleLine2}
-                </span>
-              </h1>
+          <div className="relative z-10 max-w-6xl mx-auto py-16 md:py-24 px-6">
+            <div className="flex flex-col items-center">
+              {/* Centered Content */}
+              <div className="w-full max-w-3xl text-center space-y-6">
+                {/* Title */}
+                <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold text-zinc-900 dark:text-white tracking-tight leading-[1.05]">
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-zinc-900 via-slate-700 to-zinc-500 dark:from-slate-100 dark:via-blue-200 dark:to-slate-300">
+                    {t.hero.titleLine1}
+                  </span>{' '}
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-zinc-900 via-slate-600 to-zinc-500 dark:from-blue-300 dark:via-indigo-200 dark:to-slate-100">
+                    {t.hero.titleLine2}
+                  </span>
+                </h1>
 
-              {/* Subtitle */}
-              <p className="text-lg text-zinc-600 dark:text-zinc-400 max-w-xl leading-relaxed">
-                {t.hero.subtitle}
+                {/* Subtitle */}
+                <p className="text-lg text-zinc-600 dark:text-zinc-400 max-w-xl mx-auto leading-relaxed">
+                  {t.hero.subtitle}
+                </p>
+
+                {/* CTA Buttons */}
+                <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+                  <button
+                    onClick={scrollToContent}
+                    className="w-full sm:w-auto px-10 py-3.5 font-semibold rounded-full transition-all duration-300 active:scale-[0.98] flex items-center justify-center gap-2 cursor-pointer border border-white/10 bg-[linear-gradient(140deg,#0b1220,#121827)] text-white shadow-[0_20px_50px_-30px_rgba(15,23,42,0.75)] hover:-translate-y-0.5 hover:shadow-[0_28px_70px_-36px_rgba(30,64,175,0.45)] hover:bg-[linear-gradient(140deg,#101a2e,#161d30)]"
+                  >
+                    {t.hero.primaryCta}
+                  </button>
+                  <Link
+                    href="https://help.onekey.so/en/articles/11536900-contact-us"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full sm:w-auto px-10 py-3.5 border border-white/20 bg-white/5 text-white/70 font-semibold rounded-full transition-all duration-300 active:scale-[0.98] no-underline flex items-center justify-center backdrop-blur-md hover:border-white/35 hover:text-white/90 hover:bg-white/10 hover:-translate-y-0.5 dark:border-white/25 dark:bg-white/6 dark:text-white/70 dark:hover:bg-white/12"
+                    style={{ textDecoration: 'none' }}
+                  >
+                    {t.hero.secondaryCta}
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* SDK Selection Section */}
+        <section id="sdk-section" className="relative bg-transparent pt-12 pb-14">
+          <div className="max-w-6xl mx-auto px-6">
+            <div className="max-w-3xl mx-auto text-center mb-8 relative z-10">
+              <h2 className="text-2xl md:text-3xl font-semibold text-zinc-900 dark:text-white">
+                {t.sdkSection.title}
+              </h2>
+              <p className="text-zinc-600 dark:text-zinc-400 mt-3 text-base md:text-lg leading-relaxed">
+                {t.sdkSection.subtitle}
               </p>
-
-              {/* CTA Buttons */}
-              <div className="flex flex-col sm:flex-row items-center gap-4">
-                <button
-                  onClick={scrollToContent}
-                  className="w-full sm:w-auto px-8 py-3.5 bg-zinc-900 hover:bg-zinc-800 font-semibold rounded-full shadow-[0_4px_20px_rgba(15,23,42,0.2)] transition-all active:scale-[0.98] flex items-center justify-center gap-2 cursor-pointer border-none text-white dark:bg-white dark:text-black dark:hover:bg-zinc-200"
-                >
-                  {t.hero.primaryCta}
-                  <ChevronRight className="w-4 h-4" />
-                </button>
+            </div>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 relative z-10">
+              <div className="rounded-3xl border border-zinc-200/80 bg-white/90 p-7 md:p-8 shadow-[0_20px_60px_-40px_rgba(15,23,42,0.2)] backdrop-blur-md dark:border-zinc-800/80 dark:bg-[#0F0F0F]/85 dark:shadow-[0_0_120px_-40px_rgba(59,130,246,0.2)]">
+                <div className="inline-flex items-center gap-2 rounded-full border border-zinc-200 bg-zinc-100 px-3 py-1 text-xs font-semibold tracking-[0.2em] text-zinc-600 uppercase dark:border-zinc-800 dark:bg-zinc-900/60 dark:text-zinc-300">
+                  <Usb className="w-4 h-4 text-zinc-500 dark:text-zinc-300" />
+                  {t.sdkSection.hardware.badge}
+                </div>
+                <h3 className="text-xl md:text-2xl font-bold text-zinc-900 dark:text-white mt-5">
+                  {t.sdkSection.hardware.title}
+                </h3>
+                <p className="text-zinc-600 dark:text-zinc-400 leading-relaxed mt-2 text-sm md:text-base">
+                  {t.sdkSection.hardware.desc}
+                </p>
+                <ul className="mt-6 text-sm text-zinc-700 dark:text-zinc-300">
+                  {t.sdkSection.hardware.bullets.map((item, i) => (
+                    <li key={i}>
+                      <DividerRowLink
+                        href={item.href}
+                        label={item.label}
+                        isLast={i === t.sdkSection.hardware.bullets.length - 1}
+                      />
+                    </li>
+                  ))}
+                </ul>
                 <Link
-                  href="https://github.com/OneKeyHQ/hardware-js-sdk/releases"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-full sm:w-auto px-8 py-3.5 bg-white border border-zinc-200 hover:border-zinc-300 hover:bg-zinc-50 text-zinc-700 font-semibold rounded-full transition-all active:scale-[0.98] no-underline flex items-center justify-center dark:bg-zinc-950 dark:border-zinc-800 dark:hover:border-zinc-600 dark:hover:bg-zinc-900 dark:text-zinc-200"
-                  style={{ textDecoration: 'none' }}
+                  href={t.sdkSection.hardware.ctaHref}
+                  className="mt-8 inline-flex w-full items-center justify-center rounded-full bg-zinc-900 text-white px-6 py-3 font-semibold hover:bg-zinc-800 transition-colors no-underline dark:bg-white dark:text-black dark:hover:bg-zinc-200"
                 >
-                  {t.hero.secondaryCta}
+                  {t.sdkSection.hardware.ctaLabel}
+                  <ArrowRight className="w-4 h-4 ml-2" />
+                </Link>
+              </div>
+              <div className="rounded-3xl border border-zinc-200/80 bg-white/90 p-7 md:p-8 shadow-[0_20px_60px_-40px_rgba(15,23,42,0.2)] backdrop-blur-md dark:border-zinc-800/80 dark:bg-[#0F0F0F]/85">
+                <div className="inline-flex items-center gap-2 rounded-full border border-zinc-200 bg-zinc-100 px-3 py-1 text-xs font-semibold tracking-[0.2em] text-zinc-600 uppercase dark:border-zinc-800 dark:bg-zinc-900/60 dark:text-zinc-300">
+                  <Layers className="w-4 h-4 text-zinc-500 dark:text-zinc-300" />
+                  {t.sdkSection.software.badge}
+                </div>
+                <h3 className="text-xl md:text-2xl font-bold text-zinc-900 dark:text-white mt-5">
+                  {t.sdkSection.software.title}
+                </h3>
+                <p className="text-zinc-600 dark:text-zinc-400 leading-relaxed mt-2 text-sm md:text-base">
+                  {t.sdkSection.software.desc}
+                </p>
+                <ul className="mt-6 text-sm text-zinc-700 dark:text-zinc-300">
+                  {t.sdkSection.software.bullets.map((item, i) => (
+                    <li key={i}>
+                      <DividerRowLink
+                        href={item.href}
+                        label={item.label}
+                        isLast={i === t.sdkSection.software.bullets.length - 1}
+                      />
+                    </li>
+                  ))}
+                </ul>
+                <Link
+                  href={t.sdkSection.software.ctaHref}
+                  className="mt-8 inline-flex w-full items-center justify-center rounded-full border border-zinc-300 bg-white text-zinc-900 px-6 py-3 font-semibold hover:bg-zinc-100 transition-colors no-underline dark:border-zinc-700 dark:bg-zinc-900 dark:text-white dark:hover:bg-zinc-800"
+                >
+                  {t.sdkSection.software.ctaLabel}
+                  <ArrowRight className="w-4 h-4 ml-2" />
                 </Link>
               </div>
             </div>
+          </div>
+        </section>
 
-            {/* Right Content - Code Snippet */}
-            <div className="flex-1 w-full max-w-lg hidden lg:block">
-              <div className="relative rounded-2xl bg-[#0F0F0F] p-4 shadow-2xl border border-zinc-800">
-                {/* Terminal Header */}
-                <div className="flex items-center gap-2 mb-4 border-b border-zinc-800 pb-4">
-                  <div className="flex gap-1.5">
-                    <div className="w-3 h-3 rounded-full bg-red-500/20 border border-red-500/40"></div>
-                    <div className="w-3 h-3 rounded-full bg-yellow-500/20 border border-yellow-500/40"></div>
-                    <div className="w-3 h-3 rounded-full bg-green-500/20 border border-green-500/40"></div>
-                  </div>
-                  <div className="text-xs text-zinc-500 font-mono ml-4">
-                    {t.codeSnippet.filename}
-                  </div>
+        {/* Support Section */}
+        <section className="bg-transparent pb-24">
+          <div className="max-w-6xl mx-auto px-6">
+            <div className="rounded-3xl border border-zinc-200/80 bg-white/90 p-8 md:p-12 flex flex-col md:flex-row items-start md:items-center justify-between gap-8 backdrop-blur-md dark:border-zinc-800/80 dark:bg-[#0F0F0F]/85">
+              <div className="flex items-start gap-4">
+                <div className="hidden md:flex h-12 w-12 items-center justify-center rounded-full bg-blue-500/10 text-blue-500 shrink-0">
+                  <Terminal className="w-6 h-6" />
                 </div>
-
-                {/* Code Content */}
-                <div className="font-mono text-sm leading-relaxed text-zinc-300 overflow-x-auto">
-                  <div>
-                    <span className="text-purple-400">import</span>{' '}
-                    <span className="text-yellow-300">HardwareSDK</span>{' '}
-                    <span className="text-purple-400">from</span>{' '}
-                    <span className="text-green-400">'@onekeyfe/hd-common-connect-sdk'</span>
-                  </div>
-                  <br />
-                  <div className="text-zinc-500">{t.codeSnippet.comment}</div>
-                  <div>
-                    <span className="text-purple-400">await</span>{' '}
-                    <span className="text-zinc-300">HardwareSDK.</span>
-                    <span className="text-blue-400">init</span>
-                    <span className="text-zinc-300">({'{'}</span>
-                  </div>
-                  <div className="pl-4">
-                    <span className="text-sky-300">env</span>
-                    <span className="text-zinc-300">:</span>{' '}
-                    <span className="text-green-400">'webusb'</span>
-                    <span className="text-zinc-300">,</span>
-                  </div>
-                  <div className="pl-4">
-                    <span className="text-sky-300">debug</span>
-                    <span className="text-zinc-300">:</span>{' '}
-                    <span className="text-zinc-300">process.env.NODE_ENV !==</span>{' '}
-                    <span className="text-green-400">'production'</span>
-                    <span className="text-zinc-300">,</span>
-                  </div>
-                  <div className="pl-4">
-                    <span className="text-sky-300">fetchConfig</span>
-                    <span className="text-zinc-300">:</span>{' '}
-                    <span className="text-orange-400">true</span>
-                  </div>
-                  <div>
-                    <span className="text-zinc-300">{'}'})</span>
-                  </div>
-                  <br />
-                  <div>
-                    <span className="text-blue-400">const</span>{' '}
-                    <span className="text-yellow-300">devices</span>{' '}
-                    <span className="text-zinc-300">=</span>{' '}
-                    <span className="text-purple-400">await</span>{' '}
-                    <span className="text-zinc-300">HardwareSDK.</span>
-                    <span className="text-blue-400">searchDevices</span>
-                    <span className="text-zinc-300">()</span>
-                  </div>
-                  <br />
-                  <div className="flex items-center gap-2">
-                    <span className="text-green-500">{'>'}</span>
-                    <span className="animate-pulse">_</span>
-                  </div>
+                <div>
+                  <h3 className="text-2xl font-bold text-zinc-900 dark:text-white mb-2">
+                    {t.supportSection.title}
+                  </h3>
+                  <p className="text-zinc-600 dark:text-zinc-400 max-w-md">
+                    {t.supportSection.subtitle}
+                  </p>
                 </div>
-
+              </div>
+              <div className="flex flex-col sm:flex-row gap-4 w-full md:w-auto">
+                <a
+                  href={t.supportSection.primaryHref}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex-1 md:flex-none px-6 py-3 rounded-full bg-zinc-900 text-white font-semibold hover:bg-zinc-800 transition-colors whitespace-nowrap text-center dark:bg-white dark:text-black dark:hover:bg-zinc-200"
+                >
+                  {t.supportSection.primaryCta}
+                </a>
+                <a
+                  href={t.supportSection.secondaryHref}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex-1 md:flex-none px-6 py-3 rounded-full border border-zinc-300 text-zinc-700 hover:bg-zinc-100 transition-colors whitespace-nowrap text-center dark:border-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-800"
+                >
+                  {t.supportSection.secondaryCta}
+                </a>
               </div>
             </div>
           </div>
-        </div>
-      </section>
-
-      {/* SDK Selection Section */}
-      <section id="sdk-section" className="relative bg-zinc-50 dark:bg-[#0A0A0A] pt-12 pb-14 border-t border-zinc-200 dark:border-zinc-800">
-        <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.03] dark:opacity-5 mix-blend-overlay"></div>
-        <div className="max-w-6xl mx-auto px-6">
-          <div className="max-w-3xl mx-auto text-center mb-8 relative z-10">
-            <h2 className="text-2xl md:text-3xl font-semibold text-zinc-900 dark:text-white">
-              {t.sdkSection.title}
-            </h2>
-            <p className="text-zinc-600 dark:text-zinc-400 mt-3 text-base md:text-lg leading-relaxed">
-              {t.sdkSection.subtitle}
-            </p>
-          </div>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 relative z-10">
-            <div className="rounded-3xl border border-zinc-200 bg-white p-7 md:p-8 shadow-[0_20px_60px_-40px_rgba(15,23,42,0.2)] dark:border-zinc-800 dark:bg-[#0F0F0F] dark:shadow-[0_0_100px_-40px_rgba(22,163,74,0.18)]">
-              <div className="inline-flex items-center gap-2 rounded-full border border-zinc-200 bg-zinc-100 px-3 py-1 text-xs font-semibold tracking-[0.2em] text-zinc-600 uppercase dark:border-zinc-800 dark:bg-zinc-900/60 dark:text-zinc-300">
-                <Usb className="w-4 h-4 text-zinc-500 dark:text-zinc-300" />
-                {t.sdkSection.hardware.badge}
-              </div>
-              <h3 className="text-xl md:text-2xl font-bold text-zinc-900 dark:text-white mt-5">
-                {t.sdkSection.hardware.title}
-              </h3>
-              <p className="text-zinc-600 dark:text-zinc-400 leading-relaxed mt-2 text-sm md:text-base">
-                {t.sdkSection.hardware.desc}
-              </p>
-              <ul className="mt-6 text-sm text-zinc-700 dark:text-zinc-300">
-                {t.sdkSection.hardware.bullets.map((item, i) => (
-                  <li key={i}>
-                    <DividerRowLink
-                      href={item.href}
-                      label={item.label}
-                      isLast={i === t.sdkSection.hardware.bullets.length - 1}
-                    />
-                  </li>
-                ))}
-              </ul>
-              <Link
-                href={t.sdkSection.hardware.ctaHref}
-                className="mt-8 inline-flex w-full items-center justify-center rounded-full bg-zinc-900 text-white px-6 py-3 font-semibold hover:bg-zinc-800 transition-colors no-underline dark:bg-white dark:text-black dark:hover:bg-zinc-200"
-              >
-                {t.sdkSection.hardware.ctaLabel}
-                <ArrowRight className="w-4 h-4 ml-2" />
-              </Link>
-            </div>
-            <div className="rounded-3xl border border-zinc-200 bg-white p-7 md:p-8 shadow-[0_20px_60px_-40px_rgba(15,23,42,0.2)] dark:border-zinc-800 dark:bg-[#0F0F0F]">
-              <div className="inline-flex items-center gap-2 rounded-full border border-zinc-200 bg-zinc-100 px-3 py-1 text-xs font-semibold tracking-[0.2em] text-zinc-600 uppercase dark:border-zinc-800 dark:bg-zinc-900/60 dark:text-zinc-300">
-                <Layers className="w-4 h-4 text-zinc-500 dark:text-zinc-300" />
-                {t.sdkSection.software.badge}
-              </div>
-              <h3 className="text-xl md:text-2xl font-bold text-zinc-900 dark:text-white mt-5">
-                {t.sdkSection.software.title}
-              </h3>
-              <p className="text-zinc-600 dark:text-zinc-400 leading-relaxed mt-2 text-sm md:text-base">
-                {t.sdkSection.software.desc}
-              </p>
-              <ul className="mt-6 text-sm text-zinc-700 dark:text-zinc-300">
-                {t.sdkSection.software.bullets.map((item, i) => (
-                  <li key={i}>
-                    <DividerRowLink
-                      href={item.href}
-                      label={item.label}
-                      isLast={i === t.sdkSection.software.bullets.length - 1}
-                    />
-                  </li>
-                ))}
-              </ul>
-              <Link
-                href={t.sdkSection.software.ctaHref}
-                className="mt-8 inline-flex w-full items-center justify-center rounded-full border border-zinc-300 bg-white text-zinc-900 px-6 py-3 font-semibold hover:bg-zinc-100 transition-colors no-underline dark:border-zinc-700 dark:bg-zinc-900 dark:text-white dark:hover:bg-zinc-800"
-              >
-                {t.sdkSection.software.ctaLabel}
-                <ArrowRight className="w-4 h-4 ml-2" />
-              </Link>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Support Section */}
-      <section className="bg-white dark:bg-black pb-24">
-        <div className="max-w-6xl mx-auto px-6">
-          <div className="rounded-3xl border border-zinc-200 bg-gradient-to-r from-white to-zinc-50 p-8 md:p-12 flex flex-col md:flex-row items-start md:items-center justify-between gap-8 dark:border-zinc-800 dark:from-[#0F0F0F] dark:to-[#161616]">
-            <div className="flex items-start gap-4">
-              <div className="hidden md:flex h-12 w-12 items-center justify-center rounded-full bg-[#00B812]/10 text-[#00B812] shrink-0">
-                <Terminal className="w-6 h-6" />
-              </div>
-              <div>
-                <h3 className="text-2xl font-bold text-zinc-900 dark:text-white mb-2">
-                  {t.supportSection.title}
-                </h3>
-                <p className="text-zinc-600 dark:text-zinc-400 max-w-md">
-                  {t.supportSection.subtitle}
-                </p>
-              </div>
-            </div>
-            <div className="flex flex-col sm:flex-row gap-4 w-full md:w-auto">
-              <a
-                href={t.supportSection.primaryHref}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex-1 md:flex-none px-6 py-3 rounded-full bg-zinc-900 text-white font-semibold hover:bg-zinc-800 transition-colors whitespace-nowrap text-center dark:bg-white dark:text-black dark:hover:bg-zinc-200"
-              >
-                {t.supportSection.primaryCta}
-              </a>
-              <a
-                href={t.supportSection.secondaryHref}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex-1 md:flex-none px-6 py-3 rounded-full border border-zinc-300 text-zinc-700 hover:bg-zinc-100 transition-colors whitespace-nowrap text-center dark:border-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-800"
-              >
-                {t.supportSection.secondaryCta}
-              </a>
-            </div>
-          </div>
-        </div>
-      </section>
+        </section>
+      </div>
 
       {/* Footer - Portal Style */}
       <footer className="bg-zinc-900 rounded-t-[32px] md:rounded-t-[64px] pt-10 md:pt-20 pb-16 md:pb-24 px-6">
