@@ -1,8 +1,7 @@
 import { ProviderChainSidebar } from '../../../../components/ProviderChainSidebar'
 
 export default {
-  // Index hidden but exists for routing
-  index: { display: 'hidden' },
+  index: { title: 'Overview' },
   // Provider API - chain selector
   '---provider': {
     type: 'separator',

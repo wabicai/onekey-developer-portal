@@ -32,5 +32,9 @@ export default {
   'connect-to-software': {
     title: 'Connect to Software',
     type: 'page'
+  },
+  changelog: {
+    title: 'Changelog',
+    display: 'hidden'
   }
 }

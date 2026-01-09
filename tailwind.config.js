@@ -43,8 +43,9 @@ module.exports = {
         }
       },
       fontFamily: {
-        sans: ['-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', 'sans-serif'],
-        mono: ['Source Code Pro', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'Monaco', 'monospace'],
+        sans: ['Stabil Grotesk', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', 'sans-serif'],
+        display: ['Stabil Grotesk', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', 'sans-serif'],
+        mono: ['Geist Mono', 'Source Code Pro', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'Monaco', 'monospace'],
       },
       // Stripe-inspired border radius (prefer smaller values)
       borderRadius: {
@@ -83,12 +84,12 @@ module.exports = {
         'sm': ['14px', { lineHeight: '20px' }],
         'base': ['16px', { lineHeight: '24px' }],
         'lg': ['18px', { lineHeight: '28px' }],
-        'xl': ['20px', { lineHeight: '28px' }],
+        'xl': ['20px', { lineHeight: '30px' }],
         '2xl': ['24px', { lineHeight: '32px' }],
-        '3xl': ['32px', { lineHeight: '40px' }],
-        '4xl': ['40px', { lineHeight: '48px' }],
-        '5xl': ['48px', { lineHeight: '56px' }],
-        '6xl': ['56px', { lineHeight: '64px' }],
+        '3xl': ['32px', { lineHeight: '38px' }],
+        '4xl': ['40px', { lineHeight: '46px' }],
+        '5xl': ['48px', { lineHeight: '54px' }],
+        '6xl': ['56px', { lineHeight: '62px' }],
       },
       // Stripe-inspired spacing (4px base unit)
       spacing: {

@@ -31,9 +31,9 @@ function patchPageMapForTopNav(pageMap, lang) {
       item?.name !== 'connect-to-hardware'
   )
 
-  const connectHardwareTitle = lang === 'zh' ? '连接硬件' : 'Connect to hardware'
-  const connectSoftwareTitle = lang === 'zh' ? '连接软件' : 'Connect to Software'
-  const offlineSigningTitle = lang === 'zh' ? '离线签名' : 'Offline Signing'
+  const connectHardwareTitle = lang === 'zh' ? '硬件接入' : 'Hardware Integration'
+  const connectSoftwareTitle = lang === 'zh' ? 'dApp 接入' : 'dApp Integration'
+  const offlineSigningTitle = lang === 'zh' ? 'Air-Gap 签名' : 'Offline Signing'
 
   const connectHardware = { ...hardwareSdkItem, title: connectHardwareTitle }
   const connectSoftware = { ...connectSoftwareItem, title: connectSoftwareTitle }

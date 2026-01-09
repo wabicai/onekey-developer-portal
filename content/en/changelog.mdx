@@ -1,0 +1,72 @@
+---
+title: Changelog
+theme:
+  layout: full
+  sidebar: false
+  toc: false
+  pagination: false
+  breadcrumb: false
+  copyPage: false
+---
+
+<div className="mx-auto max-w-6xl px-6 py-16 md:py-24">
+  <div>
+    <p className="text-xs font-semibold tracking-[0.4em] uppercase text-zinc-400">Developer Portal</p>
+    <h1 className="mt-4 text-4xl font-semibold tracking-tight text-zinc-900 md:text-5xl">
+      Changelog
+    </h1>
+    <p className="mt-4 max-w-2xl text-lg text-zinc-600">
+      Key milestones across hardware integrations and dApp connectivity.
+    </p>
+  </div>
+
+  <div className="mt-10 space-y-6">
+    {[
+      {
+        date: '2025-04-18',
+        version: 'v2.4.0',
+        title: 'Provider Integration Baseline',
+        hardware: 'WebUSB and BLE transport guidance aligned across desktop and mobile.',
+        dapp: 'Provider API overview published with chain coverage and entry points.'
+      },
+      {
+        date: '2025-04-12',
+        version: 'v2.3.2',
+        title: 'Hardware Paths Refined',
+        hardware: 'Separated WebUSB, React Native BLE, and native mobile BLE workflows.',
+        dapp: 'dApp integration cards consolidated for faster decision making.'
+      },
+      {
+        date: '2025-03-29',
+        version: 'v2.3.0',
+        title: 'Portal Refresh',
+        hardware: 'Hardware entrypoints clarified for secure device onboarding.',
+        dapp: 'UI kit entry points standardized around provider-based access.'
+      }
+    ].map((item) => (
+      <div key={item.title} className="relative pl-8">
+        <span className="absolute left-1.5 top-2 h-full w-px bg-zinc-200" aria-hidden="true" />
+        <span className="absolute left-0 top-2 h-4 w-4 rounded-full border border-zinc-300 bg-white" aria-hidden="true" />
+        <div className="rounded-2xl border border-zinc-200/80 bg-white p-6">
+          <div className="flex flex-wrap items-center gap-3 text-xs font-semibold uppercase tracking-[0.2em] text-zinc-400">
+            <span>{item.date}</span>
+            <span className="rounded-full border border-zinc-200 bg-white px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-zinc-500">
+              {item.version}
+            </span>
+          </div>
+          <h3 className="mt-3 text-lg font-semibold text-zinc-900">{item.title}</h3>
+          <div className="mt-3 grid gap-4 md:grid-cols-2">
+            <div className="rounded-xl border border-zinc-100 bg-zinc-50/70 p-4">
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-zinc-400">Hardware</p>
+              <p className="mt-2 text-sm text-zinc-600">{item.hardware}</p>
+            </div>
+            <div className="rounded-xl border border-zinc-100 bg-zinc-50/70 p-4">
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-zinc-400">dApp</p>
+              <p className="mt-2 text-sm text-zinc-600">{item.dapp}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    ))}
+  </div>
+</div>

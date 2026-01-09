@@ -32,5 +32,9 @@ export default {
   'connect-to-software': {
     title: '连接软件',
     type: 'page'
+  },
+  changelog: {
+    title: '更新日志',
+    display: 'hidden'
   }
 }

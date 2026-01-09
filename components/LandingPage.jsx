@@ -96,7 +96,7 @@ export function LandingPage({ locale = 'en' }) {
         titleLine2: 'Developer Portal',
         subtitle: 'Build secure Web3 experiences with OneKey hardware.',
         primaryCta: 'Start Building',
-        secondaryCta: 'Contact Us',
+        secondaryCta: 'Changelog',
       },
       codeSnippet: {
         filename: 'init-sdk.ts',
@@ -111,7 +111,7 @@ export function LandingPage({ locale = 'en' }) {
           items: [
             {
               title: 'WebUSB Connection',
-              description: 'Browser USB transport for desktop dApps.',
+              description: 'Desktop browser USB transport.',
               href: `/${locale}/hardware-sdk/transport/web-usb`,
             },
             {
@@ -121,33 +121,33 @@ export function LandingPage({ locale = 'en' }) {
             },
             {
               title: 'Native Mobile BLE',
-              description: 'BLE transport for native apps.',
+              description: 'BLE transport for native mobile apps.',
               href: `/${locale}/hardware-sdk/transport/native-ble`,
             },
           ],
         },
         dapp: {
-          title: 'DAPP Development',
+          title: 'dApp Integration',
           desc: 'Providers & UI kits for wallet connectivity',
           providersLabel: 'Providers',
           providers: [
             {
-              title: 'Provider API (EIP-1193)',
-              description: 'Standardized provider interface for dApps.',
+              title: 'Provider API',
+              description: 'Provider architecture and supported chains.',
               href: `/${locale}/connect-to-software/provider`,
             },
           ],
           uiLabel: 'UI Kits',
           uiKits: [
             {
-              title: 'Web3Modal',
+              title: 'Web3Modal UI Kit',
               description: 'Drop-in wallet UI with mobile support.',
               href: `/${locale}/connect-to-software/wallet-ui/web3modal`,
             },
           ],
         },
         airgap: {
-          title: 'Air-Gap Solutions',
+          title: 'Offline Signing',
           desc: 'QR-based offline signing',
           summary: 'Use QR codes to sign transactions offline with OneKey hardware.',
           ctaLabel: 'Explore Air-Gap Flow',
@@ -169,7 +169,7 @@ export function LandingPage({ locale = 'en' }) {
         titleLine2: '开发者门户',
         subtitle: '用 OneKey 硬件构建安全的 Web3 体验。',
         primaryCta: '开始构建',
-        secondaryCta: '联系我们',
+        secondaryCta: '更新日志',
       },
       codeSnippet: {
         filename: 'init-sdk.ts',
@@ -179,7 +179,7 @@ export function LandingPage({ locale = 'en' }) {
         title: '选择你的集成路径',
         subtitle: '',
         hardware: {
-          title: '硬件集成',
+          title: '硬件接入',
           desc: '直连 USB 与 BLE 传输',
           items: [
             {
@@ -194,33 +194,33 @@ export function LandingPage({ locale = 'en' }) {
             },
             {
               title: '原生移动端 BLE',
-              description: '原生应用的 BLE 传输。',
+              description: '原生移动端 BLE 传输。',
               href: `/${locale}/hardware-sdk/transport/native-ble`,
             },
           ],
         },
         dapp: {
-          title: 'DAPP 开发',
+          title: 'dApp 接入',
           desc: 'Provider 接入与 UI 组件库',
           providersLabel: 'Providers',
           providers: [
             {
-              title: 'Provider API（EIP-1193）',
-              description: '标准化的 dApp Provider 接口。',
+              title: 'Provider API',
+              description: 'Provider 架构与支持链概览。',
               href: `/${locale}/connect-to-software/provider`,
             },
           ],
           uiLabel: 'UI Kits',
           uiKits: [
             {
-              title: 'Web3Modal',
+              title: 'Web3Modal UI 组件',
               description: '内置移动端支持的快速接入组件。',
               href: `/${locale}/connect-to-software/wallet-ui/web3modal`,
             },
           ],
         },
         airgap: {
-          title: 'Air-Gap 方案',
+          title: 'Air-Gap 签名',
           desc: '二维码离线签名',
           summary: '通过二维码完成离线签名与传输，提升安全性。',
           ctaLabel: '了解 Air-Gap 流程',
@@ -249,17 +249,23 @@ export function LandingPage({ locale = 'en' }) {
   }
 
   return (
-    <div className="landing-page flex-1 flex flex-col bg-transparent text-zinc-900 dark:text-white">
+    <div
+      className="landing-page flex-1 flex flex-col bg-white text-zinc-900 dark:bg-black dark:text-white bg-no-repeat"
+      style={{
+        backgroundImage: "url('/device/explore-pure.jpg')",
+        backgroundPosition: 'center top',
+        backgroundSize: '100% auto',
+      }}
+    >
       <div className="relative">
         {/* Hero Section */}
         <section className="relative overflow-hidden bg-transparent">
 
           <div className="relative z-10 max-w-6xl mx-auto py-16 md:py-24 px-6">
-            <div className="flex flex-col items-center">
-              {/* Centered Content */}
-              <div className="w-full max-w-3xl text-center space-y-6">
+            <div className="flex flex-col items-start">
+              <div className="w-full max-w-xl text-left space-y-6 bg-white/75 dark:bg-black/35 backdrop-blur-sm rounded-3xl p-6 md:p-8">
                 {/* Title */}
-                <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold text-zinc-900 dark:text-white tracking-tight leading-[1.05]">
+                <h1 className="text-4xl md:text-5xl lg:text-6xl font-semibold text-zinc-900 dark:text-white tracking-tight leading-[1.05]">
                   <span className="text-zinc-900 dark:text-slate-100">
                     {t.hero.titleLine1}
                   </span>{' '}
@@ -269,12 +275,12 @@ export function LandingPage({ locale = 'en' }) {
                 </h1>
 
                 {/* Subtitle */}
-                <p className="text-lg text-zinc-600 dark:text-zinc-400 max-w-xl mx-auto leading-relaxed">
+                <p className="text-lg text-zinc-600 dark:text-zinc-300 max-w-xl leading-relaxed">
                   {t.hero.subtitle}
                 </p>
 
                 {/* CTA Buttons */}
-                <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+                <div className="flex flex-col sm:flex-row items-center justify-start gap-4">
                   <button
                     onClick={scrollToContent}
                     className="w-full sm:w-auto px-10 py-3.5 font-semibold rounded-full transition-all duration-300 active:scale-[0.98] flex items-center justify-center gap-2 cursor-pointer border border-zinc-900/10 bg-[linear-gradient(140deg,#0f172a,#111827)] text-white shadow-[0_20px_50px_-34px_rgba(15,23,42,0.25)] hover:-translate-y-0.5 hover:shadow-[0_26px_60px_-32px_rgba(15,23,42,0.35)] hover:bg-[linear-gradient(140deg,#111827,#1f2937)] dark:border-white/10 dark:shadow-[0_20px_50px_-30px_rgba(15,23,42,0.75)]"
@@ -282,9 +288,7 @@ export function LandingPage({ locale = 'en' }) {
                     {t.hero.primaryCta}
                   </button>
                   <Link
-                    href="https://help.onekey.so/en/articles/11536900-contact-us"
-                    target="_blank"
-                    rel="noopener noreferrer"
+                    href={`/${locale}/changelog`}
                     className="w-full sm:w-auto px-10 py-3.5 border border-zinc-300 bg-white text-zinc-700 font-semibold rounded-full transition-all duration-300 active:scale-[0.98] no-underline flex items-center justify-center hover:border-zinc-400 hover:text-zinc-900 hover:bg-zinc-50 hover:-translate-y-0.5 dark:border-white/25 dark:bg-white/6 dark:text-white/70 dark:hover:bg-white/12"
                     style={{ textDecoration: 'none' }}
                   >
