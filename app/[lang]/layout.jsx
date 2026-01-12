@@ -1,4 +1,4 @@
-import { Footer, Layout } from 'nextra-theme-docs'
+import { Layout } from 'nextra-theme-docs'
 import { getPageMap } from 'nextra/page-map'
 import { OneKeyWordmark } from '../../components/OneKeyLogo'
 import { NavbarMenuActiveMarker } from '../../components/NavbarMenuActiveMarker'
@@ -57,14 +57,6 @@ export default async function LocaleLayout({ children, params }) {
     </OneKeyNavbar>
   )
 
-  const footer = (
-    <Footer>
-      <div className="text-center text-sm text-zinc-500">
-        MIT 2025 © <a href="https://onekey.so" target="_blank" rel="noopener noreferrer" className="hover:text-zinc-900 dark:hover:text-white transition-colors">OneKey</a>
-      </div>
-    </Footer>
-  )
-
   return (
     <>
       <script
@@ -76,7 +68,6 @@ export default async function LocaleLayout({ children, params }) {
         navbar={navbar}
         pageMap={pageMap}
         docsRepositoryBase="https://github.com/OneKeyHQ/developer-docs/tree/main"
-        footer={footer}
         i18n={[
           { locale: 'en', name: 'English' },
           { locale: 'zh', name: '简体中文' }
@@ -93,7 +84,7 @@ export default async function LocaleLayout({ children, params }) {
         }}
         navigation={false}
         darkMode={false}
-        nextThemes={{ defaultTheme: 'light', forcedTheme: 'light' }}
+        nextThemes={{ defaultTheme: 'dark', forcedTheme: 'dark' }}
       >
         {children}
       </Layout>

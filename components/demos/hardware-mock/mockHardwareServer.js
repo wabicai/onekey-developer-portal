@@ -126,7 +126,6 @@ export function createMockHardwareServer() {
   const session = {
     connected: false,
     unlocked: false,
-    randomPinMap: false,
     pending: null,
     deviceType: 'pro',
     model: 'OneKey Pro',
@@ -146,7 +145,6 @@ export function createMockHardwareServer() {
       firmware: '3.0.0-mock',
       transport: 'mock',
       unlocked: session.unlocked,
-      randomPinMap: session.randomPinMap,
       deviceType: session.deviceType
     }
   }
@@ -195,7 +193,6 @@ export function createMockHardwareServer() {
           firmware: '3.0.0-mock',
           transport: 'mock',
           unlocked: session.unlocked,
-          randomPinMap: session.randomPinMap,
           deviceType: session.deviceType
         }
       }
@@ -210,8 +207,8 @@ export function createMockHardwareServer() {
               uuid: 'mock-uuid-001',
               deviceType: session.deviceType,
               deviceId: 'OK-EMULATOR-001',
-              path: 'mock-path',
-              name: 'ONEKEY-EMULATOR'
+              name: 'ONEKEY-EMULATOR',
+              commType: 'emulator'
             }
           ]
         }
@@ -232,7 +229,6 @@ export function createMockHardwareServer() {
             firmware: '3.0.0-mock',
             transport: 'mock',
             unlocked: session.unlocked,
-            randomPinMap: session.randomPinMap,
             deviceType: session.deviceType
           }
         }
@@ -245,8 +241,7 @@ export function createMockHardwareServer() {
           bleName: 'ONEKEY-EMULATOR',
           firmware: '3.0.0-mock',
           features: ['mock', 'demo', 'deterministic'],
-          unlocked: session.unlocked,
-          randomPinMap: session.randomPinMap
+          unlocked: session.unlocked
         }
 
       case 'deviceUnlock':

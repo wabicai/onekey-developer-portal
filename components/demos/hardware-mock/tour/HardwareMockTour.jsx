@@ -2,8 +2,8 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
+import Lottie from 'lottie-react'
 import { Tour, TourContext, useTour } from '@reactour/tour'
-import { Compass } from 'lucide-react'
 import { hardwareMockTourBus } from './hardwareMockTourBus'
 import { createClassic1sInteractiveSteps } from './steps/classic1sSteps'
 import { createProInteractiveSteps } from './steps/proSteps'
@@ -11,6 +11,48 @@ import { eventStep, hintStep, normalizeDeviceType } from './steps/stepHelpers'
 
 function clamp(value, min, max) {
   return Math.max(min, Math.min(max, value))
+}
+
+// Cache for loaded Lottie animations
+const lottieCache = new Map()
+
+function LottieAnimation({ src }) {
+  const [animationData, setAnimationData] = useState(() => lottieCache.get(src) ?? null)
+
+  useEffect(() => {
+    if (!src) return
+    if (lottieCache.has(src)) {
+      setAnimationData(lottieCache.get(src))
+      return
+    }
+
+    let cancelled = false
+    fetch(src)
+      .then((res) => res.json())
+      .then((data) => {
+        if (cancelled) return
+        lottieCache.set(src, data)
+        setAnimationData(data)
+      })
+      .catch(() => {
+        // Silently fail - animation won't show
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [src])
+
+  if (!animationData) return null
+
+  return (
+    <Lottie
+      animationData={animationData}
+      loop
+      autoplay
+      style={{ width: '100%', height: '100%' }}
+    />
+  )
 }
 
 function PortalTourProvider({ children, defaultOpen = false, startAt = 0, steps: defaultSteps, ...props }) {
@@ -21,6 +63,17 @@ function PortalTourProvider({ children, defaultOpen = false, startAt = 0, steps:
   const [steps, setSteps] = useState(defaultSteps)
   const [meta, setMeta] = useState('')
   const [disabledActions, setDisabledActions] = useState(false)
+  // Delay visibility to prevent flash at (0,0) before position is calculated
+  const [popoverVisible, setPopoverVisible] = useState(false)
+
+  // When isOpen changes, delay popover visibility
+  useEffect(() => {
+    if (isOpen) {
+      const timer = setTimeout(() => setPopoverVisible(true), 100)
+      return () => clearTimeout(timer)
+    }
+    setPopoverVisible(false)
+  }, [isOpen])
 
   const value = useMemo(
     () => ({
@@ -42,7 +95,21 @@ function PortalTourProvider({ children, defaultOpen = false, startAt = 0, steps:
   return (
     <TourContext.Provider value={value}>
       {children}
-      {isOpen && typeof document !== 'undefined' ? createPortal(<Tour {...value} />, document.body) : null}
+      {isOpen && typeof document !== 'undefined'
+        ? createPortal(
+            <div
+              style={{
+                position: 'relative',
+                zIndex: 10001,
+                opacity: popoverVisible ? 1 : 0,
+                transition: 'opacity 150ms ease-out'
+              }}
+            >
+              <Tour {...value} />
+            </div>,
+            document.body
+          )
+        : null}
     </TourContext.Provider>
   )
 }
@@ -155,28 +222,6 @@ function isEventStep(step) {
   return step?.mode === 'event'
 }
 
-function isStepSatisfied(step, events) {
-  if (!isEventStep(step)) return false
-  const list = Array.isArray(events) ? events : []
-  for (const evt of list) {
-    if (safeExpect(step?.expect, evt)) return true
-  }
-  return false
-}
-
-function findFirstIncompleteIndex(steps, startIndex, events) {
-  const maxIndex = steps.length - 1
-  let idx = clamp(startIndex, 0, maxIndex)
-  while (idx <= maxIndex) {
-    const step = steps[idx]
-    if (isEventStep(step) && isStepSatisfied(step, events)) {
-      idx += 1
-      continue
-    }
-    break
-  }
-  return clamp(idx, 0, maxIndex)
-}
 
 function createWaitingModelSteps(locale) {
   const isEn = locale === 'en'
@@ -185,8 +230,8 @@ function createWaitingModelSteps(locale) {
       id: 'waiting-start',
       selector: '[data-tour="send-button"]',
       placement: 'bottom',
-      now: isEn ? 'Waiting for a command.' : '等待命令。',
-      next: isEn ? 'Pick a command and tap Send.' : '选择命令并发送。',
+      tips: isEn ? 'Ready to Start' : '准备开始',
+      desc: isEn ? 'Select a command and click Send to begin the interactive tour.' : '选择命令并点击发送，开始交互式导览。',
       expect: (evt) => evt?.type === 'command.sent'
     })
   ]
@@ -198,24 +243,24 @@ function createSearchDevicesSteps(locale) {
     hintStep({
       id: 'example-code',
       selector: '[data-tour="example-code"]',
-      placement: 'right',
-      now: isEn ? '`searchDevices` sent.' : '`searchDevices` 已发送。',
-      next: isEn ? 'Check the Result panel.' : '查看 Result 面板。'
+      placement: 'left',
+      tips: isEn ? 'Searching Devices' : '搜索设备',
+      desc: isEn ? 'SDK is scanning for connected OneKey hardware devices.' : 'SDK 正在扫描已连接的 OneKey 硬件设备。'
     }),
     eventStep({
       id: 'wait-result',
       selector: '[data-tour="result-panel"]',
-      placement: 'top',
-      now: isEn ? 'Waiting for result…' : '等待结果…',
-      next: isEn ? 'Result shows here.' : '结果显示在这里。',
+      placement: 'left',
+      tips: isEn ? 'Waiting for Result' : '等待结果',
+      desc: isEn ? 'Device list will appear here once scanning completes.' : '扫描完成后，设备列表将显示在这里。',
       expect: (evt) => evt?.type === 'command.result'
     }),
     hintStep({
       id: 'result',
       selector: '[data-tour="result-panel"]',
-      placement: 'top',
-      now: isEn ? 'Device list ready.' : '设备列表已就绪。',
-      next: isEn ? 'Try `btcGetAddress` / `btcSignMessage`.' : '可继续 `btcGetAddress` / `btcSignMessage`。'
+      placement: 'left',
+      tips: isEn ? 'Devices Found' : '设备已找到',
+      desc: isEn ? 'Device list is ready. Try `btcGetAddress` or `btcSignMessage` next.' : '设备列表已就绪。接下来可以尝试 `btcGetAddress` 或 `btcSignMessage`。'
     })
   ]
 }
@@ -226,16 +271,16 @@ function createCallbackAndResultSteps(locale) {
     hintStep({
       id: 'result',
       selector: '[data-tour="result-panel"]',
-      placement: 'top',
-      now: isEn ? ['Result payload ready.'] : ['结果 payload 已就绪。'],
-      next: isEn ? 'Open callbacks template.' : '查看回调模板。'
+      placement: 'left',
+      tips: isEn ? 'Result Ready' : '结果已返回',
+      desc: isEn ? 'The SDK response payload is shown here.' : 'SDK 返回的 payload 显示在这里。'
     }),
     hintStep({
       id: 'callback-code',
       selector: '[data-tour="callback-code"]',
-      placement: 'right',
-      now: isEn ? 'UI_EVENT template.' : 'UI_EVENT 模板。',
-      next: isEn ? 'Handle `REQUEST_*` events.' : '处理 `REQUEST_*` 事件。'
+      placement: 'left',
+      tips: isEn ? 'Event Callbacks' : '事件回调',
+      desc: isEn ? 'This template shows how to handle `UI_EVENT` in your app.' : '这个模板展示如何在应用中处理 `UI_EVENT`。'
     })
   ]
 }
@@ -257,9 +302,9 @@ function createFlowSteps(locale, startEvent) {
     hintStep({
       id: 'example-code',
       selector: '[data-tour="example-code"]',
-      placement: 'right',
-      now: isEn ? [`Command: \`${command ?? '-'}\``] : [`命令：\`${command ?? '-'}\``],
-      next: isEn ? ['Send a supported command.'] : ['发送支持的命令。']
+      placement: 'left',
+      tips: isEn ? `Command: ${command ?? '-'}` : `命令：${command ?? '-'}`,
+      desc: isEn ? 'Try `btcGetAddress` or `btcSignMessage` for the full interactive experience.' : '尝试 `btcGetAddress` 或 `btcSignMessage` 获得完整的交互体验。'
     }),
     ...createCallbackAndResultSteps(locale)
   ]
@@ -305,53 +350,22 @@ function normalizeTourItems(value) {
   return Array.isArray(value) ? value : [value]
 }
 
-function GuideCard({ icon: Icon, title, accentColor, primary, secondary }) {
-  const hasPrimary = Array.isArray(primary) && primary.length > 0
-  const hasSecondary = Array.isArray(secondary) && secondary.length > 0
-
+function ProgressDots({ current, total }) {
+  if (total <= 1) return null
   return (
-    <div
-      className="mt-2 rounded-lg border px-3 py-3 ok-tour-card"
-      style={{
-        borderColor: `color-mix(in srgb, var(--ok-tour-border) 85%, ${accentColor} 15%)`,
-        backgroundColor: 'var(--ok-tour-bg)',
-        backgroundImage: 'none',
-        opacity: 1,
-        borderLeft: `2px solid ${accentColor}`
-      }}
-    >
-      <div className="flex items-center gap-2">
-        {Icon ? (
-          <span
-            className="inline-flex h-5 w-5 items-center justify-center rounded-md"
-            style={{
-              background: `color-mix(in srgb, var(--ok-tour-bg) 94%, ${accentColor} 6%)`,
-              color: accentColor
-            }}
-          >
-            <Icon size={14} />
-          </span>
-        ) : null}
-        <div className="text-[11px] font-semibold uppercase tracking-[0.12em]" style={{ color: accentColor }}>
-          {title}
-        </div>
-      </div>
-      {hasPrimary ? (
-        <div
-          className="mt-2 text-sm font-semibold leading-relaxed"
-          style={{ color: 'var(--ok-tour-text)', overflowWrap: 'anywhere', wordBreak: 'break-word' }}
-        >
-          {renderTourContent(primary)}
-        </div>
-      ) : null}
-      {hasSecondary ? (
-        <div
-          className="mt-1 text-xs leading-relaxed"
-          style={{ color: 'var(--ok-tour-muted)', overflowWrap: 'anywhere', wordBreak: 'break-word' }}
-        >
-          {renderTourContent(secondary)}
-        </div>
-      ) : null}
+    <div className="flex items-center gap-1.5">
+      {Array.from({ length: total }).map((_, idx) => (
+        <span
+          key={`dot-${idx}`}
+          className="h-1.5 w-1.5 rounded-full transition-all duration-200"
+          style={{
+            background: idx === current
+              ? 'var(--ok-tour-text)'
+              : 'color-mix(in srgb, var(--ok-tour-muted) 40%, var(--ok-tour-bg) 60%)',
+            transform: idx === current ? 'scale(1.1)' : 'scale(1)'
+          }}
+        />
+      ))}
     </div>
   )
 }
@@ -368,7 +382,8 @@ function emitStepChanged(steps, index) {
     index: safeIndex,
     total: list.length,
     selector: step?.selector ?? null,
-    tab
+    tab,
+    allowNext: Boolean(step?.mode === 'hint' && step?.allowNext !== false)
   })
 }
 
@@ -379,16 +394,19 @@ function emitTourClosed() {
     index: 0,
     total: 0,
     selector: null,
-    tab: null
+    tab: null,
+    allowNext: false
   })
 }
 
 function createReactourSteps({ locale, dict, modelStepsRef, lastEventRef, currentStepRef, eventLogRef, onExit }) {
   const steps = modelStepsRef.current ?? []
-  return steps.map((s) => ({
-    selector: s.selector,
-    position: sidePlacementForSelector(s.selector),
-    content: ({ currentStep, setCurrentStep, setIsOpen }) => {
+  return steps.map((s) => {
+    const resolvedPosition = s.placement || sidePlacementForSelector(s.selector)
+    return {
+      selector: s.selector,
+      position: resolvedPosition,
+      content: ({ currentStep, setCurrentStep, setIsOpen }) => {
       const liveSteps = modelStepsRef.current ?? []
       const maxIndex = liveSteps.length - 1
       const safeIndex = clamp(typeof currentStep === 'number' ? currentStep : 0, 0, maxIndex)
@@ -404,109 +422,175 @@ function createReactourSteps({ locale, dict, modelStepsRef, lastEventRef, curren
         onExit?.()
       }
 
+      const tips = step?.tips ?? step?.now
+      const desc = step?.desc ?? step?.next
+      const image = step?.image
+      const lottie = step?.lottie
+
       return (
         <div
           className="text-sm"
           style={{
-            width: 'min(360px, calc(100vw - 48px))',
+            minWidth: 280,
+            maxWidth: 'min(360px, calc(100vw - 48px))',
             color: 'var(--ok-tour-text)',
             fontFamily: 'var(--font-ui)'
           }}
         >
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex min-w-0 items-center gap-2">
-              <div className="truncate text-[13px] font-semibold leading-tight" style={{ color: 'var(--ok-tour-text)' }}>
-                {dict.tourTitle}
-              </div>
-              <div className="shrink-0 text-[11px] font-medium" style={{ color: 'var(--ok-tour-muted)' }}>
-                {safeIndex + 1}/{liveSteps.length}
-              </div>
+          {/* Header: Step indicator + Close button */}
+          <div className="mb-2 flex items-center justify-between">
+            <div className="text-[11px] font-medium" style={{ color: 'var(--ok-tour-muted)' }}>
+              Step {safeIndex + 1}/{liveSteps.length}
             </div>
-          </div>
-
-          <GuideCard
-            icon={Compass}
-            title={dict.guide}
-            accentColor="var(--ok-tour-accent)"
-            primary={normalizeTourItems(step?.now)}
-            secondary={normalizeTourItems(step?.next)}
-          />
-
-          <div className="mt-3 flex items-center justify-between gap-2">
             <button
               type="button"
               onClick={closeTour}
-              className="rounded-md px-3 py-1.5 text-xs font-medium transition-colors hover:opacity-90 active:opacity-80"
-              style={{
-                background: 'color-mix(in srgb, var(--ok-tour-bg) 92%, var(--ok-tour-text) 8%)',
-                color: 'var(--ok-tour-text)',
-                border: '1px solid var(--ok-tour-border)'
-              }}
+              className="grid h-5 w-5 place-items-center rounded transition-colors hover:opacity-70"
+              style={{ color: 'var(--ok-tour-muted)' }}
+              aria-label={dict.close}
             >
-              {dict.close}
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+                <path d="M2 2l8 8M10 2l-8 8" />
+              </svg>
             </button>
+          </div>
 
-            {canNext ? (
-              <button
-                type="button"
-                onClick={() => {
-                  const steps = modelStepsRef.current ?? []
-                  const maxIndex = steps.length - 1
-                  const rawNext = clamp(safeIndex + 1, 0, maxIndex)
-                  const nextIndex = rawNext
-                  const nextStep = steps[nextIndex]
-                  const tab = focusTabForSelector(nextStep?.selector)
-                  if (tab) hardwareMockTourBus.emit('tour.focus', { tab, stepId: nextStep?.id ?? null })
-                  emitStepChanged(steps, nextIndex)
-                  currentStepRef.current = nextIndex
-                  setCurrentStep(nextIndex)
-                }}
-                className="ok-tour-next rounded-md px-3 py-1.5 text-xs font-medium text-white transition-opacity hover:opacity-95 active:opacity-80"
-                style={{
-                  background: 'var(--ok-tour-accent)',
-                  boxShadow: '0 8px 18px rgba(0, 184, 18, 0.25)'
-                }}
+          {/* Content: Text + Image (vertical layout when image exists) */}
+          <div>
+            {/* Tips (title) */}
+            <div
+              className="text-[15px] font-semibold leading-snug"
+              style={{ color: 'var(--ok-tour-text)' }}
+            >
+              {renderTourContent(normalizeTourItems(tips))}
+            </div>
+
+            {/* Desc (description) */}
+            {desc ? (
+              <div
+                className="mt-1.5 text-[13px] leading-relaxed"
+                style={{ color: 'var(--ok-tour-muted)', overflowWrap: 'anywhere', wordBreak: 'break-word' }}
               >
-                <span>{locale === 'en' ? 'Next' : '下一步'}</span>
-                <span className="ok-tour-next-icon" aria-hidden="true">→</span>
-              </button>
-            ) : isLast ? (
-              <button
-                type="button"
-                onClick={closeTour}
-                className="rounded-md px-3 py-1.5 text-xs font-medium text-white transition-opacity hover:opacity-95 active:opacity-80"
-                style={{
-                  background: 'var(--ok-tour-accent)',
-                  boxShadow: '0 8px 18px rgba(0, 184, 18, 0.25)'
-                }}
-              >
-                {locale === 'en' ? 'Done' : '完成'}
-              </button>
-            ) : isEvent ? (
-              <button
-                type="button"
-                disabled
-                className="inline-flex items-center gap-2 rounded-md px-3 py-1.5 text-xs font-medium"
-                style={{
-                  background: 'color-mix(in srgb, var(--ok-tour-bg) 92%, var(--ok-tour-text) 8%)',
-                  color: 'var(--ok-tour-muted)',
-                  border: '1px solid var(--ok-tour-border)',
-                  opacity: 0.9
-                }}
-              >
-                <span
-                  className="inline-flex h-1.5 w-1.5 rounded-full"
-                  style={{ background: 'color-mix(in srgb, var(--ok-tour-muted) 75%, var(--ok-tour-text) 25%)' }}
+                {renderTourContent(normalizeTourItems(desc))}
+              </div>
+            ) : null}
+
+            {/* Animation or Image - displayed below text when present */}
+            {lottie ? (
+              <div className="mt-3 flex justify-center">
+                <div
+                  className="h-[144px] w-[144px] overflow-hidden rounded-lg"
+                  style={{ background: 'color-mix(in srgb, var(--ok-tour-bg) 95%, var(--ok-tour-text) 5%)' }}
+                >
+                  <LottieAnimation src={lottie} />
+                </div>
+              </div>
+            ) : image ? (
+              <div className="mt-3 flex justify-center">
+                <img
+                  src={image}
+                  alt=""
+                  className="h-[200px] w-auto rounded-lg object-contain"
+                  style={{ background: 'color-mix(in srgb, var(--ok-tour-bg) 95%, var(--ok-tour-text) 5%)' }}
                 />
-                {locale === 'en' ? 'Waiting…' : '等待操作…'}
-              </button>
+              </div>
             ) : null}
           </div>
 
+          {/* Divider */}
+          <div className="my-3 h-px" style={{ background: 'var(--ok-tour-border)' }} />
+
+          {/* Footer: Progress dots + Action buttons in same row */}
+          <div className="flex items-center justify-between gap-3">
+            {/* Progress dots on the left */}
+            <ProgressDots current={safeIndex} total={liveSteps.length} />
+
+            {/* Action buttons on the right */}
+            <div className="flex items-center gap-2">
+              {safeIndex > 0 ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    const steps = modelStepsRef.current ?? []
+                    const prevIndex = clamp(safeIndex - 1, 0, steps.length - 1)
+                    const prevStep = steps[prevIndex]
+                    const tab = focusTabForSelector(prevStep?.selector)
+                    if (tab) hardwareMockTourBus.emit('tour.focus', { tab, stepId: prevStep?.id ?? null })
+                    emitStepChanged(steps, prevIndex)
+                    currentStepRef.current = prevIndex
+                    setCurrentStep(prevIndex)
+                  }}
+                  className="rounded-md px-2.5 py-1 text-xs font-medium transition-colors hover:opacity-90"
+                  style={{
+                    background: 'color-mix(in srgb, var(--ok-tour-bg) 92%, var(--ok-tour-text) 8%)',
+                    color: 'var(--ok-tour-text)',
+                    border: '1px solid var(--ok-tour-border)'
+                  }}
+                >
+                  {locale === 'en' ? 'Back' : '上一步'}
+                </button>
+              ) : null}
+
+              {canNext ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    const steps = modelStepsRef.current ?? []
+                    const maxIndex = steps.length - 1
+                    const rawNext = clamp(safeIndex + 1, 0, maxIndex)
+                    const nextIndex = rawNext
+                    const nextStep = steps[nextIndex]
+                    const tab = focusTabForSelector(nextStep?.selector)
+                    if (tab) hardwareMockTourBus.emit('tour.focus', { tab, stepId: nextStep?.id ?? null })
+                    emitStepChanged(steps, nextIndex)
+                    currentStepRef.current = nextIndex
+                    setCurrentStep(nextIndex)
+                  }}
+                  className="rounded-md px-2.5 py-1 text-xs font-medium transition-opacity hover:opacity-90"
+                  style={{
+                    background: 'var(--ok-tour-text)',
+                    color: 'var(--ok-tour-bg)'
+                  }}
+                >
+                  {locale === 'en' ? 'Next' : '下一步'} →
+                </button>
+              ) : isLast ? (
+                <button
+                  type="button"
+                  onClick={closeTour}
+                  className="rounded-md px-2.5 py-1 text-xs font-medium transition-opacity hover:opacity-90"
+                  style={{
+                    background: 'var(--ok-tour-text)',
+                    color: 'var(--ok-tour-bg)'
+                  }}
+                >
+                  {locale === 'en' ? 'Done' : '完成'}
+                </button>
+              ) : isEvent ? (
+                <button
+                  type="button"
+                  disabled
+                  className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium"
+                  style={{
+                    background: 'color-mix(in srgb, var(--ok-tour-bg) 92%, var(--ok-tour-text) 8%)',
+                    color: 'var(--ok-tour-muted)',
+                    border: '1px solid var(--ok-tour-border)'
+                  }}
+                >
+                  <span
+                    className="inline-flex h-1.5 w-1.5 animate-pulse rounded-full"
+                    style={{ background: 'var(--ok-tour-muted)' }}
+                  />
+                  {locale === 'en' ? 'Waiting…' : '等待中…'}
+                </button>
+              ) : null}
+            </div>
+          </div>
         </div>
       )
     }
-  }))
+  }
+  })
 }
 
 export function HardwareMockTour({ locale = 'zh', enabled, onExit }) {
@@ -525,23 +609,38 @@ export function HardwareMockTour({ locale = 'zh', enabled, onExit }) {
       disableInteraction={false}
       onClickMask={() => {}}
       styles={{
-        maskWrapper: (base) => ({ ...base, zIndex: 9999 }),
+        maskWrapper: (base) => ({
+          ...base,
+          zIndex: 9999,
+          color: 'rgba(0, 0, 0, 0.45)'
+        }),
+        maskArea: (base) => ({
+          ...base,
+          rx: 12
+        }),
+        highlightedArea: (base) => ({
+          ...base,
+          stroke: 'rgba(255, 255, 255, 0.3)',
+          strokeWidth: 1,
+          rx: 12
+        }),
         popover: (base) => ({
           ...base,
           zIndex: 10000,
-          width: 'min(380px, calc(100vw - 24px))',
-          maxWidth: 'min(380px, calc(100vw - 24px))',
-          maxHeight: 'min(520px, calc(100vh - 80px))',
+          width: 'auto',
+          maxWidth: 'min(400px, calc(100vw - 24px))',
+          maxHeight: 'min(560px, calc(100vh - 80px))',
           overflowX: 'hidden',
           overflowY: 'auto',
           overscrollBehavior: 'contain',
           wordBreak: 'break-word',
           borderRadius: 12,
-          padding: 12,
+          padding: 16,
+          paddingTop: 16,
           backgroundColor: 'var(--ok-tour-bg)',
           backgroundImage: 'none',
           border: '1px solid var(--ok-tour-border)',
-          boxShadow: '0 10px 24px rgba(15, 23, 42, 0.12)'
+          boxShadow: '0 16px 32px rgba(0, 0, 0, 0.2)'
         }),
         badge: (base) => ({ ...base, display: 'none' }),
         dot: (base) => ({ ...base, display: 'none' }),
@@ -695,6 +794,20 @@ function HardwareMockTourEventBridge({
     const offConfirm = hardwareMockTourBus.on('ui.confirm', (payload) => handleEvent({ type: 'ui.confirm', ...payload }))
     const offUiShown = hardwareMockTourBus.on('ui.shown', (payload) => handleEvent({ type: 'ui.shown', ...payload }))
     const offPinSubmit = hardwareMockTourBus.on('ui.pin.submit', (payload) => handleEvent({ type: 'ui.pin.submit', ...payload }))
+    const offNext = hardwareMockTourBus.on('tour.next', () => {
+      const steps = modelStepsRef.current ?? []
+      const maxIndex = steps.length - 1
+      const idx = clamp(currentStepRef.current, 0, maxIndex)
+      const step = steps[idx]
+      if (!step || step?.mode !== 'hint' || step?.allowNext === false || idx >= maxIndex) return
+      const nextIndex = clamp(idx + 1, 0, maxIndex)
+      const nextStep = steps[nextIndex]
+      const tab = focusTabForSelector(nextStep?.selector)
+      if (tab) hardwareMockTourBus.emit('tour.focus', { tab, stepId: nextStep?.id ?? null })
+      emitStepChanged(steps, nextIndex)
+      currentStepRef.current = nextIndex
+      setCurrentStep(nextIndex)
+    })
     const offRefresh = hardwareMockTourBus.on('tour.refresh', () => {
       setSteps(
         createReactourSteps({ locale, dict, modelStepsRef, lastEventRef, currentStepRef, eventLogRef, onExit: onExitRef.current })
@@ -706,6 +819,7 @@ function HardwareMockTourEventBridge({
       offConfirm()
       offUiShown()
       offPinSubmit()
+      offNext()
       offRefresh()
     }
   }, [currentStepRef, dict, enabled, lastEventRef, locale, modelStepsRef, setCurrentStep, setIsOpen, setSteps])

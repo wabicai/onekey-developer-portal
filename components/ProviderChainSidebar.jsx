@@ -225,6 +225,7 @@ export function ProviderChainSidebar({ lang = 'en' }) {
   // Use URL chain if available, otherwise use last selected (persists across remounts)
   const displayedChainId = urlChainId || lastSelectedChainId
   const selectedChain = PROVIDER_CHAINS.find(c => c.id === displayedChainId) || PROVIDER_CHAINS[0]
+  const shouldHighlight = Boolean(urlChainId)
   const basePath = `/${lang}/connect-to-software/provider`
 
   // Update last selected when URL chain changes
@@ -246,6 +247,7 @@ export function ProviderChainSidebar({ lang = 'en' }) {
 
   const searchPlaceholder = lang === 'zh' ? '搜索链...' : 'Search chains...'
   const noResults = lang === 'zh' ? '未找到链' : 'No chains found'
+  const placeholder = lang === 'zh' ? '选择链' : 'Select a chain'
 
   return (
     <div className="provider-chain-sidebar">
@@ -256,6 +258,8 @@ export function ProviderChainSidebar({ lang = 'en' }) {
         onSelect={handleChainSelect}
         searchPlaceholder={searchPlaceholder}
         noResultsText={noResults}
+        placeholder={placeholder}
+        placeholderChainId="eth"
         className="mb-2"
       />
 
@@ -266,7 +270,7 @@ export function ProviderChainSidebar({ lang = 'en' }) {
             ? `${basePath}/${displayedChainId}${page.path ? `/${page.path}` : ''}`
             : `${basePath}/${displayedChainId}/${page.id}`
 
-          const isActive = (
+          const isActive = shouldHighlight && (
             pathname === pagePath ||
             (page.id === 'index' && pathname === `${basePath}/${displayedChainId}`) ||
             (currentPage === page.id && !currentSubPage)

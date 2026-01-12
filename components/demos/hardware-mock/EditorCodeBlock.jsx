@@ -120,11 +120,11 @@ export function EditorCodeBlock({
               style: {
                 display: 'block',
                 paddingRight: 12,
-                borderLeft: isActive ? '2px solid #00B812' : '2px solid transparent',
+                borderLeft: isActive ? '2px solid rgba(255, 255, 255, 0.5)' : '2px solid transparent',
                 background: isActive
                   ? isDark
-                    ? '#2c313c'
-                    : 'rgba(0, 184, 18, 0.10)'
+                    ? 'rgba(255, 255, 255, 0.08)'
+                    : 'rgba(0, 0, 0, 0.05)'
                   : showBreakpoints && isBp
                     ? isDark
                       ? 'rgba(239, 68, 68, 0.06)'

@@ -272,7 +272,6 @@ export function createHardwareMockMachine({ basePath }) {
           }
 
           apply('unlocked', output.unlocked, (v) => typeof v === 'boolean')
-          apply('randomPinMap', output.randomPinMap, (v) => typeof v === 'boolean')
           apply('deviceId', output.deviceId, (v) => typeof v === 'string' && v)
           apply('model', output.model, (v) => typeof v === 'string' && v)
           apply('deviceName', output.deviceName, (v) => typeof v === 'string' && v)
@@ -405,7 +404,6 @@ export function createHardwareMockMachine({ basePath }) {
             firmware: features?.payload?.firmware ?? '3.0.0-mock',
             transport: features?.payload?.transport ?? 'mock',
             unlocked: Boolean(features?.payload?.unlocked),
-            randomPinMap: Boolean(features?.payload?.randomPinMap),
             deviceType: features?.payload?.deviceType ?? first?.deviceType ?? 'pro'
           }
         }),

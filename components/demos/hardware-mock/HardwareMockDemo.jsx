@@ -2,7 +2,7 @@
 
 import { useMachine } from '@xstate/react'
 import gsap from 'gsap'
-import { Check, ChevronDown, Compass, Copy, Delete, ExternalLink, Info, Send, X } from 'lucide-react'
+import { Check, ChevronDown, Compass, Copy, Delete, ExternalLink, Info, Play, X } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { flushSync } from 'react-dom'
 import { createHardwareMockMachine } from './createHardwareMockMachine'
@@ -62,7 +62,10 @@ const I18N = {
       tabResult: '结果',
       noResult: '暂无结果。发送命令后这里会展示返回值。',
       showRawLogs: '查看完整日志',
-      noPayload: '无返回数据。'
+      noPayload: '无返回数据。',
+      guideTitle: '交互导览',
+      guideNext: '下一步',
+      guideWaiting: '等待操作…'
     },
     tour: {
       idleTitle: '操作指引',
@@ -133,7 +136,10 @@ const I18N = {
       tabResult: 'Result',
       noResult: 'No result yet. Send a command to see output.',
       showRawLogs: 'Show raw logs',
-      noPayload: 'No payload.'
+      noPayload: 'No payload.',
+      guideTitle: 'Interaction guide',
+      guideNext: 'Next',
+      guideWaiting: 'Waiting…'
     },
     tour: {
       idleTitle: 'Guide',
@@ -309,70 +315,6 @@ function buildTourHintPayload({ locale, dict, stepId, tourEnabled, tourStarted }
   }
 }
 
-function TourHintCard({ hint, locale, compact = false }) {
-  const accent = hint?.accent ?? TOUR_HINT_ACCENTS.action
-  const title = hint?.title ?? (locale === 'en' ? 'Guide' : '操作指引')
-  const typeLabel =
-    locale === 'en'
-      ? hint?.type === 'review'
-        ? 'Result'
-        : 'Next step'
-      : hint?.type === 'review'
-        ? '结果'
-        : '下一步'
-
-  return (
-    <div
-      className={[
-        'relative overflow-hidden border border-zinc-200/80 text-zinc-900 shadow-sm transition-transform duration-150 hover:-translate-y-[1px] dark:border-zinc-800/60 dark:text-zinc-100 [--tour-base:#ffffff] dark:[--tour-base:#0b0f14]',
-        compact ? 'rounded-xl px-3 py-2 text-xs' : 'rounded-2xl px-4 py-3 text-sm'
-      ].join(' ')}
-      style={{
-        borderColor: accent,
-        backgroundColor: `color-mix(in srgb, ${accent} 12%, var(--tour-base) 88%)`
-      }}
-    >
-      <span
-        aria-hidden="true"
-        className="pointer-events-none absolute -left-2 top-1/2 hidden h-4 w-4 -translate-y-1/2 rotate-45 border-l-2 border-t-2 lg:block animate-pulse"
-        style={{ borderColor: accent }}
-      />
-
-      <div className="flex items-center justify-between gap-2">
-        <div
-          className={[
-            'font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400',
-            compact ? 'text-[10px]' : 'text-xs'
-          ].join(' ')}
-        >
-          {title}
-        </div>
-        <span
-          className={[
-            'rounded-full font-semibold uppercase tracking-wider',
-            compact ? 'px-1.5 py-0.5 text-[10px]' : 'px-2 py-0.5 text-[11px]'
-          ].join(' ')}
-          style={{
-            backgroundColor: `color-mix(in srgb, ${accent} 35%, var(--tour-base) 65%)`,
-            color: accent
-          }}
-        >
-          {typeLabel}
-        </span>
-      </div>
-
-      <p className={compact ? 'mt-1 text-xs font-semibold text-zinc-900 dark:text-zinc-100' : 'mt-2 text-sm font-semibold text-zinc-900 dark:text-zinc-100'}>
-        {hint?.primary ?? ''}
-      </p>
-      {hint?.secondary ? (
-        <p className={compact ? 'mt-0.5 text-[11px] text-zinc-600 dark:text-zinc-300' : 'mt-1 text-xs text-zinc-600 dark:text-zinc-300'}>
-          {hint.secondary}
-        </p>
-      ) : null}
-    </div>
-  )
-}
-
 function buildExampleCode({ locale, command, btcPath, addressShowOnOneKey, messageHex }) {
   const init = [
     "import HardwareSDK from '@onekeyfe/hd-common-connect-sdk'",
@@ -496,6 +438,7 @@ export function HardwareMockDemo({ locale = 'zh' }) {
   const [tourStarted, setTourStarted] = useState(false)
   const tourStartedRef = useRef(false)
   const [currentTourStepId, setCurrentTourStepId] = useState(null)
+  const [tourStepMeta, setTourStepMeta] = useState({ index: 0, total: 0, allowNext: false, mode: null })
   const [rightTab, setRightTab] = useState('example')
   const [editorFocus, setEditorFocus] = useState({ tab: 'example', activeLine: null })
   const currentTourStepIdRef = useRef(null)
@@ -506,44 +449,11 @@ export function HardwareMockDemo({ locale = 'zh' }) {
 
   const logs = state.context.logs
   const ui = state.context.ui
+  const deviceType = state.context.device?.deviceType ?? 'pro'
 
   const tourGuided = Boolean(tourEnabled && tourStarted)
   const allowPinInteraction = !tourGuided || currentTourStepId === 'pin'
   const allowConfirmInteraction = !tourGuided || currentTourStepId === 'confirm'
-  const tourInlineHint = useMemo(() => {
-    if (!tourGuided || !currentTourStepId) return null
-    const isEn = locale === 'en'
-    switch (currentTourStepId) {
-      case 'waiting-start':
-        return isEn ? 'Pick a command and send' : '选择命令并发送'
-      case 'example-code':
-        return isEn ? 'Example ready' : '示例已准备'
-      case 'pin-matrix-and-modal':
-      case 'pin':
-        return null
-      case 'callback-request-button':
-        return isEn ? 'REQUEST_BUTTON triggered' : 'REQUEST_BUTTON 已触发'
-      case 'confirm':
-        return isEn ? 'Confirm on device' : '在设备上确认'
-      case 'wait-result':
-        return isEn ? 'Waiting for result' : '等待结果'
-      case 'result':
-        return isEn ? 'Result ready' : '结果已就绪'
-      case 'callback-code':
-        return isEn ? 'Review callbacks' : '查看回调模板'
-      default:
-        return null
-    }
-  }, [currentTourStepId, locale, tourGuided])
-  const deviceTourOverlay = tourInlineHint ? (
-    <div className="pointer-events-none absolute left-1/2 top-6 z-30 -translate-x-1/2">
-      <div className="ok-tour-inline-hint">
-        <span className="ok-tour-inline-dot" />
-        <span className="text-[11px] font-medium text-zinc-700 dark:text-zinc-200">{tourInlineHint}</span>
-        <span className="ok-tour-inline-arrow" />
-      </div>
-    </div>
-  ) : null
 
   const isBusy =
     state.matches('booting') ||
@@ -562,7 +472,6 @@ export function HardwareMockDemo({ locale = 'zh' }) {
   const mockReady = state.context.mockReady
   const mockError = state.context.mockError
   const lastError = state.context.lastError
-  const deviceType = state.context.device?.deviceType ?? 'pro'
   const controlsDisabled = !mockReady || isBusy || isAwaitingUi || tourGuided
   const modelControlDisabled = !mockReady || isBusy || isAwaitingUi || tourStarted
   const pinRequestId = ui?.type === 'pin' ? ui?.requestId ?? null : null
@@ -653,6 +562,7 @@ export function HardwareMockDemo({ locale = 'zh' }) {
       tourStartedRef.current = false
       currentTourStepIdRef.current = null
       setCurrentTourStepId(null)
+      setTourStepMeta({ index: 0, total: 0, allowNext: false, mode: null })
     }
   }, [tourEnabled])
 
@@ -850,6 +760,12 @@ ${extraHint}`
       const stepId = payload?.stepId ?? null
       currentTourStepIdRef.current = stepId
       setCurrentTourStepId(stepId)
+      setTourStepMeta({
+        index: typeof payload?.index === 'number' ? payload.index : 0,
+        total: typeof payload?.total === 'number' ? payload.total : 0,
+        allowNext: Boolean(payload?.allowNext),
+        mode: payload?.mode ?? null
+      })
 
       // Classic 1s：Step=输入 PIN 时应优先锁定弹窗（而不是设备屏幕）。
       if (
@@ -1264,95 +1180,68 @@ ${extraHint}`
                     <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(255,255,255,0.55),_transparent_55%)] opacity-50 dark:opacity-10" />
                     <div className="relative">
                       <div className="flex items-center justify-between gap-2">
-                        <div className="flex items-center gap-1 text-[9px] font-semibold uppercase tracking-[0.2em] text-zinc-400 dark:text-zinc-500">
-                          <span>{dict.labels.device}</span>
-                          <span className="rounded-full bg-zinc-100/80 px-1.5 py-0.5 text-[8px] font-semibold text-zinc-500 dark:bg-zinc-900/40 dark:text-zinc-400">
-                            {dict.labels.mock}
-                          </span>
-                        </div>
-                        <div className="flex min-w-0 items-center gap-1.5">
-                          <div className="inline-flex items-center rounded-full bg-white/80 p-0.5 ring-1 ring-zinc-200/70 shadow-sm dark:bg-zinc-900/60 dark:ring-zinc-700/70">
-                            {[
-                              { value: 'pro', label: 'Pro' },
-                              { value: 'classic1s', label: 'Classic 1s' }
-                            ].map((item) => {
-                              const active = deviceTypeControl === item.value
-                              return (
-                                <button
-                                  key={item.value}
-                                  type="button"
-                                  disabled={modelControlDisabled}
-                                  onClick={() => {
-                                    if (modelControlDisabled) return
-                                    const next = item.value
-                                    setDeviceTypeControl(next)
-                                    send({ type: 'SEND', command: 'setDeviceModel', params: { deviceType: next } })
-                                  }}
-                                  className={[
-                                    'h-5 rounded-full px-2 text-[9px] font-semibold transition-colors',
-                                    active
-                                      ? 'bg-zinc-900 text-white shadow-sm dark:bg-zinc-100 dark:text-zinc-900'
-                                      : 'text-zinc-600 hover:text-zinc-900 dark:text-zinc-300 dark:hover:text-white',
-                                    modelControlDisabled ? 'cursor-not-allowed opacity-60' : ''
-                                  ].join(' ')}
-                                >
-                                  {item.label}
-                                </button>
-                              )
-                            })}
-                          </div>
-
-                          <div className="inline-flex items-center gap-1 rounded-full border border-white/70 bg-white/80 p-0.5 text-[9px] shadow-sm dark:border-white/10 dark:bg-white/5">
-                            <div className="relative group">
-                              <a
-                                href="https://hardware-example.onekey.so/#/emulator"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="grid h-5 w-5 place-items-center rounded-full text-zinc-700 transition-all hover:-translate-y-[1px] hover:bg-white hover:text-zinc-900 dark:text-zinc-200 dark:hover:bg-white/10 dark:hover:text-white"
-                                aria-label={dict.labels.openEmulator}
-                                title={dict.labels.openEmulator}
-                              >
-                                <ExternalLink size={11} strokeWidth={1.8} />
-                              </a>
-                              <div className="pointer-events-none absolute right-0 top-full z-20 mt-2 origin-top-right scale-95 opacity-0 transition duration-150 group-hover:scale-100 group-hover:opacity-100">
-                                <div className="whitespace-nowrap rounded-lg border border-white/70 bg-white/90 px-2.5 py-1 text-[10px] font-medium text-zinc-700 shadow-sm dark:border-white/10 dark:bg-zinc-950/70 dark:text-zinc-200">
-                                  {dict.labels.openEmulator}
-                                </div>
-                              </div>
-                            </div>
-
-                            <div className="relative group">
+                        <div className="inline-flex items-center rounded-full bg-white/80 p-0.5 ring-1 ring-zinc-200/70 shadow-sm dark:bg-zinc-900/60 dark:ring-zinc-700/70">
+                          {[
+                            { value: 'pro', label: 'Pro' },
+                            { value: 'classic1s', label: 'Classic 1s' }
+                          ].map((item) => {
+                            const active = deviceTypeControl === item.value
+                            return (
                               <button
+                                key={item.value}
                                 type="button"
+                                disabled={modelControlDisabled}
                                 onClick={() => {
-                                  const next = !tourEnabledRef.current
-                                  tourEnabledRef.current = next
-                                  setTourEnabled(next)
+                                  if (modelControlDisabled) return
+                                  const next = item.value
+                                  setDeviceTypeControl(next)
+                                  send({ type: 'SEND', command: 'setDeviceModel', params: { deviceType: next } })
                                 }}
                                 className={[
-                                  'inline-flex h-6 items-center gap-1.5 rounded-full border px-2 text-[10px] font-semibold transition-all hover:-translate-y-[1px]',
-                                  tourEnabled
-                                    ? 'border-[#00B812]/50 bg-[#00B812]/15 text-[#0a7024] hover:bg-[#00B812]/20 dark:border-[#00B812]/40 dark:bg-[#00B812]/20 dark:text-[#b6ffc6]'
-                                    : 'border-transparent text-zinc-700 hover:bg-white hover:text-zinc-900 dark:text-zinc-200 dark:hover:bg-white/10 dark:hover:text-white'
+                                  'h-6 rounded-full px-2.5 text-[10px] font-semibold transition-colors',
+                                  active
+                                    ? 'bg-zinc-900 text-white shadow-sm dark:bg-zinc-100 dark:text-zinc-900'
+                                    : 'text-zinc-600 hover:text-zinc-900 dark:text-zinc-300 dark:hover:text-white',
+                                  modelControlDisabled ? 'cursor-not-allowed opacity-60' : ''
                                 ].join(' ')}
-                                aria-pressed={tourEnabled}
-                                aria-label={dict.labels.guide}
-                                title={dict.labels.guide}
                               >
-                                <Compass size={12} strokeWidth={1.8} />
-                                <span>{dict.labels.guide}</span>
+                                {item.label}
                               </button>
-                              <div className="pointer-events-none absolute right-0 top-full z-20 mt-2 w-[240px] origin-top-right scale-95 opacity-0 transition duration-150 group-hover:pointer-events-auto group-hover:scale-100 group-hover:opacity-100">
-                                <TourHintCard hint={tourHint} locale={locale} compact />
-                              </div>
-                            </div>
-                          </div>
+                            )
+                          })}
                         </div>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const next = !tourEnabledRef.current
+                            tourEnabledRef.current = next
+                            setTourEnabled(next)
+                          }}
+                          className={[
+                            'relative inline-flex h-6 items-center gap-1.5 rounded-full border px-2.5 text-[10px] font-medium transition-all',
+                            tourEnabled
+                              ? 'border-zinc-400 bg-zinc-100 text-zinc-900 dark:border-zinc-300 dark:bg-zinc-100 dark:text-zinc-900'
+                              : 'border-zinc-300 bg-transparent text-zinc-500 hover:border-zinc-400 hover:bg-zinc-50 hover:text-zinc-700 dark:border-zinc-600 dark:text-zinc-400 dark:hover:border-zinc-500 dark:hover:bg-zinc-800/50 dark:hover:text-zinc-300'
+                          ].join(' ')}
+                          aria-pressed={tourEnabled}
+                          aria-label={dict.labels.guide}
+                          title={dict.labels.guide}
+                        >
+                          <Compass size={12} strokeWidth={1.8} />
+                          <span>{dict.labels.guide}</span>
+                          {tourEnabled ? (
+                            <span className="absolute -right-0.5 -top-0.5 flex h-2.5 w-2.5">
+                              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+                              <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-emerald-500" />
+                            </span>
+                          ) : null}
+                        </button>
                       </div>
 
                       <div className="mt-2 rounded-2xl border border-zinc-200/60 bg-white/70 p-2.5 shadow-sm dark:border-zinc-800/60 dark:bg-white/5 ok-command-panel">
                         <div className="flex items-center gap-2">
-                          <span className="text-[11px] font-medium text-zinc-500 dark:text-zinc-400">{dict.labels.command}</span>
+                          <span className="w-[72px] shrink-0 text-[11px] font-medium text-zinc-500 dark:text-zinc-400">{dict.labels.command}</span>
                           <div className="relative min-w-0 flex-1">
                             <select
                               data-tour="command-select"
@@ -1381,22 +1270,22 @@ ${extraHint}`
                             onClick={handleSendCommand}
                             disabled={controlsDisabled}
                             data-tour="send-button"
-                            className="inline-flex h-7 shrink-0 items-center justify-center gap-1.5 rounded-lg border border-[#00B812]/25 bg-[#00B812]/10 px-2.5 text-xs font-medium text-[#0a7024] transition-colors hover:bg-[#00B812]/15 focus:outline-none focus:ring-2 focus:ring-[#00B812]/20 disabled:cursor-not-allowed disabled:opacity-50 dark:border-[#00B812]/30 dark:bg-[#00B812]/15 dark:text-[#b6ffc6]"
+                            className="inline-flex h-7 shrink-0 items-center justify-center gap-1.5 rounded-lg bg-[#00B812] px-3 text-xs font-medium text-white transition-colors hover:bg-[#00a010] focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
                           >
-                            <Send size={14} strokeWidth={1.8} />
+                            <Play size={12} strokeWidth={2} fill="currentColor" />
                             {dict.labels.sendCommand}
                           </button>
                         </div>
 
                         <div className="mt-2.5 grid gap-2">
                           {command !== 'searchDevices' ? (
-                            <label className="grid gap-1 text-xs text-zinc-600 dark:text-zinc-300">
-                              <span className="text-[11px] font-medium text-zinc-400 dark:text-zinc-500">Path</span>
+                            <label className="flex items-center gap-2 text-xs text-zinc-600 dark:text-zinc-300">
+                              <span className="w-[72px] shrink-0 text-[11px] font-medium text-zinc-400 dark:text-zinc-500">Path</span>
                               <input
                                 value={btcPath}
                                 onChange={(e) => setBtcPath(e.target.value)}
                                 disabled={controlsDisabled}
-                                className="w-full"
+                                className="min-w-0 flex-1"
                               />
                             </label>
                           ) : null}
@@ -1415,11 +1304,12 @@ ${extraHint}`
                           ) : null}
 
                           {command === 'btcGetAddress' ? (
-                            <div data-tour="show-on-onekey" className="flex items-center justify-between gap-3 text-xs text-zinc-600 dark:text-zinc-300">
-                              <span className="font-mono text-[11px] text-zinc-500 dark:text-zinc-400">{compactShowOnDeviceLabel}</span>
+                            <div data-tour="show-on-onekey" className="flex items-center gap-2 text-xs text-zinc-600 dark:text-zinc-300">
+                              <span className="w-[72px] shrink-0 font-mono text-[11px] text-zinc-500 dark:text-zinc-400">{compactShowOnDeviceLabel}</span>
                               <button
                                 type="button"
-                                aria-pressed={addressShowOnOneKey}
+                                role="switch"
+                                aria-checked={addressShowOnOneKey}
                                 onClick={() => {
                                   if (controlsDisabled) return
                                   const next = !addressShowOnOneKey
@@ -1430,14 +1320,19 @@ ${extraHint}`
                                 }}
                                 disabled={controlsDisabled}
                                 className={[
-                                  'inline-flex h-6 min-w-[48px] items-center justify-center rounded-full px-2 text-[11px] font-semibold transition-colors',
+                                  'relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full transition-colors duration-200 ease-in-out focus:outline-none',
                                   addressShowOnOneKey
-                                    ? 'bg-[#00B812] text-white shadow-sm'
-                                    : 'bg-zinc-200 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300',
-                                  controlsDisabled ? 'opacity-60' : 'hover:brightness-95'
+                                    ? 'bg-[#00B812]'
+                                    : 'bg-zinc-300 dark:bg-zinc-600',
+                                  controlsDisabled ? 'cursor-not-allowed opacity-60' : ''
                                 ].join(' ')}
                               >
-                                {addressShowOnOneKey ? 'ON' : 'OFF'}
+                                <span
+                                  className={[
+                                    'pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out',
+                                    addressShowOnOneKey ? 'translate-x-[22px]' : 'translate-x-[2px]'
+                                  ].join(' ')}
+                                />
                               </button>
                             </div>
                           ) : null}
@@ -1450,14 +1345,13 @@ ${extraHint}`
                         </div>
                       </div>
 
-                      <div ref={deviceRef} className="mt-3 flex justify-center" data-tour="device-screen">
+                      <div ref={deviceRef} className="mt-3 py-[10px] flex justify-center" data-tour="device-screen">
                         {deviceType === 'classic1s' ? (
                           <Classic1sDeviceScreen
                             locale={locale}
                             busy={isBusy}
                             device={state.context.device}
                             ui={ui}
-                            overlay={deviceTourOverlay}
                             pinEntryOnDevice={classicPinEntryOnDevice}
                             pinMatrix={classicPinMatrix}
                             allowPinInput={allowPinInteraction}
@@ -1513,7 +1407,6 @@ ${extraHint}`
                             busy={isBusy}
                             device={state.context.device}
                             ui={ui}
-                            overlay={deviceTourOverlay}
                             allowPinInput={allowPinInteraction}
                             allowConfirmInput={allowConfirmInteraction}
                             onSubmitPin={(pinValue) => {
@@ -1560,9 +1453,25 @@ ${extraHint}`
                         )}
                       </div>
 
-                      <div className="mt-2 flex flex-wrap items-center gap-2">
-                        <div className="inline-flex items-center gap-1 rounded-full border border-white/70 bg-white/80 px-2 py-0.5 text-[10px] font-medium text-zinc-600 shadow-sm dark:border-white/10 dark:bg-white/5 dark:text-zinc-300">
-                          <Info size={14} strokeWidth={2} className="text-zinc-400 dark:text-zinc-500" />
+                      <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
+                        <div className="flex items-center gap-1.5 text-[9px] font-semibold uppercase tracking-[0.15em] text-zinc-400 dark:text-zinc-500">
+                          <span>{dict.labels.device}</span>
+                          <span className="rounded bg-zinc-100/80 px-1.5 py-0.5 text-[8px] font-semibold text-zinc-500 dark:bg-zinc-900/40 dark:text-zinc-400">
+                            {dict.labels.mock}
+                          </span>
+                          <a
+                            href="https://hardware-example.onekey.so/#/emulator"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            data-tour="emulator-link"
+                            className="ml-1 inline-flex items-center gap-1 text-[9px] font-medium normal-case tracking-normal text-zinc-500 transition-colors hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200"
+                            title={dict.labels.openEmulator}
+                          >
+                            <ExternalLink size={10} strokeWidth={1.8} />
+                          </a>
+                        </div>
+                        <div className="inline-flex items-center gap-1 text-[10px] text-zinc-500 dark:text-zinc-400">
+                          <Info size={12} strokeWidth={2} className="text-zinc-400 dark:text-zinc-500" />
                           <span className="whitespace-nowrap">{dict.labels.pinNote}</span>
                         </div>
                       </div>

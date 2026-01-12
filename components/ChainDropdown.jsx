@@ -22,6 +22,8 @@ export function ChainDropdown({
   onSelect,
   searchPlaceholder = 'Search chains...',
   noResultsText = 'No chains found',
+  placeholder = 'Select a chain',
+  placeholderChainId = null,
   className = '',
   disabled = false,
 }) {
@@ -31,7 +33,12 @@ export function ChainDropdown({
   const dropdownRef = useRef(null)
   const inputRef = useRef(null)
 
-  const selectedChain = chains.find(c => c.id === selectedChainId) || chains[0]
+  const selectedChain = selectedChainId
+    ? chains.find(c => c.id === selectedChainId)
+    : null
+  const placeholderChain = placeholderChainId
+    ? chains.find(c => c.id === placeholderChainId)
+    : null
 
   const filteredChains = chains.filter(chain =>
     chain.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -86,8 +93,6 @@ export function ChainDropdown({
     inputRef.current?.focus()
   }
 
-  if (!selectedChain) return null
-
   return (
     <div ref={dropdownRef} className={`chain-dropdown relative ${className}`}>
       {/* Trigger Button */}
@@ -106,10 +111,25 @@ export function ChainDropdown({
         aria-expanded={isOpen}
         aria-haspopup="listbox"
       >
-        <ChainIcon chain={selectedChain.icon} size={18} />
-        <span className="flex-1 text-left truncate">
-          {selectedChain.name}
-        </span>
+        {selectedChain ? (
+          <>
+            <ChainIcon chain={selectedChain.icon} size={18} />
+            <span className="flex-1 text-left truncate">
+              {selectedChain.name}
+            </span>
+          </>
+        ) : placeholderChain ? (
+          <>
+            <ChainIcon chain={placeholderChain.icon} size={18} />
+            <span className="flex-1 text-left truncate text-zinc-500 dark:text-zinc-400">
+              {placeholderChain.name}
+            </span>
+          </>
+        ) : (
+          <span className="flex-1 text-left truncate text-zinc-500 dark:text-zinc-400">
+            {placeholder}
+          </span>
+        )}
         <ChevronDown
           className={`w-4 h-4 text-zinc-400 transition-transform flex-shrink-0
             ${isOpen ? 'rotate-180' : ''}`}
@@ -200,4 +220,3 @@ export function ChainDropdown({
 }
 
 export default ChainDropdown
-
