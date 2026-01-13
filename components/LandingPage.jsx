@@ -1,15 +1,16 @@
 'use client'
 
+import { useState } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import {
   Usb,
   Bluetooth,
   Smartphone,
   QrCode,
   ArrowUpRight,
-  Twitter,
-  Github,
-  Bug,
+  ChevronDown,
+  X,
 } from 'lucide-react'
 
 const heroSecurity05 = '/landing-page/security-05.svg'
@@ -18,64 +19,28 @@ const heroSecurity03 = '/landing-page/security-03.svg'
 const heroSecurity02 = '/landing-page/security-02.svg'
 const heroSecurity01 = '/landing-page/security-01.svg'
 
-const getFooterColumns = (isZh, locale) => {
-  if (isZh) {
-    return [
-      {
-        title: '资源',
-        items: [
-          { label: 'Playground', href: 'https://hardware-example.onekey.so/' },
-          { label: 'hardware-js-sdk', href: 'https://github.com/OneKeyHQ/hardware-js-sdk/' },
-          { label: 'cross-inpage-provider', href: 'https://github.com/OneKeyHQ/cross-inpage-provider' },
-          { label: 'app-monorepo', href: 'https://github.com/OneKeyHQ/app-monorepo' },
-        ],
-      },
-      {
-        title: '社区',
-        items: [
-          { label: 'GitHub', href: 'https://github.com/OneKeyHQ' },
-          { label: 'Twitter', href: 'https://twitter.com/onekeyHQ' },
-          { label: 'Blog', href: 'https://onekey.so/blog' },
-        ],
-      },
-      {
-        title: '法律',
-        items: [
-          { label: '用户协议', href: 'https://help.onekey.so/zh-CN/articles/11461297-%E6%9C%8D%E5%8A%A1%E5%8D%8F%E8%AE%AE?url_locale=zh-CN' },
-          { label: '隐私政策', href: 'https://help.onekey.so/zh-CN/articles/11461298-privacy-policy?url_locale=zh-CN' },
-          { label: '官方成员验证', href: 'https://onekey.so/zh_CN/team-verification/' },
-        ],
-      },
-    ]
+const getFooterData = (isZh, locale) => {
+  const portalColumn = {
+    title: isZh ? 'OneKey 开发者门户' : 'OneKey Developer portal',
+    items: [
+      { label: isZh ? '首页' : 'Home', href: `/${locale}` },
+      { label: 'Playground', href: 'https://hardware-example.onekey.so/' },
+      { label: 'Hardware-js-sdk', href: 'https://github.com/OneKeyHQ/hardware-js-sdk/' },
+      { label: 'Cross-inpage-provider', href: 'https://github.com/OneKeyHQ/cross-inpage-provider' },
+      { label: 'App-monorepo', href: 'https://github.com/OneKeyHQ/app-monorepo' },
+    ],
   }
 
-  return [
-      {
-        title: 'Resources',
-        items: [
-          { label: 'Playground', href: 'https://hardware-example.onekey.so/' },
-          { label: 'hardware-js-sdk', href: 'https://github.com/OneKeyHQ/hardware-js-sdk/' },
-          { label: 'cross-inpage-provider', href: 'https://github.com/OneKeyHQ/cross-inpage-provider' },
-          { label: 'app-monorepo', href: 'https://github.com/OneKeyHQ/app-monorepo' },
-        ],
-      },
-    {
-      title: 'Community',
-      items: [
-        { label: 'GitHub', href: 'https://github.com/OneKeyHQ' },
-        { label: 'Twitter', href: 'https://twitter.com/onekeyHQ' },
-        { label: 'Blog', href: 'https://onekey.so/blog' },
-      ],
-    },
-      {
-        title: 'Legal',
-        items: [
-          { label: 'User Agreement', href: 'https://help.onekey.so/zh-CN/articles/11461297-%E6%9C%8D%E5%8A%A1%E5%8D%8F%E8%AE%AE?url_locale=zh-CN' },
-          { label: 'Privacy Policy', href: 'https://help.onekey.so/zh-CN/articles/11461298-privacy-policy?url_locale=zh-CN' },
-          { label: 'Team Verification', href: 'https://onekey.so/zh_CN/team-verification/' },
-        ],
-      },
-    ]
+  const legalColumn = {
+    title: isZh ? '法律' : 'Legal',
+    items: [
+      { label: isZh ? '用户协议' : 'User Agreement', href: 'https://help.onekey.so/hc/articles/11461297' },
+      { label: isZh ? '隐私政策' : 'Privacy Policy', href: 'https://help.onekey.so/hc/articles/11461298' },
+      { label: isZh ? '官方成员验证' : 'Team Verification', href: 'https://onekey.so/team-verification' },
+    ],
+  }
+
+  return { portalColumn, legalColumn }
 }
 
 const IntegrationCard = ({ title, description, icon: Icon, iconSrc, href, cta, className = '' }) => (
@@ -108,7 +73,16 @@ const IntegrationCard = ({ title, description, icon: Icon, iconSrc, href, cta, c
 )
 
 export function LandingPage({ locale = 'en' }) {
+  const router = useRouter()
+  const [showSubscribeModal, setShowSubscribeModal] = useState(false)
+  const [showLanguageMenu, setShowLanguageMenu] = useState(false)
   const isZh = locale === 'zh'
+
+  const handleLanguageChange = (newLocale) => {
+    setShowLanguageMenu(false)
+    router.push(`/${newLocale}`)
+  }
+
   const copy = isZh
     ? {
         heroTitle: 'OneKey 开发者门户',
@@ -197,33 +171,27 @@ export function LandingPage({ locale = 'en' }) {
 
   return (
     <div className="flex min-h-screen flex-col bg-[#101111] font-sans text-white">
-      <main className="flex flex-col gap-[40px]">
+      <main className="flex flex-col gap-[120px]">
         <section
-          className="relative w-full overflow-hidden pt-[8px]"
+          className="relative w-full overflow-hidden"
           style={{
-            backgroundImage:
-              'radial-gradient(44.43% 1236.5% at 50% 100%, #3d3d3d 0%, #272727 50%, #1b1c1c 75%, #101111 100%)',
+            backgroundImage: "url('/landing-page/hero-bg.svg')",
+            backgroundSize: 'cover',
+            backgroundPosition: 'center bottom',
           }}
         >
-          <div className="relative mx-auto h-[500px] w-full max-w-[1440px]">
-            <div
-              className="pointer-events-none absolute bottom-0 left-0 h-[20%] w-full"
-              style={{
-                background:
-                  'linear-gradient(0deg, rgba(16,17,17,0.95) 0%, rgba(16,17,17,0) 100%)',
-              }}
-            />
-            <div className="absolute left-[64px] top-[96px] z-10 flex w-[711px] flex-col gap-[16px]">
+          <div className="relative mx-auto h-[810px] w-full max-w-[1440px]">
+            <div className="absolute left-[64px] top-[169px] z-10 flex w-[711px] flex-col gap-[0px]">
               <h1 className="text-[52px] font-semibold leading-[56px]">
-                <span className="bg-gradient-to-r from-white to-[#16d629] bg-clip-text text-transparent">
+                <span className="bg-gradient-to-r from-white from-[24%] to-[#16d629] bg-clip-text text-transparent">
                   {copy.heroTitle}
                 </span>
               </h1>
-              <p className="text-[16px] leading-[20px] text-white/60">
+              <p className="mt-[0px] text-[16px] leading-[56px] text-white/60">
                 {copy.heroSubtitle}
               </p>
             </div>
-            <div className="absolute left-[64px] top-[236px] z-10 flex items-center gap-[8px]">
+            <div className="absolute left-[64px] top-[335px] z-10 flex items-center gap-[8px]">
               <button
                 type="button"
                 onClick={() => {
@@ -232,7 +200,7 @@ export function LandingPage({ locale = 'en' }) {
                     section.scrollIntoView({ behavior: 'smooth' })
                   }
                 }}
-                className="flex w-[170px] items-center justify-center gap-[8px] rounded-[50px] px-[16px] py-[18px] text-[16px] font-medium text-[#101111]"
+                className="flex w-[223px] items-center justify-center gap-[8px] rounded-[50px] px-[32px] py-[18px] text-[16px] font-medium text-[#101111]"
                 style={{
                   backgroundImage:
                     'linear-gradient(90deg, rgb(79, 245, 95) 0%, rgb(33, 233, 53) 100%)',
@@ -248,7 +216,7 @@ export function LandingPage({ locale = 'en' }) {
               </button>
               <Link
                 href={`/${locale}/changelog`}
-                className="flex w-[170px] items-center justify-center rounded-[50px] bg-white px-[18px] py-[18px] text-[16px] font-medium text-[#101111] no-underline"
+                className="flex items-center justify-center rounded-[50px] bg-white px-[32px] py-[18px] text-[16px] font-medium text-[#101111] no-underline"
                 style={{ color: '#101111' }}
               >
                 {copy.ctaSecondary}
@@ -257,89 +225,89 @@ export function LandingPage({ locale = 'en' }) {
               <img
                 src={heroSecurity05}
                 alt=""
-                className="pointer-events-none absolute left-[calc(50%+309px)] top-[-140px] h-[720px] w-[740px] -translate-x-1/2 object-cover opacity-70"
+                className="pointer-events-none absolute left-[calc(50%+334.5px)] top-[-65px] h-[919px] w-[915px] -translate-x-1/2 object-cover opacity-70"
               />
               <img
                 src={heroSecurity04}
                 alt=""
-                className="pointer-events-none absolute left-[calc(50%+285.5px)] top-[-80px] h-[680px] w-[675px] -translate-x-1/2 object-cover"
+                className="pointer-events-none absolute left-[calc(50%+309.5px)] top-[11px] h-[863px] w-[831px] -translate-x-1/2 object-cover"
               />
               <img
                 src={heroSecurity03}
                 alt=""
-                className="pointer-events-none absolute left-[calc(50%+285.5px)] top-[-80px] h-[680px] w-[675px] -translate-x-1/2 object-cover opacity-20"
+                className="pointer-events-none absolute left-[calc(50%+309.5px)] top-[11px] h-[863px] w-[831px] -translate-x-1/2 object-cover opacity-20"
               />
               <img
                 src={heroSecurity02}
                 alt=""
-                className="pointer-events-none absolute left-[calc(50%+285.5px)] top-[-80px] h-[680px] w-[675px] -translate-x-1/2 object-cover"
+                className="pointer-events-none absolute left-[calc(50%+309.5px)] top-[11px] h-[863px] w-[831px] -translate-x-1/2 object-cover"
               />
               <img
                 src={heroSecurity01}
                 alt=""
-                className="pointer-events-none absolute left-[calc(50%+285.5px)] top-[-80px] h-[680px] w-[675px] -translate-x-1/2 object-cover opacity-50"
+                className="pointer-events-none absolute left-[calc(50%+309.5px)] top-[11px] h-[863px] w-[831px] -translate-x-1/2 object-cover opacity-50"
               />
           </div>
         </section>
 
         <section
           id="hardware-integration"
-          className="mx-auto flex w-full max-w-[1440px] flex-col items-start gap-[24px] px-[64px]"
+          className="mx-auto flex w-full max-w-[1440px] flex-col items-center px-[64px]"
         >
-          <div className="flex flex-col items-start gap-[8px] text-left">
+          <div className="flex w-full flex-col items-center gap-[8px] text-center">
             <p className="text-[40px] font-medium leading-[46px]">{copy.hardwareTitle}</p>
             <p className="text-[16px] text-white/70">
               {copy.hardwareSubtitle}
             </p>
           </div>
-          <div className="grid w-full grid-cols-1 gap-[32px] lg:grid-cols-3">
+          <div className="mt-[24px] grid w-full grid-cols-1 gap-[32px] lg:grid-cols-3">
             {integrationCards.map((card) => (
               <IntegrationCard key={card.title} {...card} />
             ))}
           </div>
+          <div className="mt-[24px] h-[1px] w-full bg-white/30" />
         </section>
 
-        <section className="mx-auto flex w-full max-w-[1440px] flex-col items-start gap-[24px] px-[64px]">
-          <div className="flex flex-col items-start gap-[8px] text-left">
+        <section className="mx-auto flex w-full max-w-[1440px] flex-col items-center px-[64px]">
+          <div className="flex w-full flex-col items-center gap-[8px] text-center">
             <p className="text-[40px] font-medium leading-[46px]">{copy.dappTitle}</p>
             <p className="text-[16px] text-white/70">
               {copy.dappSubtitle}
             </p>
           </div>
-          <div className="grid w-full grid-cols-1 gap-[32px] lg:grid-cols-2">
+          <div className="mt-[24px] grid w-full grid-cols-1 gap-[32px] lg:grid-cols-2">
             {dappCards.map((card) => (
               <IntegrationCard key={card.title} {...card} />
             ))}
           </div>
+          <div className="mt-[24px] h-[1px] w-full bg-white/30" />
         </section>
 
-        <section className="mx-auto flex w-full max-w-[1440px] flex-col items-start gap-[24px] px-[64px]">
-          <div className="flex flex-col items-start gap-[8px] text-left">
+        <section className="mx-auto flex w-full max-w-[1440px] flex-col items-center px-[64px]">
+          <div className="flex w-full flex-col items-center gap-[8px] text-center">
             <p className="text-[40px] font-medium leading-[46px]">{copy.offlineTitle}</p>
             <p className="text-[16px] text-white/70">
               {copy.offlineSubtitle}
             </p>
           </div>
-          <div className="grid w-full grid-cols-1 gap-[32px] lg:grid-cols-2">
+          <div className="mt-[24px] grid w-full grid-cols-1 gap-[32px] lg:grid-cols-2">
             {offlineCards.map((card) => (
               <IntegrationCard key={card.title} className="lg:col-span-1" {...card} />
             ))}
           </div>
+          <div className="mt-[24px] h-[1px] w-full bg-white/30" />
         </section>
 
-        <section className="mx-auto w-full max-w-[1440px] px-[64px] pb-[40px]">
+        <section className="mx-auto w-full max-w-[1440px] px-[64px]">
           <div
-            className="relative flex flex-col items-start gap-[31px] rounded-[24px] p-[40px] text-[#101111] lg:flex-row lg:items-center"
-            style={{
-              backgroundImage: 'linear-gradient(90deg, #c3c3c3 0%, #eeeeee 100%)',
-            }}
+            className="relative flex flex-col items-start gap-[40px] rounded-[24px] bg-[#222222] p-[40px] lg:flex-row lg:items-center"
           >
-            <div className="flex w-full max-w-[591px] flex-col gap-[30px]">
-              <div className="flex flex-col gap-[8px] text-[#101111]">
-                <div className="text-[30px] font-semibold leading-[36px]">
+            <div className="flex w-full max-w-[591px] flex-col gap-[40px]">
+              <div className="flex flex-col gap-[8px]">
+                <div className="text-[30px] font-medium leading-[36px] text-white">
                   {copy.supportTitle}
                 </div>
-                <div className="text-[16px] leading-[20px] text-[#2d3133]">
+                <div className="text-[16px] leading-[20px] text-white/70">
                   {copy.supportSubtitle}
                 </div>
               </div>
@@ -361,7 +329,7 @@ export function LandingPage({ locale = 'en' }) {
                   href="https://github.com/OneKeyHQ/hardware-js-sdk/issues"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center justify-center gap-[8px] rounded-[50px] border border-[#101111] px-[20px] py-[10px] text-[16px] font-medium text-[#101111] no-underline"
+                  className="flex items-center justify-center gap-[8px] rounded-[50px] border border-white px-[20px] py-[10px] text-[16px] font-medium text-white no-underline"
                 >
                   GitHub Issues
                 </a>
@@ -376,18 +344,109 @@ export function LandingPage({ locale = 'en' }) {
         </section>
       </main>
 
-      <footer className="mt-[40px] w-full border-t border-white/10 bg-[#0b0b0b]">
-        <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-[40px] px-[64px] pb-[48px] pt-[56px]">
-          <div className="grid grid-cols-1 gap-[24px] md:grid-cols-2 lg:grid-cols-4">
-            {getFooterColumns(isZh, locale).map((column) => (
-              <div key={column.title} className="flex flex-col gap-[16px]">
-                <p className="text-[14px] font-medium text-white/60">{column.title}</p>
-                <div className="flex flex-col gap-[12px] text-[16px] text-white">
-                  {column.items.map((item) => (
+      <footer className="mt-[120px] w-full rounded-t-[64px] bg-[#101111]">
+        <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-[80px] px-[64px] py-[120px] lg:flex-row lg:gap-[133px]">
+          <div className="flex shrink-0 flex-col gap-[10px]">
+            <div className="flex flex-col gap-[16px]">
+              <img
+                src="/landing-page/onekey-brand.svg"
+                alt="OneKey"
+                className="h-[57px] w-[233px]"
+              />
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => setShowLanguageMenu(!showLanguageMenu)}
+                  className="flex w-fit items-center gap-[8px] rounded-[50px] border border-white px-[20px] py-[10px] text-[16px] font-medium text-white"
+                >
+                  {isZh ? '中文' : 'English'}
+                  <ChevronDown className={`size-[24px] transition-transform ${showLanguageMenu ? 'rotate-180' : ''}`} />
+                </button>
+                {showLanguageMenu && (
+                  <div className="absolute left-0 top-full z-20 mt-[8px] flex flex-col overflow-hidden rounded-[12px] border border-white/10 bg-[#1a1a1a]">
+                    <button
+                      type="button"
+                      onClick={() => handleLanguageChange('en')}
+                      className={`px-[20px] py-[12px] text-left text-[14px] hover:bg-white/10 ${!isZh ? 'text-[#16d629]' : 'text-white'}`}
+                    >
+                      English
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleLanguageChange('zh')}
+                      className={`px-[20px] py-[12px] text-left text-[14px] hover:bg-white/10 ${isZh ? 'text-[#16d629]' : 'text-white'}`}
+                    >
+                      中文
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+            <div className="flex flex-col gap-[24px] pt-[10px]">
+              <div className="flex items-center gap-[16px]">
+                <a
+                  href="https://twitter.com/onekeyHQ"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Twitter"
+                >
+                  <img src="/landing-page/social/twitter.svg" alt="" className="size-[24px]" />
+                </a>
+                <a
+                  href="https://github.com/OneKeyHQ"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="GitHub"
+                >
+                  <img src="/landing-page/social/github.svg" alt="" className="size-[24px]" />
+                </a>
+                <a
+                  href="https://discord.gg/onekey"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Discord"
+                >
+                  <img src="/landing-page/social/discord.svg" alt="" className="size-[24px]" />
+                </a>
+              </div>
+              <div className="flex flex-col gap-[16px]">
+                <div className="flex items-center gap-[16px]">
+                  <a
+                    href="https://github.com/OneKeyHQ"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <img
+                      src="/landing-page/badge-osi.svg"
+                      alt="Open Source"
+                      className="h-[33px] w-[96px]"
+                    />
+                  </a>
+                  <img
+                    src="/landing-page/badge-cceal.svg"
+                    alt="CCEAL 5+ ISO 27001"
+                    className="h-[32px] w-[108px]"
+                  />
+                </div>
+                <p className="text-[12px] leading-[15px] text-white/60">
+                  2022 OneKey, Inc. All rights reserved.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex flex-1 flex-col gap-[80px]">
+            <div className="flex flex-wrap gap-[40px] lg:gap-[80px]">
+              <div className="flex flex-col gap-[32px]">
+                <p className="text-[14px] font-medium leading-[20px] text-white/60">
+                  {getFooterData(isZh, locale).portalColumn.title}
+                </p>
+                <div className="flex flex-col gap-[16px]">
+                  {getFooterData(isZh, locale).portalColumn.items.map((item) => (
                     <a
                       key={item.label}
                       href={item.href}
-                      className="text-white/80 hover:text-white"
+                      className="text-[16px] leading-[20px] text-white hover:text-white/80"
                       target={item.href.startsWith('http') ? '_blank' : undefined}
                       rel={item.href.startsWith('http') ? 'noopener noreferrer' : undefined}
                     >
@@ -396,11 +455,62 @@ export function LandingPage({ locale = 'en' }) {
                   ))}
                 </div>
               </div>
-            ))}
-          </div>
 
+              <div className="flex flex-col gap-[32px]">
+                <p className="text-[14px] font-medium leading-[17px] text-white/60">
+                  {getFooterData(isZh, locale).legalColumn.title}
+                </p>
+                <div className="flex flex-col gap-[16px]">
+                  {getFooterData(isZh, locale).legalColumn.items.map((item) => (
+                    <a
+                      key={item.label}
+                      href={item.href}
+                      className="text-[16px] font-medium leading-[20px] text-white hover:text-white/80"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      {item.label}
+                    </a>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-[16px]">
+              <button
+                type="button"
+                onClick={() => setShowSubscribeModal(true)}
+                className="w-fit rounded-[50px] border border-white px-[20px] py-[10px] text-[16px] font-medium text-white hover:bg-white/10"
+              >
+                {isZh ? '订阅我们的通知' : 'Subscribe to our notifications'}
+              </button>
+            </div>
+          </div>
         </div>
       </footer>
+
+      {showSubscribeModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80">
+          <div className="relative max-h-[90vh] w-full max-w-[520px] overflow-hidden rounded-[16px] bg-white">
+            <button
+              type="button"
+              onClick={() => setShowSubscribeModal(false)}
+              className="absolute right-[16px] top-[16px] z-10 flex size-[32px] items-center justify-center rounded-full bg-black/10 hover:bg-black/20"
+              aria-label="Close"
+            >
+              <X className="size-[20px] text-gray-600" />
+            </button>
+            <iframe
+              title="Subscribe to OneKey notifications"
+              width="100%"
+              height="640"
+              src="https://42580da6.sibforms.com/serve/MUIEAI9xKoDAfTUz53hH6tfFw33F9jhgZ4pvLBMCebFgxpaWbthSByPZWMaeONkK5X2ffORCqwK1J-ZPnWiv0QO7xOKU7GNASRGHZkksxcx-GnE0kkPbJ-GFDvZ5MC1vPT1lybkIKZZxZI5eXofyZQqeXNaaGT6-nQJ1hNb5FG0tvGLpgNK3oBe9Wvx3lpghzTTkwiYcWH25Xt1o"
+              allowFullScreen
+              style={{ display: 'block', maxWidth: '100%' }}
+            />
+          </div>
+        </div>
+      )}
     </div>
   )
 }
