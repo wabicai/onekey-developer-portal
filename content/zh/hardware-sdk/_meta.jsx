@@ -2,9 +2,8 @@ import { ChainMethodsSidebar } from '../../../components/ChainMethodsSidebar'
 
 export default {
   index: '概览',
-  'getting-started': '快速开始',
-  'mock-demo': {
-    title: '交互指引',
+  playground: {
+    title: '交互演示',
     theme: {
       layout: 'full',
       toc: false,

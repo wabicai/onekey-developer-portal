@@ -2,9 +2,8 @@ import { ChainMethodsSidebar } from '../../../components/ChainMethodsSidebar'
 
 export default {
   index: 'Overview',
-  'getting-started': 'Getting Started',
-  'mock-demo': {
-    title: 'Interaction mock',
+  playground: {
+    title: 'Playground',
     theme: {
       layout: 'full',
       toc: false,
